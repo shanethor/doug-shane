@@ -18,6 +18,7 @@ const DemoSpotlightTab = lazy(() => import("@/components/connect-demo/DemoSpotli
 const DemoAssistantTab = lazy(() => import("@/components/connect-demo/DemoAssistantTab"));
 const ConnectIntelligencePage = lazy(() => import("@/pages/ConnectIntelligence"));
 const ConnectLeads = lazy(() => import("@/pages/ConnectLeads"));
+const ConnectLeadDetail = lazy(() => import("@/pages/ConnectLeadDetail"));
 const ConnectRewardsPage = lazy(() => import("@/pages/ConnectRewards"));
 const ConnectPropertyDashboard = lazy(() => import("@/pages/ConnectPropertyDashboard"));
 const ConnectDashboard = lazy(() => import("@/pages/ConnectDashboard"));
