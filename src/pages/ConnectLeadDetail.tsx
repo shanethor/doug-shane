@@ -226,30 +226,30 @@ export default function ConnectLeadDetail() {
 
   if (loading) {
     return (
-      <ProductLayout>
+      <>
         <div className="px-2 sm:px-4 lg:px-6 py-4">
           <Skeleton className="h-8 w-32 mb-4" />
           <Skeleton className="h-64 w-full" />
         </div>
-      </ProductLayout>
+      </>
     );
   }
 
   if (!lead) {
     return (
-      <ProductLayout>
+      <>
         <div className="px-2 sm:px-4 lg:px-6 py-20 text-center">
           <p className="text-muted-foreground">Lead not found.</p>
           <Button variant="ghost" className="mt-4" onClick={() => navigate("/connect/leads")}>
             <ArrowLeft className="h-4 w-4 mr-2" /> Back to Leads
           </Button>
         </div>
-      </ProductLayout>
+      </>
     );
   }
 
   return (
-    <ProductLayout>
+    <>
       <div className="px-2 sm:px-4 lg:px-6 py-4 max-w-5xl mx-auto space-y-6">
         {/* Back button */}
         <Button variant="ghost" size="sm" onClick={() => navigate("/connect/leads")} className="gap-2">
@@ -406,6 +406,6 @@ export default function ConnectLeadDetail() {
           </div>
         </div>
       </div>
-    </ProductLayout>
+    </>
   );
 }
