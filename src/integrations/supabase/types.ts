@@ -4632,6 +4632,89 @@ export type Database = {
         }
         Relationships: []
       }
+      unreached_leads: {
+        Row: {
+          claimed_at: string | null
+          claimed_by_user_id: string | null
+          company: string
+          contact_name: string | null
+          created_at: string
+          email: string | null
+          engine_lead_id: string | null
+          est_premium: number | null
+          id: string
+          industry: string | null
+          original_batch_id: string | null
+          original_owner_id: string
+          phone: string | null
+          score: number | null
+          signal: string | null
+          source: string | null
+          source_url: string | null
+          specializations: string[] | null
+          state: string | null
+          status: string | null
+          updated_at: string
+          vertical: string | null
+        }
+        Insert: {
+          claimed_at?: string | null
+          claimed_by_user_id?: string | null
+          company: string
+          contact_name?: string | null
+          created_at?: string
+          email?: string | null
+          engine_lead_id?: string | null
+          est_premium?: number | null
+          id?: string
+          industry?: string | null
+          original_batch_id?: string | null
+          original_owner_id: string
+          phone?: string | null
+          score?: number | null
+          signal?: string | null
+          source?: string | null
+          source_url?: string | null
+          specializations?: string[] | null
+          state?: string | null
+          status?: string | null
+          updated_at?: string
+          vertical?: string | null
+        }
+        Update: {
+          claimed_at?: string | null
+          claimed_by_user_id?: string | null
+          company?: string
+          contact_name?: string | null
+          created_at?: string
+          email?: string | null
+          engine_lead_id?: string | null
+          est_premium?: number | null
+          id?: string
+          industry?: string | null
+          original_batch_id?: string | null
+          original_owner_id?: string
+          phone?: string | null
+          score?: number | null
+          signal?: string | null
+          source?: string | null
+          source_url?: string | null
+          specializations?: string[] | null
+          state?: string | null
+          status?: string | null
+          updated_at?: string
+          vertical?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "unreached_leads_engine_lead_id_fkey"
+            columns: ["engine_lead_id"]
+            isOneToOne: false
+            referencedRelation: "engine_leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_consent_records: {
         Row: {
           accepted: boolean

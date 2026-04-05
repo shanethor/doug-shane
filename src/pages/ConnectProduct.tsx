@@ -18,6 +18,7 @@ const DemoSpotlightTab = lazy(() => import("@/components/connect-demo/DemoSpotli
 const DemoAssistantTab = lazy(() => import("@/components/connect-demo/DemoAssistantTab"));
 const ConnectIntelligencePage = lazy(() => import("@/pages/ConnectIntelligence"));
 const ConnectLeads = lazy(() => import("@/pages/ConnectLeads"));
+const ConnectLeadDetail = lazy(() => import("@/pages/ConnectLeadDetail"));
 const ConnectRewardsPage = lazy(() => import("@/pages/ConnectRewards"));
 const ConnectPropertyDashboard = lazy(() => import("@/pages/ConnectPropertyDashboard"));
 const ConnectDashboard = lazy(() => import("@/pages/ConnectDashboard"));
@@ -138,7 +139,10 @@ export default function ConnectProduct() {
 
   // Determine which page to render based on path
   const path = location.pathname;
+  // Check if we're on a lead detail page
+  const leadDetailMatch = path.match(/^\/connect\/leads\/([^/]+)$/);
   const getPage = () => {
+    if (leadDetailMatch) return "lead-detail";
     if (path.startsWith("/connect/dashboard")) return "dashboard";
     if (path.startsWith("/connect/property")) return "property";
     if (path.startsWith("/connect/intelligence")) return "intelligence";
@@ -183,6 +187,7 @@ export default function ConnectProduct() {
           }}>
             <Suspense fallback={<PageLoader />}>
               {page === "dashboard" && <ConnectDashboard />}
+              {page === "lead-detail" && <ConnectLeadDetail />}
               {page === "leads" && <ConnectLeads />}
               {page !== "leads" && page !== "dashboard" && !canAccessFullSite ? (
                 <ComingSoonGate pageName={page.charAt(0).toUpperCase() + page.slice(1)} />
