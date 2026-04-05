@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,7 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Plus, Search, DollarSign, Star, Trophy, Shield,
-  ArrowRight, Clock, User, Handshake, TrendingUp, Filter,
+  ArrowRight, Clock, User, Handshake, TrendingUp, Filter, Lock, Loader2, CheckCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,6 +19,7 @@ import {
   useLeadPosts, useMyLeadPosts, useCreateLeadPost, useClaimLead,
   useMyElo, useEnsureElo, getEloBadge, type LeadPost,
 } from "@/hooks/useLeadsHub";
+import { useAuth } from "@/hooks/useAuth";
 
 const LEAD_TYPES = [
   { value: "insurance", label: "Insurance" },
@@ -35,6 +36,136 @@ function AuraRatingBadge({ rating }: { rating: number }) {
       <Shield className="h-3 w-3" />
       {badge.label} ({Math.round(rating)})
     </span>
+  );
+}
+
+/* ── Request Invite Form ── */
+function RequestInviteForm({ onSubmitted }: { onSubmitted: () => void }) {
+  const { user } = useAuth();
+  const [referralTypes, setReferralTypes] = useState("");
+  const [leadsSeeking, setLeadsSeeking] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async () => {
+    if (!referralTypes.trim() || !leadsSeeking.trim()) {
+      toast.error("Please fill out both fields");
+      return;
+    }
+    if (!user?.id) return;
+    setSubmitting(true);
+    try {
+      const { error } = await supabase
+        .from("marketplace_access_requests")
+        .insert({
+          user_id: user.id,
+          referral_types: referralTypes.trim(),
+          leads_seeking: leadsSeeking.trim(),
+        } as any);
+      if (error) throw error;
+      toast.success("Invite request submitted! We'll review it shortly.");
+      onSubmitted();
+    } catch (err: any) {
+      if (err?.code === "23505") {
+        toast.info("You've already submitted a request — we'll review it soon.");
+        onSubmitted();
+      } else {
+        toast.error(err.message || "Failed to submit request");
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="max-w-lg mx-auto space-y-4">
+      <div>
+        <label className="text-xs font-medium text-muted-foreground mb-1 block">
+          What kind of referrals can you offer?
+        </label>
+        <Textarea
+          value={referralTypes}
+          onChange={(e) => setReferralTypes(e.target.value)}
+          placeholder="e.g. Commercial property leads in Texas, restaurant owners looking for liability coverage…"
+          rows={3}
+        />
+      </div>
+      <div>
+        <label className="text-xs font-medium text-muted-foreground mb-1 block">
+          What kind of leads are you looking for?
+        </label>
+        <Textarea
+          value={leadsSeeking}
+          onChange={(e) => setLeadsSeeking(e.target.value)}
+          placeholder="e.g. Trucking companies needing fleet insurance, homeowners in Florida…"
+          rows={3}
+        />
+      </div>
+      <Button onClick={handleSubmit} disabled={submitting} className="w-full gap-2">
+        {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Handshake className="h-4 w-4" />}
+        {submitting ? "Submitting…" : "Request Invite"}
+      </Button>
+    </div>
+  );
+}
+
+/* ── Invite-Only Gate ── */
+function MarketplaceInviteGate() {
+  const { user } = useAuth();
+  const [status, setStatus] = useState<"loading" | "none" | "pending" | "approved" | "denied">("loading");
+
+  const checkStatus = async () => {
+    if (!user?.id) { setStatus("none"); return; }
+    const { data } = await supabase
+      .from("marketplace_access_requests")
+      .select("status")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (!data) { setStatus("none"); return; }
+    setStatus((data as any).status as any);
+  };
+
+  useEffect(() => { checkStatus(); }, [user?.id]);
+
+  if (status === "loading") return <Skeleton className="h-64 w-full" />;
+
+  if (status === "approved") return null; // Has access — render marketplace
+
+  return (
+    <Card className="max-w-xl mx-auto">
+      <CardContent className="p-8 text-center space-y-5">
+        <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mx-auto">
+          <Lock className="h-7 w-7 text-muted-foreground" />
+        </div>
+        <div>
+          <h2 className="text-lg font-bold mb-1">Marketplace is Invite Only</h2>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            The AURA Lead Marketplace connects verified professionals to exchange high-quality referrals.
+            To request an invite, tell us what kind of referrals you can offer and what leads you're looking for.
+          </p>
+        </div>
+
+        {status === "pending" ? (
+          <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-1">
+            <div className="flex items-center justify-center gap-2">
+              <Clock className="h-4 w-4 text-primary" />
+              <p className="text-sm font-semibold text-primary">Invite Request Pending</p>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              We've received your request and will review it shortly. You'll get access once approved.
+            </p>
+          </div>
+        ) : status === "denied" ? (
+          <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-4 space-y-1">
+            <p className="text-sm font-semibold text-destructive">Request Not Approved</p>
+            <p className="text-xs text-muted-foreground">
+              Your request wasn't approved at this time. Please reach out to support if you have questions.
+            </p>
+          </div>
+        ) : (
+          <RequestInviteForm onSubmitted={checkStatus} />
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -189,7 +320,7 @@ function LeadPostCard({ post, onClaim }: { post: LeadPost; onClaim: (post: LeadP
   );
 }
 
-export default function LeadMarketplace() {
+function MarketplaceContent() {
   const [postOpen, setPostOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -204,7 +335,6 @@ export default function LeadMarketplace() {
       await ensureElo.mutateAsync();
       await claimLead.mutateAsync({ lead_post_id: post.id });
 
-      // Auto-import to pipeline
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const { data: newLead } = await supabase
@@ -328,5 +458,73 @@ export default function LeadMarketplace() {
 
       <PostLeadModal open={postOpen} onClose={() => setPostOpen(false)} />
     </div>
+  );
+}
+
+export default function LeadMarketplace() {
+  const { user } = useAuth();
+  const [accessStatus, setAccessStatus] = useState<"loading" | "none" | "pending" | "approved" | "denied">("loading");
+
+  useEffect(() => {
+    if (!user?.id) { setAccessStatus("none"); return; }
+    (async () => {
+      const { data } = await supabase
+        .from("marketplace_access_requests")
+        .select("status")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (!data) { setAccessStatus("none"); return; }
+      setAccessStatus((data as any).status as any);
+    })();
+  }, [user?.id]);
+
+  if (accessStatus === "loading") return <Skeleton className="h-64 w-full" />;
+
+  if (accessStatus === "approved") return <MarketplaceContent />;
+
+  // Gate: show invite request UI
+  return (
+    <Card className="max-w-xl mx-auto">
+      <CardContent className="p-8 text-center space-y-5">
+        <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mx-auto">
+          <Lock className="h-7 w-7 text-muted-foreground" />
+        </div>
+        <div>
+          <h2 className="text-lg font-bold mb-1">Marketplace is Invite Only</h2>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            The AURA Lead Marketplace connects verified professionals to exchange high-quality referrals.
+            To request an invite, tell us what kind of referrals you can offer and what leads you're looking for.
+          </p>
+        </div>
+
+        {accessStatus === "pending" ? (
+          <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-1">
+            <div className="flex items-center justify-center gap-2">
+              <Clock className="h-4 w-4 text-primary" />
+              <p className="text-sm font-semibold text-primary">Invite Request Pending</p>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              We've received your request and will review it shortly. You'll get access once approved.
+            </p>
+          </div>
+        ) : accessStatus === "denied" ? (
+          <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-4 space-y-1">
+            <p className="text-sm font-semibold text-destructive">Request Not Approved</p>
+            <p className="text-xs text-muted-foreground">
+              Your request wasn't approved at this time. Please reach out to support if you have questions.
+            </p>
+          </div>
+        ) : (
+          <RequestInviteForm onSubmitted={async () => {
+            const { data } = await supabase
+              .from("marketplace_access_requests")
+              .select("status")
+              .eq("user_id", user!.id)
+              .maybeSingle();
+            setAccessStatus((data as any)?.status ?? "pending");
+          }} />
+        )}
+      </CardContent>
+    </Card>
   );
 }
