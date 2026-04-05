@@ -40,6 +40,7 @@ async function searchGooglePlaces(
     if (resp.ok) {
       const data = await resp.json();
       const places = data.places || [];
+      console.log(`[google-places] New API success for "${query}" — ${places.length} results`);
       return places.map((p: any) => {
         const addr = p.formattedAddress || "";
         let city: string | null = null;
