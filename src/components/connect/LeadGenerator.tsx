@@ -1319,9 +1319,50 @@ export default function LeadGenerator() {
   };
 
   const handlePurchaseLeads = async (count: number) => {
-    // In test mode: just claim the leads (no Stripe charge)
-    // The leads stay in engine_leads for the user; we don't need to move them
-    toast.success(`${count} lead${count !== 1 ? "s" : ""} claimed! They're yours to work.`);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { toast.error("Not authenticated"); return; }
+
+      // Get the sellable leads (same filter as displayed)
+      const allNew = existingLeads?.filter(l => l.status === "new" && !!(l.email || l.phone)) ?? [];
+      const toPurchase = allNew.slice(0, count);
+
+      if (toPurchase.length === 0) { toast.error("No leads to purchase"); return; }
+
+      // Persist to purchased_leads table
+      const rows = toPurchase.map(l => ({
+        user_id: user.id,
+        engine_lead_id: l.id,
+        company: l.company,
+        contact_name: l.contact_name,
+        email: l.email,
+        phone: l.phone,
+        state: l.state,
+        industry: l.industry,
+        est_premium: l.est_premium || 0,
+        signal: l.signal,
+        source: l.source,
+        source_url: l.source_url,
+        score: l.score || 0,
+        batch_id: l.batch_id,
+        vertical: userIndustry,
+        specializations: userSpecializations || [],
+      }));
+
+      const { error } = await supabase.from("purchased_leads").insert(rows as any);
+      if (error) throw error;
+
+      // Mark purchased leads as "contacted" so they don't show as new again
+      for (const l of toPurchase) {
+        await supabase.from("engine_leads").update({ status: "contacted" } as any).eq("id", l.id);
+      }
+
+      qc.invalidateQueries({ queryKey: ["engine-leads"] });
+      qc.invalidateQueries({ queryKey: ["purchased-leads"] });
+      toast.success(`${count} lead${count !== 1 ? "s" : ""} purchased! View them in the Purchased Leads tab.`);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to purchase leads");
+    }
     setPurchaseDismissed(true);
   };
 
