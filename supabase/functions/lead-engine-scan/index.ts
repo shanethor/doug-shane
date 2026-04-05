@@ -739,9 +739,11 @@ Deno.serve(async (req) => {
               const snippet = r.snippet || "";
               const stMatch = snippet.match(/\b([A-Z]{2})\b/);
               if (stMatch && STATE_FULL_NAMES[stMatch[1]]) state = stMatch[1];
-              // Clean company name: strip trailing "- Site Title", "| Home", ": All" etc
-              let companyName = title.replace(/\s*[-|–—:]\s*(Home|About|Contact|Services|Official|Welcome|All|Overview).*$/i, "").trim();
-              companyName = companyName.replace(/\s*[-|–—]\s*[^-|–—]*$/, "").trim();
+              // Clean company name: strip taglines, page titles, suffixes
+              let companyName = title.replace(/\s*[-|–—:]\s*(Home|About|Contact|Services|Official|Welcome|All|Overview|Premier|Leading|Your|Best|Top).*$/i, "").trim();
+              companyName = companyName.replace(/\s*\|\s*.*$/, "").trim(); // strip "| anything"
+              companyName = companyName.replace(/:\s*(Premier|Leading|Your|A |The |Best|Top|#1|No\.).*$/i, "").trim(); // strip taglines after colon
+              companyName = companyName.replace(/\s*[-–—]\s*[^-–—]*$/, "").trim();
               if (companyName.length < 3 || companyName.length > 80) continue;
               // Final check: skip if cleaned name is still generic
               if (/^(home|about|all|contact|motor carriers?)$/i.test(companyName)) continue;
