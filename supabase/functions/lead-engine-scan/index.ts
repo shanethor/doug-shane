@@ -723,24 +723,28 @@ Deno.serve(async (req) => {
             for (const r of (data.organic || []).slice(0, 5)) {
               const title = r.title || "";
               const link = r.link || "";
-              // Skip aggregator / directory / listicle sites
-              if (/yelp|yellowpages|bbb|manta|mapquest|tripadvisor|indeed|glassdoor|ziprecruiter|wikipedia|alltruckjobs|zippia|comparably|crunchbase\.com\/hub|listicle/i.test(link)) continue;
+              // Skip aggregator / directory / listicle / government / job sites
+              if (/yelp|yellowpages|bbb|manta|mapquest|tripadvisor|indeed|glassdoor|ziprecruiter|wikipedia|alltruckjobs|zippia|comparably|crunchbase\.com\/hub|listicle|cdljobs|\.gov\//i.test(link)) continue;
               if (!title || seenNames.has(title.toLowerCase().trim())) continue;
-              // Skip list articles, search result pages, and generic non-business content
-              if (/top \d|best \d|\d+ best|\d+ largest|learn about \d|company search|search results|companies in|how to|what is|guide|blog/i.test(title)) continue;
+              // Skip list articles, search result pages, job postings, and generic non-business content
+              if (/top \d|best \d|\d+ best|\d+ largest|learn about \d|company search|search results|companies in|how to|what is|guide|blog|hiring|cdl drivers|motor carrier list|intrastate licens|enforcement/i.test(title)) continue;
+              // Skip very generic titles that are clearly not business names
+              if (/^(home|about|contact|services|all|motor carriers?)$/i.test(title.trim())) continue;
               // Skip titles that are just location names (e.g., "DALLAS, TX")
               if (/^[A-Z\s]+,\s*[A-Z]{2}$/i.test(title.trim())) continue;
-              // Skip titles containing aggregation keywords
-              if (/freight shipping|ltl freight|shipping company/i.test(title) && !/inc|llc|corp|co\./i.test(title)) continue;
+              // Skip titles containing aggregation keywords (unless they have LLC/Inc/Corp indicating a real business)
+              if (/freight shipping|ltl freight|shipping company|freight forwarder/i.test(title) && !/inc|llc|corp|co\.|l\.l\.c/i.test(title)) continue;
               seenNames.add(title.toLowerCase().trim());
               let state: string | null = null;
               const snippet = r.snippet || "";
               const stMatch = snippet.match(/\b([A-Z]{2})\b/);
               if (stMatch && STATE_FULL_NAMES[stMatch[1]]) state = stMatch[1];
-              // Clean company name: strip trailing "- Site Title" etc
-              let companyName = title.replace(/\s*[-|–—:]\s*(Home|About|Contact|Services|Official|Welcome).*$/i, "").trim();
+              // Clean company name: strip trailing "- Site Title", "| Home", ": All" etc
+              let companyName = title.replace(/\s*[-|–—:]\s*(Home|About|Contact|Services|Official|Welcome|All|Overview).*$/i, "").trim();
               companyName = companyName.replace(/\s*[-|–—]\s*[^-|–—]*$/, "").trim();
               if (companyName.length < 3 || companyName.length > 80) continue;
+              // Final check: skip if cleaned name is still generic
+              if (/^(home|about|all|contact|motor carriers?)$/i.test(companyName)) continue;
               allPlaces.push({
                 company: companyName,
                 address: "",
