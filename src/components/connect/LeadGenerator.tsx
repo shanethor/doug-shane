@@ -790,9 +790,14 @@ function ResultsTable({ latestBatchId, onPurchaseLeads, greyedOut }: { latestBat
     return matchesSearch && matchesScore && matchesContact;
   });
 
+  // Sort by score if active
+  const sortedFiltered = sortByScore
+    ? [...filtered].sort((a, b) => sortByScore === "desc" ? (b.score || 0) - (a.score || 0) : (a.score || 0) - (b.score || 0))
+    : filtered;
+
   // Separate latest batch from previous leads
-  const latestLeads = latestBatchId ? filtered.filter(l => l.batch_id === latestBatchId) : [];
-  const previousLeads = latestBatchId ? filtered.filter(l => l.batch_id !== latestBatchId) : filtered;
+  const latestLeads = latestBatchId ? sortedFiltered.filter(l => l.batch_id === latestBatchId) : [];
+  const previousLeads = latestBatchId ? sortedFiltered.filter(l => l.batch_id !== latestBatchId) : sortedFiltered;
 
   const allSelected = filtered.length > 0 && filtered.every((l: EngineLead) => selectedIds.has(l.id));
   const someSelected = filtered.some((l: EngineLead) => selectedIds.has(l.id));
