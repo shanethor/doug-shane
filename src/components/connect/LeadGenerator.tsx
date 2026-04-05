@@ -1149,9 +1149,7 @@ function ResultsTable({ latestBatchId, onPurchaseLeads }: { latestBatchId: strin
       </CardContent>
     </Card>
 
-    {selectedLead && (
-      <LeadOutreachPanel lead={selectedLead} onClose={() => setSelectedLead(null)} />
-    )}
+    {/* Lead detail is now a separate page at /connect/leads/:id */}
     {gameplanLead && (
       <SageGameplan lead={gameplanLead} onClose={() => setGameplanLead(null)} />
     )}
