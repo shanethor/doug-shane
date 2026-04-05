@@ -188,10 +188,13 @@ function buildGoogleMapsQueries(settings: Record<string, string>): string[] {
       }
     } else {
       for (const st of states.slice(0, 4)) {
-        const isConstructionTrade = /contractor|roofing|plumbing|hvac|electrician|excavation|flooring|solar|drywall|insulation|glazing|elevator|fire sprinkler/i.test(ind);
-        const tradeQuery = isConstructionTrade
-          ? `${ind} contractor in ${st}`
-          : `${ind} company in ${st}`;
+        // If the industry term already contains "company", "contractor", "carrier" etc, use as-is
+        const alreadySpecific = /company|contractor|carrier|broker|dealer|service|fleet|operator|delivery|trucking|transport/i.test(ind);
+        const tradeQuery = alreadySpecific
+          ? `${ind} in ${st}`
+          : /contractor|roofing|plumbing|hvac|electrician|excavation|flooring|solar|drywall|insulation|glazing|elevator|fire sprinkler/i.test(ind)
+            ? `${ind} contractor in ${st}`
+            : `${ind} company in ${st}`;
         queries.push(tradeQuery);
       }
     }
