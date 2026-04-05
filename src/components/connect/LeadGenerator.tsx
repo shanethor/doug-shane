@@ -1157,185 +1157,66 @@ function ResultsTable({ latestBatchId, onPurchaseLeads }: { latestBatchId: strin
   );
 }
 
-/* ── Purchase section shown after free leads generated ── */
-function PurchaseSection({ userIndustry, isSubscriber, hasAgent, onGenerate, userStates, userSpecializations }: {
+/* ── Purchase prompt shown after lead generation ── */
+function PurchasePrompt({ leads, userIndustry, isSubscriber, hasAgent, onPurchase, onDecline }: {
+  leads: EngineLead[];
   userIndustry: string;
   isSubscriber: boolean;
   hasAgent: boolean;
-  onGenerate?: (opts: any) => void;
-  userStates?: string[];
-  userSpecializations?: string[];
+  onPurchase: (count: number) => void;
+  onDecline: () => void;
 }) {
   const pricing = getVerticalPricing(userIndustry);
-  const packs = getLeadPacks(pricing.basePrice, isSubscriber, hasAgent);
-  const [selectedPack, setSelectedPack] = useState(50);
-  const [purchasing, setPurchasing] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [step, setStep] = useState("");
+  const discount = hasAgent ? 0.5 : isSubscriber ? 0.6 : 1;
+  const totalLeads = leads.length;
+  
+  const packOptions = [1, 5, 10, 25].filter(n => n <= totalLeads);
+  if (!packOptions.includes(totalLeads)) packOptions.push(totalLeads);
 
-  const verticalSearchTerms = useMemo(() => {
-    // Use specializations if available, otherwise fall back to pricing label
-    if (userSpecializations?.length) {
-      const cleaned = userSpecializations.map(s => cleanSearchLabel(s)).filter(Boolean);
-      if (cleaned.length > 0) return cleaned;
-    }
-    return [pricing.label];
-  }, [pricing.label, userSpecializations]);
-
-  const handlePurchase = async () => {
-    setPurchasing(true);
-    setProgress(0);
-    setStep("Initializing purchased scan…");
-    try {
-      const states = userStates?.length ? userStates : [];
-      const settings: Record<string, string> = {
-        states: states.join(", ") || "NY, CA, TX, FL",
-        industries: verticalSearchTerms.join(", "),
-        keywords: `${verticalSearchTerms[0] || pricing.label} leads`,
-        entity_types: "LLC, Corp",
-      };
-
-      let totalFound = 0;
-      const sourceNames: string[] = [];
-      const batchIds: string[] = [];
-
-      setProgress(5);
-      setStep("Connecting to databases…");
-      await new Promise(r => setTimeout(r, 600));
-      setProgress(10);
-
-      // Google Maps first
-      setStep("Scanning businesses on Google Maps…");
-      try {
-        const { data, error } = await supabase.functions.invoke("lead-engine-scan", {
-          body: { source: "Google Maps", settings, enrich: true },
-        });
-        if (error) console.warn("Scan error for Google Maps:", error.message);
-        totalFound += data?.leads_found ?? 0;
-        if (data?.batch_id) batchIds.push(data.batch_id);
-        sourceNames.push("Google Maps");
-      } catch (err: any) {
-        console.warn("Failed scanning Google Maps:", err.message);
-      }
-      setProgress(50);
-
-      // Additional focus sources — same sources used by Generate Free Leads
-      const sourceLabels = DEFAULT_SCAN_SOURCES
-        .map(s => s.label)
-        .filter(l => l !== "Google Maps");
-      for (let i = 0; i < sourceLabels.length; i++) {
-        const source = sourceLabels[i];
-        setStep(`Scanning ${source}…`);
-        setProgress(50 + Math.round(30 * (i / sourceLabels.length)));
-        try {
-          const { data, error } = await supabase.functions.invoke("lead-engine-scan", {
-            body: { source, settings, enrich: true },
-          });
-          if (error) console.warn(`Scan error for ${source}:`, error.message);
-          totalFound += data?.leads_found ?? 0;
-          if (data?.batch_id) batchIds.push(data.batch_id);
-          sourceNames.push(source);
-        } catch (err: any) {
-          console.warn(`Failed scanning ${source}:`, err.message);
-        }
-      }
-
-      setProgress(90);
-      setStep("Scoring & deduplicating…");
-      await new Promise(r => setTimeout(r, 500));
-      setProgress(100);
-      setStep("Complete!");
-
-      onGenerate?.({ volume: selectedPack, leads_found: totalFound, batch_ids: batchIds });
-      if (totalFound > 0) {
-        toast.success(`Found ${totalFound} new leads across ${sourceNames.join(", ")}`);
-      } else {
-        toast.info("No leads found this scan — try different focuses or geography");
-      }
-    } catch (err: any) {
-      toast.error(err.message || "Lead generation failed");
-    } finally {
-      await new Promise(r => setTimeout(r, 600));
-      setPurchasing(false);
-      setProgress(0);
-      setStep("");
-    }
-  };
-
-  const selectedPackData = packs.find(p => p.leads === selectedPack);
+  const getPrice = (count: number) => Math.round(count * pricing.basePrice * discount);
 
   return (
-    <Card className="animate-fade-in">
+    <Card className="animate-fade-in border-primary/30 bg-primary/5">
       <CardHeader className="pb-3">
         <CardTitle className="text-sm flex items-center gap-2">
-          <Rocket className="h-4 w-4 text-primary" />
-          Want more? Purchase {pricing.label} Lead Packs
+          <Sparkles className="h-4 w-4 text-primary" />
+          {totalLeads} Leads Generated — Claim Yours
         </CardTitle>
         <p className="text-[10px] text-muted-foreground">
-          Base price: ${pricing.basePrice}/lead • Avg premium: ${pricing.avgPremium.toLocaleString()} • All leads exclusive
+          Select how many leads to purchase. Unclaimed leads will be available to other users.
         </p>
-        {isSubscriber ? (
-          <Badge variant="outline" className={`text-[9px] mt-1 ${hasAgent ? "text-orange-500 border-orange-500/30" : "text-emerald-600 border-emerald-600/30"}`}>
+        {isSubscriber && (
+          <Badge variant="outline" className={`text-[9px] mt-1 w-fit ${hasAgent ? "text-orange-500 border-orange-500/30" : "text-emerald-600 border-emerald-600/30"}`}>
             {hasAgent ? "🚀 Agent — 50% discount" : "🎉 Connect — 40% discount"}
-          </Badge>
-        ) : (
-          <Badge variant="outline" className="text-[9px] mt-1 text-amber-600 border-amber-600/30">
-            <Lock className="h-2.5 w-2.5 mr-1" /> Subscribe for 40% off
           </Badge>
         )}
       </CardHeader>
       <CardContent className="space-y-2">
-        {packs.map((pack) => (
+        {packOptions.map(count => (
           <button
-            key={pack.leads}
-            onClick={() => setSelectedPack(pack.leads)}
-            className={`w-full flex items-center justify-between rounded-lg border p-3 text-left transition-all ${
-              selectedPack === pack.leads
-                ? "border-primary bg-primary/5 ring-1 ring-primary/20"
-                : "border-border hover:border-primary/40 hover:bg-muted/30"
-            }`}
+            key={count}
+            onClick={() => onPurchase(count)}
+            className="w-full flex items-center justify-between rounded-lg border border-border hover:border-primary/40 hover:bg-muted/30 p-3 text-left transition-all"
           >
             <div className="flex items-center gap-3">
-              <div className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${
-                selectedPack === pack.leads ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-              }`}>
-                {pack.leads}
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-muted-foreground text-xs font-bold">
+                {count}
               </div>
               <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold">{pack.leads} Leads</span>
-                  {pack.popular && <Badge className="text-[9px] px-1.5 py-0">Most Popular</Badge>}
-                  {isSubscriber && <Badge variant="secondary" className={`text-[9px] px-1.5 py-0 ${hasAgent ? "text-orange-500" : "text-emerald-600"}`}>{hasAgent ? "50% Off" : "40% Off"}</Badge>}
-                </div>
-                <span className="text-[10px] text-muted-foreground">
-                  ${Math.round(pack.price / pack.leads)}/lead
+                <span className="text-sm font-semibold">
+                  {count === totalLeads ? `All ${count} Leads` : `${count} Lead${count !== 1 ? "s" : ""}`}
+                </span>
+                <span className="text-[10px] text-muted-foreground ml-2">
+                  ${Math.round(getPrice(count) / count)}/lead
                 </span>
               </div>
             </div>
-            <div className="text-right">
-              {isSubscriber && (
-                <span className="text-[11px] text-muted-foreground line-through">${pack.originalPrice.toLocaleString()}</span>
-              )}
-              <span className="text-sm font-bold ml-1.5">${pack.price.toLocaleString()}</span>
-            </div>
+            <span className="text-sm font-bold">${getPrice(count).toLocaleString()}</span>
           </button>
         ))}
-        {purchasing ? (
-          <div className="space-y-2 mt-2">
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-muted-foreground flex items-center gap-1.5">
-                <Sparkles className="h-3.5 w-3.5 animate-pulse text-primary" />
-                {step}
-              </span>
-              <span className="font-medium text-foreground">{progress}%</span>
-            </div>
-            <Progress value={progress} className="h-2" />
-          </div>
-        ) : (
-          <Button onClick={handlePurchase} disabled={purchasing} className="w-full gap-1.5 mt-2">
-            Purchase {selectedPack} Leads — ${selectedPackData?.price.toLocaleString()}
-          </Button>
-        )}
+        <Button variant="ghost" size="sm" className="w-full text-xs text-muted-foreground mt-1" onClick={onDecline}>
+          No thanks — skip for now
+        </Button>
       </CardContent>
     </Card>
   );
