@@ -174,6 +174,7 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasAgent, in
   const [genStep, setGenStep] = useState("");
   const [purchasing, setPurchasing] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set(availableVerticals.map((v) => v.label)));
+  const [specsExpanded, setSpecsExpanded] = useState(false);
 
   useEffect(() => {
     setSelectedVerticals((prev) => {
