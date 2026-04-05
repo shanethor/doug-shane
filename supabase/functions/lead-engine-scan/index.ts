@@ -832,16 +832,18 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Score based on real signals only
-      const scored = allPlaces.map(p => {
-        let score = 50;
-        if (!p.website) score += 20;
-        if ((p.reviewCount ?? 0) < 10) score += 15;
-        if ((p.reviewCount ?? 0) === 0) score += 10;
-        if ((p.rating ?? 5) < 4.0) score += 5;
-        score = Math.min(score, 99);
-        return { ...p, score };
-      }).sort((a, b) => b.score - a.score);
+      // Final filter pass + score based on real signals only
+      const scored = allPlaces
+        .filter(p => isValidBusinessLead(p.company))
+        .map(p => {
+          let score = 50;
+          if (!p.website) score += 20;
+          if ((p.reviewCount ?? 0) < 10) score += 15;
+          if ((p.reviewCount ?? 0) === 0) score += 10;
+          if ((p.rating ?? 5) < 4.0) score += 5;
+          score = Math.min(score, 99);
+          return { ...p, score };
+        }).sort((a, b) => b.score - a.score);
 
       const topPlaces = scored.slice(0, 12);
 
