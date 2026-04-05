@@ -927,6 +927,11 @@ export default function AdminDashboard() {
         <TabsContent value="industry-requests" className="space-y-6">
           <AdminIndustryRequests />
         </TabsContent>
+
+        {/* ── Marketplace Requests ── */}
+        <TabsContent value="marketplace-requests" className="space-y-6">
+          <AdminMarketplaceRequests />
+        </TabsContent>
       </Tabs>
 
       {/* Reject policy dialog */}
