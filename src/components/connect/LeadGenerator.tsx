@@ -1057,7 +1057,14 @@ function ResultsTable({ latestBatchId, onPurchaseLeads, greyedOut }: { latestBat
                     <TableHead className="text-xs">Company</TableHead>
                     <TableHead className="text-xs">Contact</TableHead>
                     <TableHead className="text-xs">State</TableHead>
-                    <TableHead className="text-xs">Score</TableHead>
+                    <TableHead className="text-xs cursor-pointer select-none hover:text-primary transition-colors" onClick={toggleScoreSort}>
+                      <span className="flex items-center gap-1">
+                        Score
+                        <ArrowDownUp className={`h-3 w-3 ${sortByScore ? "text-primary" : "text-muted-foreground/50"}`} />
+                        {sortByScore === "desc" && <span className="text-[9px]">↓</span>}
+                        {sortByScore === "asc" && <span className="text-[9px]">↑</span>}
+                      </span>
+                    </TableHead>
                     <TableHead className="text-xs">Status</TableHead>
                     <TableHead className="text-xs text-right">Actions</TableHead>
                   </TableRow>
