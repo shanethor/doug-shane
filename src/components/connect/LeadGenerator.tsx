@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import SageGameplan from "./SageGameplan";
 import AuraAgentLeadPromo from "./AuraAgentLeadPromo";
-import AuraAgentLeadPromo from "./AuraAgentLeadPromo";
 import AuraAgentUpsellModal from "@/components/AuraAgentUpsellModal";
 import { useStudioQualification } from "@/hooks/useStudioQualification";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
