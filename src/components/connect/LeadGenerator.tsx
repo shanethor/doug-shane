@@ -854,7 +854,14 @@ function ResultsTable({ latestBatchId, onPurchaseLeads, greyedOut }: { latestBat
 
   return (
     <>
-    <Card className={greyedOut ? "opacity-50 pointer-events-none select-none" : ""}>
+    <Card className={greyedOut ? "relative overflow-hidden" : ""}>
+      {greyedOut && (
+        <div className="absolute inset-0 z-10 backdrop-blur-md bg-background/60 flex flex-col items-center justify-center gap-2 rounded-lg">
+          <Lock className="h-6 w-6 text-muted-foreground" />
+          <p className="text-sm font-medium text-foreground">{filtered.length} Leads Generated</p>
+          <p className="text-xs text-muted-foreground">Purchase leads above to unlock details</p>
+        </div>
+      )}
       <CardHeader className="pb-3 space-y-3">
         <div className={`flex ${isMobile ? "flex-col gap-2" : "items-center justify-between"}`}>
           <div className="flex items-center justify-between">
