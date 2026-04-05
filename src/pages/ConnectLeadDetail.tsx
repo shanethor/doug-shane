@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   ArrowLeft, Mail, Phone, Globe, Copy, Check, Sparkles, Loader2,
   ArrowUpRight, Building2, MapPin, DollarSign, Target, User,
-  MessageSquare, ExternalLink, RefreshCw, X,
+  MessageSquare, ExternalLink, RefreshCw, X, Map,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useUpdateEngineLead, useConvertToPipeline, type EngineLead } from "@/hooks/useLeadEngine";
