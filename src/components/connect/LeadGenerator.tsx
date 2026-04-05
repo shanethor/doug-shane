@@ -1118,7 +1118,7 @@ function ResultsTable({ latestBatchId, onPurchaseLeads }: { latestBatchId: strin
                            <Button variant="ghost" size="icon" className="h-6 w-6" title="Sage Gameplan" onClick={() => setGameplanLead(lead)}>
                              <Target className="h-3 w-3" style={{ color: "hsl(140 12% 55%)" }} />
                            </Button>
-                           <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setSelectedLead(lead)}>
+                           <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => navigate(`/connect/leads/${lead.id}`)}>
                             <Eye className="h-3 w-3" />
                           </Button>
                           <Button variant="ghost" size="icon" className="h-6 w-6" disabled={lead.status === "converted"} onClick={(e) => {
