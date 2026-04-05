@@ -399,7 +399,7 @@ export default function DemoSpotlightTab() {
                 <div>
                   <p className="text-xs font-semibold text-white">AI-Powered Generation</p>
                   <p className="text-[10px] mt-0.5 leading-relaxed" style={{ color: "hsl(240 5% 52%)" }}>
-                    Describe what you need in plain English — Sage builds it into a polished flyer using your brand colors and logo.
+                    Describe what you need in plain English — Clark builds it into a polished flyer using your brand colors and logo.
                   </p>
                 </div>
               </div>

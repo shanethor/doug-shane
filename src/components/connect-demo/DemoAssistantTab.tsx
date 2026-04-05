@@ -263,7 +263,7 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
               : "Event saved in AURA, but external calendar sync failed.");
           }
         } catch (error) {
-          console.error("Demo Sage calendar action failed:", error);
+          console.error("Demo Clark calendar action failed:", error);
           toast.error("Failed to create calendar event");
         }
       }
