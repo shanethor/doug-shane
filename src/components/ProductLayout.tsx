@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useConnectNavConfig, ALL_CONNECT_TABS } from "@/hooks/useConnectNavConfig";
-import { SageFloatingChat } from "@/components/SageFloatingChat";
+import { ClarkFloatingChat } from "@/components/ClarkFloatingChat";
 import { useSubscription } from "@/hooks/useSubscription";
 
 
@@ -26,7 +26,7 @@ const CONNECT_NAV = [
   { to: "/connect/create", label: "Create", icon: Sparkles, premium: false, beta: true },
   { to: "/connect/leads", label: "Leads", icon: Target, premium: false, beta: false },
   { to: "/connect/property", label: "Property", icon: Home, premium: true, beta: false },
-  { to: "/connect/sage", label: "Sage", icon: Zap, premium: false, beta: false },
+  { to: "/connect/clark", label: "Clark", icon: Zap, premium: false, beta: false },
 ];
 
 const ICON_MAP: Record<string, any> = {
@@ -328,7 +328,7 @@ export function ProductLayout({
       </div>
 
       {/* Sage floating chat */}
-      <SageFloatingChat />
+      <ClarkFloatingChat />
     </div>
   );
 }

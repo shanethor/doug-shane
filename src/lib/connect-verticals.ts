@@ -33,7 +33,7 @@ export interface ConnectVerticalConfig {
   subVerticals: ConnectSubVertical[];
   pipelineStages: PipelineStageConfig[];
   coverageLines: string[];
-  sageContext: string;         // injected into Sage system prompt
+  clarkContext: string;         // injected into Sage system prompt
   leadSources: string[];      // top-level lead source descriptions
   pricing: VerticalLeadPricing;
 }
@@ -195,7 +195,7 @@ export const CONNECT_VERTICALS: ConnectVerticalConfig[] = [
       "Contractors Pollution Liability (CPL — Gas Fitting, Sewer, Grease Trap, EPA RRP, PFAS Remediation)",
       "XCU Endorsement (Explosion, Collapse, Underground — Excavation Critical)",
     ],
-    sageContext: `You are advising a contractor-focused insurance producer with deep expertise in roofing AND HVAC contractor P&C insurance. P&C lines only — health insurance, ACA, and employee benefits are excluded.
+    clarkContext: `You are advising a contractor-focused insurance producer with deep expertise in roofing AND HVAC contractor P&C insurance. P&C lines only — health insurance, ACA, and employee benefits are excluded.
 
 === ROOFING VERTICAL (CONTRACTOR #1) ===
 
@@ -591,7 +591,7 @@ IMPORTANT: Never use generic insurance language. Name the specific trigger event
     ],
     pipelineStages: TRUCKING_STAGES,
     coverageLines: ["Primary Auto Liability", "Physical Damage", "Motor Cargo", "Bobtail / Non-Trucking Liability", "GL", "WC", "Occupational Accident", "Trailer Interchange", "Umbrella / Excess"],
-    sageContext: `You are advising a trucking/commercial fleet insurance producer. You have deep knowledge of FMCSA regulations, CSA BASIC scores, and commercial trucking insurance markets.
+    clarkContext: `You are advising a trucking/commercial fleet insurance producer. You have deep knowledge of FMCSA regulations, CSA BASIC scores, and commercial trucking insurance markets.
 
 KEY BUYING SIGNALS (ranked by urgency):
 1. BMC-35 Cancellation — An insurance company filed a cancellation notice with FMCSA. The motor carrier has a 30-day hard deadline before authority is revoked. This is the highest-intent signal. First producer to contact wins. Suppress leads with <10 days remaining.
@@ -639,7 +639,7 @@ IMPORTANT TERMINOLOGY: Never use 'carrier' alone — always 'motor carrier' (the
     ],
     pipelineStages: REAL_ESTATE_STAGES,
     coverageLines: ["Commercial Property", "GL", "Flood", "Umbrella", "Equipment Breakdown", "Business Interruption", "D&O (HOAs/LLCs)"],
-    sageContext: "You are advising a real estate-focused producer. Key triggers: deed transfers, FEMA flood zone acquisitions, large renovation permits, HOA formations. Unique capabilities: live property listings via Zillow/HasData integration, territory ZIP-code monitoring, signal detection (permits, pre-foreclosures, probate). Coverage gaps: flood zone NFIP cap at $500K, Builder's Risk for renovations, D&O for new HOA boards.",
+    clarkContext: "You are advising a real estate-focused producer. Key triggers: deed transfers, FEMA flood zone acquisitions, large renovation permits, HOA formations. Unique capabilities: live property listings via Zillow/HasData integration, territory ZIP-code monitoring, signal detection (permits, pre-foreclosures, probate). Coverage gaps: flood zone NFIP cap at $500K, Builder's Risk for renovations, D&O for new HOA boards.",
     leadSources: ["County assessor deed transfers", "FEMA National Flood Hazard Layer", "Socrata building permit APIs", "Secretary of State LLC filings", "Maricopa County bulk property data"],
     pricing: { basePrice: 22, platinumMax: 69, bronzeMin: 10, avgPremium: 7400, volumePerMonth: 530, freeLeadsPerMonth: 4 },
   },
@@ -664,7 +664,7 @@ IMPORTANT TERMINOLOGY: Never use 'carrier' alone — always 'motor carrier' (the
       "Food Contamination / Product Liability", "EPLI", "Cyber Liability (POS Systems)",
       "Management Liability", "Umbrella / Excess", "Builder's Risk (Renovations)",
     ],
-    sageContext: `You are advising a hospitality-focused insurance producer. You have deep knowledge of state liquor control boards, health department regulations, and hospitality insurance markets.
+    clarkContext: `You are advising a hospitality-focused insurance producer. You have deep knowledge of state liquor control boards, health department regulations, and hospitality insurance markets.
 
 KEY BUYING SIGNALS (ranked by urgency):
 1. Liquor License Cancellation / Lapse — Equivalent to a trucking BMC-35 cancellation. The bar or restaurant cannot legally serve alcohol. They need replacement coverage IMMEDIATELY. 7-14 day urgency window.
@@ -748,7 +748,7 @@ IMPORTANT: Never use 'carrier' alone — always 'insurance company' or 'insurer'
       "Employed Physicians Liability",
       "Entity / Vicarious Liability (Groups & ASCs)",
     ],
-    sageContext: `You are advising a healthcare P&C insurance producer. You have deep knowledge of medical malpractice markets, NPI data, and healthcare regulatory triggers. P&C lines ONLY — health insurance, Medicare, ACA, and employee benefits are explicitly excluded.
+    clarkContext: `You are advising a healthcare P&C insurance producer. You have deep knowledge of medical malpractice markets, NPI data, and healthcare regulatory triggers. P&C lines ONLY — health insurance, Medicare, ACA, and employee benefits are explicitly excluded.
 
 THE NPI REGISTRY — PRIMARY DATA SOURCE:
 The NPI Registry (download.cms.gov/nppes/NPI_Files.html) is the most powerful free lead database in commercial insurance. Every healthcare provider must register. CMS publishes a weekly update file with every new provider — all specialties, all 50 states. Nobody in commercial insurance lead generation monitors it as a trigger. Key fields: NPI, Entity Type Code (1=individual, 2=organization), Provider Name, Taxonomy Code (specialty), Practice Address, Enumeration Date, State, Phone. Taxonomy codes route each provider to the correct sub-vertical (SV-1 through SV-7).
@@ -822,7 +822,7 @@ IMPORTANT: Never confuse 'carrier' (insurance company) with 'provider' (healthca
     ],
     pipelineStages: STANDARD_STAGES,
     coverageLines: ["Professional Liability/E&O", "GL", "Cyber", "EPLI", "D&O (firm principals)", "Crime (staffing)", "WC (staffing)"],
-    sageContext: "You are advising a professional services-focused producer. Key triggers: new CPA/PE/RA licenses, state bar admissions, new RIA registrations (SEC EDGAR), new staffing agency registrations. Critical gap: most professionals think GL covers professional mistakes — it does not. E&O pays for claims from the professional service itself. First year of practice is when most E&O claims originate.",
+    clarkContext: "You are advising a professional services-focused producer. Key triggers: new CPA/PE/RA licenses, state bar admissions, new RIA registrations (SEC EDGAR), new staffing agency registrations. Critical gap: most professionals think GL covers professional mistakes — it does not. E&O pays for claims from the professional service itself. First year of practice is when most E&O claims originate.",
     leadSources: ["State CPA licensing boards", "NCEES PE license registrations", "NCARB architecture licenses", "SEC EDGAR RIA registrations", "State Bar admissions", "State DOL staffing registrations"],
     pricing: { basePrice: 20, platinumMax: 69, bronzeMin: 11, avgPremium: 6100, volumePerMonth: 435, freeLeadsPerMonth: 5 },
   },
@@ -841,7 +841,7 @@ IMPORTANT: Never confuse 'carrier' (insurance company) with 'provider' (healthca
     ],
     pipelineStages: STANDARD_STAGES,
     coverageLines: ["Cyber Liability", "Tech E&O", "Media Liability", "D&O", "EPLI", "Crime/Social Engineering"],
-    sageContext: "You are advising a technology-focused producer. Key triggers: HHS breach portal (competitors of breached companies are most receptive), SEC Reg D filings (startups with investors need Cyber + D&O), CISA KEV vulnerability alerts. Critical: GL specifically excludes tech professional services and data breaches. Most SaaS companies discover this after their first claim.",
+    clarkContext: "You are advising a technology-focused producer. Key triggers: HHS breach portal (competitors of breached companies are most receptive), SEC Reg D filings (startups with investors need Cyber + D&O), CISA KEV vulnerability alerts. Critical: GL specifically excludes tech professional services and data breaches. Most SaaS companies discover this after their first claim.",
     leadSources: ["HHS Breach Portal", "SEC EDGAR Reg D filings", "CISA Known Exploited Vulnerabilities", "Crunchbase funding data", "FCC license applications"],
     pricing: { basePrice: 35, platinumMax: 94, bronzeMin: 14, avgPremium: 15000, volumePerMonth: 670, freeLeadsPerMonth: 3 },
   },
@@ -859,7 +859,7 @@ IMPORTANT: Never confuse 'carrier' (insurance company) with 'provider' (healthca
     ],
     pipelineStages: STANDARD_STAGES,
     coverageLines: ["GL", "Product Liability", "Property", "WC", "Commercial Auto", "Umbrella", "Pollution/Environmental", "Equipment Breakdown", "Business Income"],
-    sageContext: "You are advising a manufacturing-focused producer. Key triggers: OSHA inspections, EPA compliance actions, CPSC recall notices, new plant permits. Coverage gaps: product liability for imports/private-label, pollution liability exclusions in standard GL, equipment breakdown vs standard property coverage.",
+    clarkContext: "You are advising a manufacturing-focused producer. Key triggers: OSHA inspections, EPA compliance actions, CPSC recall notices, new plant permits. Coverage gaps: product liability for imports/private-label, pollution liability exclusions in standard GL, equipment breakdown vs standard property coverage.",
     leadSources: ["OSHA inspection records", "EPA enforcement actions", "CPSC recall database", "Socrata building permits", "Secretary of State filings"],
     pricing: { basePrice: 22, platinumMax: 69, bronzeMin: 6, avgPremium: 10000, volumePerMonth: 810, freeLeadsPerMonth: 4 },
   },
@@ -877,7 +877,7 @@ IMPORTANT: Never confuse 'carrier' (insurance company) with 'provider' (healthca
     ],
     pipelineStages: STANDARD_STAGES,
     coverageLines: ["D&O", "EPLI", "Fiduciary Liability", "Crime/Fidelity"],
-    sageContext: "You are advising a specialty/E&S-focused producer. Key triggers: SEC Reg D filings (startups with investors need D&O), LinkedIn hiring signals (EPLI exposure grows with headcount), IRS Form 990 filings (nonprofits need D&O for board members). Critical: most small businesses don't know GL excludes director liability. Nuclear verdicts in employment cases are increasing.",
+    clarkContext: "You are advising a specialty/E&S-focused producer. Key triggers: SEC Reg D filings (startups with investors need D&O), LinkedIn hiring signals (EPLI exposure grows with headcount), IRS Form 990 filings (nonprofits need D&O for board members). Critical: most small businesses don't know GL excludes director liability. Nuclear verdicts in employment cases are increasing.",
     leadSources: ["SEC EDGAR Reg D filings (daily)", "Crunchbase funding data", "ProPublica Nonprofit Explorer (Form 990)", "LinkedIn hiring signals"],
     pricing: { basePrice: 45, platinumMax: 119, bronzeMin: 14, avgPremium: 20000, volumePerMonth: 280, freeLeadsPerMonth: 2 },
   },
@@ -894,7 +894,7 @@ IMPORTANT: Never confuse 'carrier' (insurance company) with 'provider' (healthca
     ],
     pipelineStages: STANDARD_STAGES,
     coverageLines: ["D&O", "GL", "Property", "WC", "Sexual Abuse & Molestation", "Volunteer Accident", "Event Liability"],
-    sageContext: "You are advising a nonprofit/religious-focused producer. Key triggers: Form 990 filings (1.8M nonprofits, board members personally exposed without D&O), new IRS tax-exempt determinations, Secretary of State filings. Critical: volunteer board members are personally liable without D&O coverage. Sexual abuse & molestation coverage is essential for youth-serving organizations.",
+    clarkContext: "You are advising a nonprofit/religious-focused producer. Key triggers: Form 990 filings (1.8M nonprofits, board members personally exposed without D&O), new IRS tax-exempt determinations, Secretary of State filings. Critical: volunteer board members are personally liable without D&O coverage. Sexual abuse & molestation coverage is essential for youth-serving organizations.",
     leadSources: ["ProPublica Nonprofit Explorer (Form 990)", "IRS Tax Exempt Organization Search", "Secretary of State filings"],
     pricing: { basePrice: 22, platinumMax: 69, bronzeMin: 10, avgPremium: 9200, volumePerMonth: 530, freeLeadsPerMonth: 4 },
   },
@@ -912,7 +912,7 @@ IMPORTANT: Never confuse 'carrier' (insurance company) with 'provider' (healthca
     ],
     pipelineStages: STANDARD_STAGES,
     coverageLines: ["Farm Owners", "Crop Insurance", "Livestock Mortality", "GL", "WC", "Commercial Auto", "Equipment/Inland Marine", "Pollution"],
-    sageContext: "You are advising an agriculture-focused producer. Key triggers: USDA census data, new farm entity filings, state cannabis license approvals, TTB winery/distillery permits. Coverage nuances: crop insurance (MPCI vs private), livestock mortality, pollution from agricultural runoff, equipment floaters for farm machinery.",
+    clarkContext: "You are advising an agriculture-focused producer. Key triggers: USDA census data, new farm entity filings, state cannabis license approvals, TTB winery/distillery permits. Coverage nuances: crop insurance (MPCI vs private), livestock mortality, pollution from agricultural runoff, equipment floaters for farm machinery.",
     leadSources: ["USDA Census of Agriculture", "County agricultural assessor data", "TTB permits (wineries)", "State cannabis licensing boards"],
     pricing: { basePrice: 28, platinumMax: 81, bronzeMin: 15, avgPremium: 15000, volumePerMonth: 400, freeLeadsPerMonth: 3 },
   },
@@ -930,7 +930,7 @@ IMPORTANT: Never confuse 'carrier' (insurance company) with 'provider' (healthca
     ],
     pipelineStages: TRUCKING_STAGES,
     coverageLines: ["Commercial Auto", "GL", "WC", "Hired & Non-Owned Auto", "Umbrella", "Passenger Liability"],
-    sageContext: "You are advising a transportation-for-hire producer. Key triggers: new TLC/livery licenses, FMCSA passenger carrier authorities, school bus contract awards, EMS licensing. Coverage nuances: passenger liability limits, hired & non-owned auto for subcontracted vehicles, DOT compliance requirements.",
+    clarkContext: "You are advising a transportation-for-hire producer. Key triggers: new TLC/livery licenses, FMCSA passenger carrier authorities, school bus contract awards, EMS licensing. Coverage nuances: passenger liability limits, hired & non-owned auto for subcontracted vehicles, DOT compliance requirements.",
     leadSources: ["TLC / livery licensing boards", "FMCSA passenger carrier authorities", "State EMS licensing", "DOT registrations"],
     pricing: { basePrice: 22, platinumMax: 81, bronzeMin: 11, avgPremium: 9600, volumePerMonth: 420, freeLeadsPerMonth: 4 },
   },
@@ -948,7 +948,7 @@ IMPORTANT: Never confuse 'carrier' (insurance company) with 'provider' (healthca
     ],
     pipelineStages: STANDARD_STAGES,
     coverageLines: ["Product Liability", "Professional Liability/E&O", "Clinical Trial Insurance", "D&O", "Cyber", "Property", "WC", "Pollution/Environmental"],
-    sageContext: "You are advising a life sciences/biotech-focused producer. Key triggers: SEC Reg D filings (biotech fundraising), FDA device registrations, new clinical trial registrations, NIH grant awards. Coverage nuances: clinical trial liability, product liability for medical devices, D&O for venture-backed startups.",
+    clarkContext: "You are advising a life sciences/biotech-focused producer. Key triggers: SEC Reg D filings (biotech fundraising), FDA device registrations, new clinical trial registrations, NIH grant awards. Coverage nuances: clinical trial liability, product liability for medical devices, D&O for venture-backed startups.",
     leadSources: ["SEC EDGAR Reg D filings", "FDA device registrations (510k)", "ClinicalTrials.gov", "NIH grant awards", "Crunchbase biotech funding"],
     pricing: { basePrice: 50, platinumMax: 119, bronzeMin: 21, avgPremium: 38000, volumePerMonth: 230, freeLeadsPerMonth: 2 },
   },
@@ -966,7 +966,7 @@ IMPORTANT: Never confuse 'carrier' (insurance company) with 'provider' (healthca
     ],
     pipelineStages: STANDARD_STAGES,
     coverageLines: ["GL", "Property", "WC", "Pollution/Environmental", "Professional Liability", "Builder's Risk", "Equipment Breakdown", "Business Interruption"],
-    sageContext: "You are advising an energy/utilities-focused producer. Key triggers: solar/wind installation permits, FERC regulatory filings, new oil & gas well permits, DOE grant awards for EV infrastructure. Coverage nuances: pollution/environmental liability, equipment breakdown for generation assets, builder's risk during construction.",
+    clarkContext: "You are advising an energy/utilities-focused producer. Key triggers: solar/wind installation permits, FERC regulatory filings, new oil & gas well permits, DOE grant awards for EV infrastructure. Coverage nuances: pollution/environmental liability, equipment breakdown for generation assets, builder's risk during construction.",
     leadSources: ["State oil & gas commissions", "FERC regulatory filings", "Solar/wind building permits", "DOE grant awards", "Utility interconnection applications"],
     pricing: { basePrice: 50, platinumMax: 119, bronzeMin: 21, avgPremium: 42000, volumePerMonth: 175, freeLeadsPerMonth: 2 },
   },
@@ -982,7 +982,7 @@ IMPORTANT: Never confuse 'carrier' (insurance company) with 'provider' (healthca
     ],
     pipelineStages: TRUCKING_STAGES,
     coverageLines: ["Commercial Auto", "Cargo/Goods in Transit", "GL", "Property", "WC", "Inland Marine", "Bailee's Customer"],
-    sageContext: "You are advising a moving/storage-focused producer. Key triggers: new FMCSA household goods mover registrations, new self-storage facility permits, DOT inspections. Coverage nuances: bailee's customer coverage (liability for stored goods), cargo/goods-in-transit for movers, inland marine for valuable items.",
+    clarkContext: "You are advising a moving/storage-focused producer. Key triggers: new FMCSA household goods mover registrations, new self-storage facility permits, DOT inspections. Coverage nuances: bailee's customer coverage (liability for stored goods), cargo/goods-in-transit for movers, inland marine for valuable items.",
     leadSources: ["FMCSA household goods mover registrations", "Self-storage building permits", "DOT inspection records", "Secretary of State filings"],
     pricing: { basePrice: 25, platinumMax: 65, bronzeMin: 14, avgPremium: 11400, volumePerMonth: 350, freeLeadsPerMonth: 4 },
   },
@@ -999,7 +999,7 @@ IMPORTANT: Never confuse 'carrier' (insurance company) with 'provider' (healthca
     ],
     pipelineStages: STANDARD_STAGES,
     coverageLines: ["GL", "Property", "WC", "Commercial Auto", "Umbrella", "EPLI", "Franchise-Specific E&O", "Business Income"],
-    sageContext: "You are advising a franchise-focused producer. Key triggers: new FTC Franchise Disclosure Document (FDD) filings, new franchise entity formations, multi-unit expansion permits. Coverage nuances: franchise agreements often mandate specific coverage minimums, multi-location property schedules, EPLI exposure increases with unit count.",
+    clarkContext: "You are advising a franchise-focused producer. Key triggers: new FTC Franchise Disclosure Document (FDD) filings, new franchise entity formations, multi-unit expansion permits. Coverage nuances: franchise agreements often mandate specific coverage minimums, multi-location property schedules, EPLI exposure increases with unit count.",
     leadSources: ["FTC Franchise Disclosure Documents", "Secretary of State franchise entity filings", "Multi-unit building permits"],
     pricing: { basePrice: 20, platinumMax: 60, bronzeMin: 11, avgPremium: 7800, volumePerMonth: 400, freeLeadsPerMonth: 5 },
   },
@@ -1032,7 +1032,7 @@ IMPORTANT: Never confuse 'carrier' (insurance company) with 'provider' (healthca
       "Key Person Life", "Buy-Sell Funding (Cross-Purchase / Entity)", "Disability Income (DI)",
       "Group Term / Voluntary Benefits", "Final Expense", "Premium Finance (Large Cases)",
     ],
-    sageContext: `You are advising a life insurance-focused financial advisor or producer. You specialize in trigger-based lead generation and consultative sales for life and disability insurance.
+    clarkContext: `You are advising a life insurance-focused financial advisor or producer. You specialize in trigger-based lead generation and consultative sales for life and disability insurance.
 
 TRIGGER LANES (7 unique lead sources):
 1. New LLC / Business Formation — SOS filings across all 50 states. Multi-member LLCs need buy-sell funding (whole life). Sole owners need income replacement (term). The gap: no LLC attorney tells new owners what happens to their ownership stake the day they die.

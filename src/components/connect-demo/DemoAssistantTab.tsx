@@ -216,7 +216,7 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
           target_premium: Number(value) || 0,
           stage: stage as any,
           owner_user_id: user.id,
-          lead_source: "Sage AI",
+          lead_source: "Clark AI",
         }).then(({ error }) => {
           if (error) toast.error("Failed to add lead");
           else toast.success(`Added ${name} to pipeline`);
@@ -263,7 +263,7 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
               : "Event saved in AURA, but external calendar sync failed.");
           }
         } catch (error) {
-          console.error("Demo Sage calendar action failed:", error);
+          console.error("Demo Clark calendar action failed:", error);
           toast.error("Failed to create calendar event");
         }
       }
@@ -389,7 +389,7 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
         <div className="flex-1 flex flex-col items-center justify-start pt-[8vh] px-4">
           <div className="flex items-center gap-2 mb-3" style={{ animation: "sageFadeIn 0.5s cubic-bezier(0.16,1,0.3,1) 0.05s both" }}>
             <Sparkles className="h-5 w-5" style={{ color: "hsl(140 12% 58%)" }} />
-            <span className="text-xs font-medium uppercase tracking-widest" style={{ color: "hsl(140 12% 50%)" }}>Sage Assistant</span>
+            <span className="text-xs font-medium uppercase tracking-widest" style={{ color: "hsl(140 12% 50%)" }}>Clark Assistant</span>
             <span className="text-[9px] px-2 py-0.5 rounded-full font-medium" style={{ background: "hsl(140 50% 30% / 0.2)", color: "hsl(140 50% 65%)" }}>LIVE DATA</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-6 text-center" style={{ background: "linear-gradient(135deg, hsl(140 12% 62%), hsl(140 12% 45%), hsl(240 5% 80%))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", animation: "sageFadeIn 0.6s cubic-bezier(0.16,1,0.3,1) 0.15s both" }}>
@@ -419,7 +419,7 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(input); } }}
-                placeholder="Ask Sage anything — your real data is connected…"
+                placeholder="Ask Clark anything — your real data is connected…"
                 rows={3}
                 className="flex-1 resize-none bg-transparent border-0 outline-none text-sm min-h-[72px] max-h-48 py-2"
                 style={{ color: "white" }}
@@ -490,7 +490,7 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
                     <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: "hsl(140 12% 58%)", animationDelay: "0ms" }} />
                     <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: "hsl(140 12% 58%)", animationDelay: "150ms" }} />
                     <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: "hsl(140 12% 58%)", animationDelay: "300ms" }} />
-                    <span className="text-xs ml-2" style={{ color: "hsl(240 5% 40%)" }}>Sage is pulling your real data…</span>
+                    <span className="text-xs ml-2" style={{ color: "hsl(240 5% 40%)" }}>Clark is pulling your real data…</span>
                   </span>
                 </div>
               </div>
@@ -520,7 +520,7 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(input); } }}
-                placeholder="Ask Sage anything..."
+                placeholder="Ask Clark anything..."
                 rows={2}
                 className="flex-1 resize-none bg-transparent border-0 outline-none text-sm min-h-[48px] max-h-36 py-2"
                 style={{ color: "white" }}

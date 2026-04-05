@@ -15,7 +15,7 @@ const FEATURES = [
   { icon: BarChart3, label: "Pipeline Management" },
   { icon: Mail, label: "Email & Calendar" },
   { icon: Sparkles, label: "AI Create Studio" },
-  { icon: Zap, label: "Sage Assistant" },
+  { icon: Zap, label: "Clark Assistant" },
 ];
 
 const MASTER_EMAILS = ["shane@houseofthor.com", "dwenz17@gmail.com"];

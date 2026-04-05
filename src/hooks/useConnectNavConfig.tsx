@@ -16,7 +16,7 @@ export const ALL_CONNECT_TABS: ConnectNavTab[] = [
   { id: "create", label: "Create", to: "/connect/create" },
   { id: "leads", label: "Leads", to: "/connect/leads" },
   { id: "property", label: "Property", to: "/connect/property" },
-  { id: "sage", label: "Sage", to: "/connect/sage" },
+  { id: "sage", label: "Clark", to: "/connect/clark" },
 ];
 
 const DEFAULT_VISIBLE_IDS = ["dashboard", "connect", "intelligence", "pipeline", "email", "calendar"];

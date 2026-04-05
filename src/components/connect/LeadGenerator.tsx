@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback, Fragment } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
-import SageGameplan from "./SageGameplan";
+import ClarkGameplan from "./ClarkGameplan";
 import AuraAgentLeadPromo from "./AuraAgentLeadPromo";
 import AuraAgentUpsellModal from "@/components/AuraAgentUpsellModal";
 import { useStudioQualification } from "@/hooks/useStudioQualification";
@@ -19,7 +19,7 @@ import {
   ArrowUpRight, Eye, Trash2, Zap,
   Sparkles, Users, TrendingUp,
   Mail, Phone, RefreshCw, Gift, Lock, ChevronDown, ChevronUp,
-  Download, FileText, Building2, Globe, ArrowDownUp,
+  Download, FileText, Building2, Globe, ArrowDownUp, X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -854,7 +854,14 @@ function ResultsTable({ latestBatchId, onPurchaseLeads, greyedOut }: { latestBat
 
   return (
     <>
-    <Card className={greyedOut ? "opacity-50 pointer-events-none select-none" : ""}>
+    <Card className={greyedOut ? "relative overflow-hidden" : ""}>
+      {greyedOut && (
+        <div className="absolute inset-0 z-10 backdrop-blur-md bg-background/60 flex flex-col items-center justify-center gap-2 rounded-lg">
+          <Lock className="h-6 w-6 text-muted-foreground" />
+          <p className="text-sm font-medium text-foreground">{filtered.length} Leads Generated</p>
+          <p className="text-xs text-muted-foreground">Purchase leads above to unlock details</p>
+        </div>
+      )}
       <CardHeader className="pb-3 space-y-3">
         <div className={`flex ${isMobile ? "flex-col gap-2" : "items-center justify-between"}`}>
           <div className="flex items-center justify-between">
@@ -1131,7 +1138,7 @@ function ResultsTable({ latestBatchId, onPurchaseLeads, greyedOut }: { latestBat
                       </TableCell>
                       <TableCell className="text-right py-2">
                         <div className="flex items-center gap-1 justify-end">
-                           <Button variant="ghost" size="icon" className="h-6 w-6" title="Sage Gameplan" onClick={() => setGameplanLead(lead)}>
+                           <Button variant="ghost" size="icon" className="h-6 w-6" title="Clark Gameplan" onClick={() => setGameplanLead(lead)}>
                              <Target className="h-3 w-3" style={{ color: "hsl(140 12% 55%)" }} />
                            </Button>
                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => navigate(`/connect/leads/${lead.id}`)}>
@@ -1167,7 +1174,7 @@ function ResultsTable({ latestBatchId, onPurchaseLeads, greyedOut }: { latestBat
 
     {/* Lead detail is now a separate page at /connect/leads/:id */}
     {gameplanLead && (
-      <SageGameplan lead={gameplanLead} onClose={() => setGameplanLead(null)} />
+      <ClarkGameplan lead={gameplanLead} onClose={() => setGameplanLead(null)} />
     )}
     </>
   );
@@ -1253,6 +1260,12 @@ export default function LeadGenerator() {
   const [showAgentDrip, setShowAgentDrip] = useState(false);
   const [latestBatchId, setLatestBatchId] = useState<string | null>(null);
   const [purchaseDismissed, setPurchaseDismissed] = useState(false);
+  const [tipDismissed, setTipDismissed] = useState(() => {
+    try { return localStorage.getItem("lead-tip-dismissed") === "true"; } catch { return false; }
+  });
+  const [lastGeneratedAt, setLastGeneratedAt] = useState<number | null>(() => {
+    try { const v = localStorage.getItem("lead-last-generated"); return v ? parseInt(v) : null; } catch { return null; }
+  });
   const { data: studioQual } = useStudioQualification();
 
   useEffect(() => {
@@ -1299,13 +1312,14 @@ export default function LeadGenerator() {
 
   const handleGenerate = (opts: any) => {
     setHasGenerated(true);
-    // Track the latest batch IDs from the scan
     if (opts?.batch_ids?.length) {
       setLatestBatchId(opts.batch_ids[opts.batch_ids.length - 1]);
     }
-    // Reset dismiss state so purchase prompt shows for new batch
     if (opts?.leads_found > 0) {
       setPurchaseDismissed(false);
+      const now = Date.now();
+      setLastGeneratedAt(now);
+      try { localStorage.setItem("lead-last-generated", String(now)); } catch {}
     }
     qc.invalidateQueries({ queryKey: ["engine-leads"] });
     qc.invalidateQueries({ queryKey: ["engine-tier-summary"] });
@@ -1371,19 +1385,47 @@ export default function LeadGenerator() {
   const newLeads = existingLeads?.filter(l => l.status === "new") ?? [];
   const showPurchasePrompt = !purchaseDismissed && newLeads.length > 0;
 
+  const handleDismissTip = () => {
+    setTipDismissed(true);
+    try { localStorage.setItem("lead-tip-dismissed", "true"); } catch {}
+  };
+
   return (
     <div className="space-y-6">
-      <div className="rounded-lg border bg-muted/30 p-4">
-        <div className="flex items-start gap-3">
-          <Sparkles className="h-5 w-5 text-primary mt-0.5 shrink-0" />
-          <div>
-            <p className="text-sm font-medium">AI-Powered {pricing.label} Lead Generation</p>
-            <p className="text-xs text-muted-foreground">
-              AURA sources and enriches leads tailored to your {pricing.label} industry from public web directories and data providers.
-            </p>
+      {/* Dismissible AI tip */}
+      {!tipDismissed && (
+        <div className="rounded-lg border bg-muted/30 p-4 relative">
+          <button
+            onClick={handleDismissTip}
+            className="absolute top-2 right-2 p-1 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+            aria-label="Dismiss"
+          >
+            <X className="h-4 w-4" />
+          </button>
+          <div className="flex items-start gap-3 pr-6">
+            <Sparkles className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+            <div>
+              <p className="text-sm font-medium">AI-Powered {pricing.label} Lead Generation</p>
+              <p className="text-xs text-muted-foreground">
+                AURA sources and enriches leads tailored to your {pricing.label} industry from public web directories and data providers.
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      )}
+
+      {/* ═══ Generate Leads Toolbar ═══ */}
+      <GenerateControls
+        onGenerate={handleGenerate}
+        userIndustry={userIndustry}
+        isSubscriber={subscribed}
+        hasAgent={hasAgent}
+        initialSpecializations={userSpecializations}
+        showAllVerticals={isMaster}
+        isMaster={isMaster}
+        userStates={userStates}
+        userSubCategories={userSpecializations}
+      />
 
       {/* Post-generation purchase prompt — shown at top full width */}
       {showPurchasePrompt && (
@@ -1397,25 +1439,9 @@ export default function LeadGenerator() {
         />
       )}
 
-      <div className="grid lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-1 space-y-4">
-          <GenerateControls
-            onGenerate={handleGenerate}
-            userIndustry={userIndustry}
-            isSubscriber={subscribed}
-            hasAgent={hasAgent}
-            initialSpecializations={userSpecializations}
-            showAllVerticals={isMaster}
-            isMaster={isMaster}
-            userStates={userStates}
-            userSubCategories={userSpecializations}
-          />
-        </div>
-        <div className="lg:col-span-2 space-y-4">
-          <ResultsTable latestBatchId={latestBatchId} greyedOut={showPurchasePrompt} />
-          {showPromo && <AuraAgentLeadPromo />}
-        </div>
-      </div>
+      {/* Results — fully blurred if unpurchased */}
+      <ResultsTable latestBatchId={latestBatchId} greyedOut={showPurchasePrompt} />
+      {showPromo && <AuraAgentLeadPromo />}
 
       {showAgentDrip && (
         <AuraAgentUpsellModal

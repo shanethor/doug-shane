@@ -58,7 +58,7 @@ const TABS = [
   { value: "calendar", icon: CalendarDays, label: "Calendar" },
   { value: "outreach", icon: Send, label: "Outreach" },
   { value: "spotlight", icon: Sparkles, label: "Create" },
-  { value: "assistant", icon: MessageSquare, label: "Sage" },
+  { value: "assistant", icon: MessageSquare, label: "Clark" },
   { value: "studio", icon: Palette, label: "Studio" },
 ];
 

@@ -13,7 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { EngineLead } from "@/hooks/useLeadEngine";
 import ReactMarkdown from "react-markdown";
 
-interface SageGameplanProps {
+interface ClarkGameplanProps {
   lead: EngineLead;
   onClose: () => void;
 }
@@ -25,7 +25,7 @@ type GameplanPhase = {
   timing: string;
 };
 
-export default function SageGameplan({ lead, onClose }: SageGameplanProps) {
+export default function ClarkGameplan({ lead, onClose }: ClarkGameplanProps) {
   const [gameplan, setGameplan] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [generated, setGenerated] = useState(false);
@@ -40,7 +40,7 @@ export default function SageGameplan({ lead, onClose }: SageGameplanProps) {
           messages: [
             {
               role: "user",
-              content: `Create a detailed "Sage Gameplan" — a step-by-step outreach-to-close strategy for this lead:
+              content: `Create a detailed "Clark Gameplan" — a step-by-step outreach-to-close strategy for this lead:
 
 Company: ${lead.company}
 Contact: ${lead.contact_name || "Unknown"}
@@ -125,7 +125,7 @@ Make it specific to their industry, signal, and situation. Include actual email/
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <Target className="h-5 w-5" style={{ color: "hsl(140 12% 55%)" }} />
-              <h2 className="text-base font-bold text-white">Sage Gameplan</h2>
+              <h2 className="text-base font-bold text-white">Clark Gameplan</h2>
             </div>
             <p className="text-xs" style={{ color: "hsl(240 5% 50%)" }}>
               AI-powered outreach-to-close strategy for {lead.company}
@@ -209,14 +209,14 @@ Make it specific to their industry, signal, and situation. Include actual email/
               style={{ background: "hsl(140 12% 42%)" }}
             >
               <Sparkles className="h-5 w-5" />
-              Generate Sage Gameplan
+              Generate Clark Gameplan
             </Button>
           )}
 
           {loading && (
             <div className="text-center py-8">
               <Loader2 className="h-8 w-8 animate-spin mx-auto mb-3" style={{ color: "hsl(140 12% 55%)" }} />
-              <p className="text-sm text-white font-medium">Sage is crafting your gameplan…</p>
+              <p className="text-sm text-white font-medium">Clark is crafting your gameplan…</p>
               <p className="text-xs mt-1" style={{ color: "hsl(240 5% 50%)" }}>
                 Analyzing lead data, industry patterns, and outreach best practices
               </p>

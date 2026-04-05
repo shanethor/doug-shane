@@ -726,7 +726,7 @@ function ReadyStep() {
       <div className="grid grid-cols-2 gap-3 pt-2 max-w-sm mx-auto">
         {[
           { icon: Target, label: "Generate Leads", desc: "Find prospects now" },
-          { icon: Brain, label: "Ask Sage", desc: "Your AI advisor" },
+          { icon: Brain, label: "Ask Clark", desc: "Your AI advisor" },
           { icon: TrendingUp, label: "Track Pipeline", desc: "Manage your deals" },
           { icon: Sparkles, label: "Create Content", desc: "Market your brand" },
         ].map(({ icon: Icon, label, desc }) => (

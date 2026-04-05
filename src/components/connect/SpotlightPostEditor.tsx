@@ -182,7 +182,7 @@ export default function SpotlightPostEditor({
         {/* Sage post buttons */}
         <div className="space-y-2">
           <label className="text-[9px] font-medium uppercase tracking-wider flex items-center gap-1.5" style={{ color: "hsl(240 5% 50%)" }}>
-            <Sparkles className="h-3 w-3" style={{ color: "hsl(140 12% 58%)" }} /> Post with Sage
+            <Sparkles className="h-3 w-3" style={{ color: "hsl(140 12% 58%)" }} /> Post with Clark
           </label>
           <div className="flex flex-wrap gap-1.5">
             {[

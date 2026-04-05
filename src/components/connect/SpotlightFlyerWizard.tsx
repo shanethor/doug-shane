@@ -600,7 +600,7 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, ini
           messages: [
             {
               role: "system",
-              content: "You are Sage, an expert social media copywriter. Return ONLY the post text with hashtags. No explanations, no markdown formatting, no quotes around the text.",
+              content: "You are Clark, an expert social media copywriter. Return ONLY the post text with hashtags. No explanations, no markdown formatting, no quotes around the text.",
             },
             {
               role: "user",
@@ -619,7 +619,7 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, ini
         throw new Error("No content returned");
       }
     } catch (err: any) {
-      console.error("Sage caption error:", err);
+      console.error("Clark caption error:", err);
       const fallbackCaptions: Record<string, string> = {
         facebook: `🔥 ${title}\n\n${getResolvedBullets().slice(0, 2).join(". ")}.\n\n${cta || "Learn more today!"}\n\n#BusinessGrowth #Marketing #${brandName?.replace(/\s+/g, "") || "YourBrand"}`,
         instagram: `${title} ✨\n\n${getResolvedBullets().slice(0, 2).join("\n")}\n\n👉 ${cta || "Link in bio!"}\n\n.\n.\n.\n#Marketing #SmallBusiness #Entrepreneur #BusinessOwner #${brandName?.replace(/\s+/g, "") || "Brand"}`,
@@ -1090,20 +1090,20 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, ini
                 }}
               />
 
-              {/* Sage Post Dialog */}
+              {/* Clark Post Dialog */}
               <Dialog open={showSagePost} onOpenChange={setShowSagePost}>
                 <DialogContent className="sm:max-w-md" style={{ background: "hsl(240 6% 8%)", border: "1px solid hsl(240 6% 16%)", color: "#F5F5F0" }}>
                   <DialogHeader>
                     <DialogTitle className="flex items-center gap-2 text-sm text-white">
                       <Sparkles className="h-4 w-4" style={{ color: "hsl(140 12% 58%)" }} />
-                      Sage — {sagePostPlatform.charAt(0).toUpperCase() + sagePostPlatform.slice(1)} Post
+                      Clark — {sagePostPlatform.charAt(0).toUpperCase() + sagePostPlatform.slice(1)} Post
                     </DialogTitle>
                   </DialogHeader>
                   <div className="space-y-3 mt-2">
                     {sageGenerating ? (
                       <div className="flex items-center justify-center py-8 gap-2">
                         <Loader2 className="h-5 w-5 animate-spin" style={{ color: "hsl(140 12% 50%)" }} />
-                        <span className="text-xs" style={{ color: "hsl(240 5% 60%)" }}>Sage is crafting your post...</span>
+                        <span className="text-xs" style={{ color: "hsl(240 5% 60%)" }}>Clark is crafting your post...</span>
                       </div>
                     ) : (
                       <>

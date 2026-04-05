@@ -99,7 +99,7 @@ export default function TemplateEditor({ templateId, brands, onBack }: Props) {
   // Parse which field is active for the edit panel
   const activeBulletIndex = activeField?.startsWith("bullet-") ? parseInt(activeField.split("-")[1]) : -1;
 
-  // Sage AI edit
+  // Clark AI edit
   const handleSageEdit = async () => {
     if (!sagePrompt.trim()) return;
     setSageLoading(true);
@@ -120,10 +120,10 @@ export default function TemplateEditor({ templateId, brands, onBack }: Props) {
         if (e.title) update({ title: e.title });
         if (e.bullets?.length) update({ bullets: e.bullets });
         if (e.cta) update({ cta: e.cta });
-        toast.success("Sage updated your template");
+        toast.success("Clark updated your template");
       }
     } catch {
-      toast.error("Sage couldn't update the template right now");
+      toast.error("Clark couldn't update the template right now");
     } finally {
       setSageLoading(false);
       setSagePrompt("");
@@ -304,7 +304,7 @@ export default function TemplateEditor({ templateId, brands, onBack }: Props) {
             {[
               { id: "text", label: "Text", icon: Type },
               { id: "brand", label: "Brand", icon: Palette },
-              { id: "sage", label: "Sage AI", icon: Sparkles },
+              { id: "sage", label: "Clark AI", icon: Sparkles },
             ].map(tab => (
               <button
                 key={tab.id}
@@ -543,10 +543,10 @@ export default function TemplateEditor({ templateId, brands, onBack }: Props) {
                 <div className="px-3 py-3 rounded-xl space-y-1" style={{ background: "hsl(140 12% 42% / 0.1)", border: "1px solid hsl(140 12% 42% / 0.25)" }}>
                   <div className="flex items-center gap-2">
                     <Sparkles className="h-3.5 w-3.5" style={{ color: "hsl(140 12% 58%)" }} />
-                    <p className="text-xs font-semibold text-white">Edit with Sage</p>
+                    <p className="text-xs font-semibold text-white">Edit with Clark</p>
                   </div>
                   <p className="text-[10px] leading-relaxed" style={{ color: "hsl(240 5% 55%)" }}>
-                    Tell Sage what to change — it will rewrite your headline, bullets, or CTA while keeping the template design intact.
+                    Tell Clark what to change — it will rewrite your headline, bullets, or CTA while keeping the template design intact.
                   </p>
                 </div>
 
@@ -597,7 +597,7 @@ export default function TemplateEditor({ templateId, brands, onBack }: Props) {
                   disabled={sageLoading || !sagePrompt.trim()}
                 >
                   {sageLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
-                  {sageLoading ? "Sage is editing..." : "Apply with Sage"}
+                  {sageLoading ? "Clark is editing..." : "Apply with Clark"}
                 </Button>
 
                 <div className="pt-2" style={{ borderTop: "1px solid hsl(240 6% 14%)" }}>

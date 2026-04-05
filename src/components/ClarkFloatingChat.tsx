@@ -68,7 +68,7 @@ async function streamChat({
 
 type SageView = "chat" | "support" | "ticket-form";
 
-export function SageFloatingChat() {
+export function ClarkFloatingChat() {
   const { user } = useAuth();
   const { getAccessiblePages } = useEarlyAccessWhitelist();
   const [open, setOpen] = useState(false);
@@ -117,7 +117,7 @@ export function SageFloatingChat() {
         }
       }
     } catch (error: any) {
-      console.error("Sage calendar action failed:", error);
+      console.error("Clark calendar action failed:", error);
       toast.error(error?.message || "Failed to create calendar event");
     }
   }, [user]);
@@ -134,7 +134,7 @@ export function SageFloatingChat() {
     abortRef.current = ctrl;
     let full = "";
 
-    // Build accessible pages context so Sage only helps with what the user can see
+    // Build accessible pages context so Clark only helps with what the user can see
     const accessiblePages = getAccessiblePages();
     const scopeContext: Msg = {
       role: "user",
@@ -172,7 +172,7 @@ export function SageFloatingChat() {
     setView("support");
   };
 
-  // Sage popup toggle from settings
+  // Clark popup toggle from settings
   const [enabled, setEnabledState] = useState(() => {
     try { return localStorage.getItem("sage-popup-enabled") !== "false"; } catch { return true; }
   });
@@ -205,7 +205,7 @@ export function SageFloatingChat() {
         onClick={() => setMinimized(false)}
       >
         <Zap className="h-4 w-4" style={{ color: "hsl(140 12% 58%)" }} />
-        <span className="text-xs font-medium text-white">Sage</span>
+        <span className="text-xs font-medium text-white">Clark</span>
         <Maximize2 className="h-3 w-3 text-white/50" />
       </div>
     );
@@ -222,7 +222,7 @@ export function SageFloatingChat() {
       <div className="flex items-center justify-between px-3 py-2 shrink-0" style={{ borderBottom: "1px solid hsl(240 6% 14%)", background: "hsl(240 8% 9%)" }}>
         <div className="flex items-center gap-2">
           <Zap className="h-4 w-4" style={{ color: "hsl(140 12% 58%)" }} />
-          <span className="text-sm font-semibold text-white">Sage</span>
+          <span className="text-sm font-semibold text-white">Clark</span>
         </div>
         <div className="flex items-center gap-1">
           <button onClick={() => setView(view === "support" ? "chat" : "support")} className="p-1.5 rounded hover:bg-white/10" title="Support">
@@ -240,7 +240,7 @@ export function SageFloatingChat() {
             {messages.length === 0 && !streaming && (
               <div className="flex flex-col items-center justify-center h-full gap-3 text-center px-4">
                 <Zap className="h-8 w-8" style={{ color: "hsl(140 12% 42%)" }} />
-                <p className="text-sm font-medium text-white">Hey! I'm Sage.</p>
+                <p className="text-sm font-medium text-white">Hey! I'm Clark.</p>
                 <p className="text-xs" style={{ color: "hsl(240 5% 55%)" }}>Ask me anything or let me help with tasks on this page.</p>
               </div>
             )}
@@ -271,7 +271,7 @@ export function SageFloatingChat() {
             {streaming && !streamContent && (
               <div className="flex items-center gap-2 px-3 py-2">
                 <Loader2 className="h-3 w-3 animate-spin" style={{ color: "hsl(140 12% 58%)" }} />
-                <span className="text-[10px]" style={{ color: "hsl(240 5% 50%)" }}>Sage is thinking…</span>
+                <span className="text-[10px]" style={{ color: "hsl(240 5% 50%)" }}>Clark is thinking…</span>
               </div>
             )}
             <div ref={bottomRef} />
@@ -279,7 +279,7 @@ export function SageFloatingChat() {
           <div className="px-3 py-2 flex items-center gap-2 shrink-0" style={{ borderTop: "1px solid hsl(240 6% 14%)" }}>
             <Input
               value={input} onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask Sage anything…"
+              placeholder="Ask Clark anything…"
               className="h-8 text-xs bg-transparent border-white/10 text-white placeholder:text-white/30"
               onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
             />
