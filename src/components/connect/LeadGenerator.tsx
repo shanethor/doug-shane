@@ -819,7 +819,7 @@ function ResultsTable({ latestBatchId, onPurchaseLeads, greyedOut }: { latestBat
   };
 
   const handleBulkConvert = () => {
-    const toConvert = filtered.filter((l: EngineLead) => selectedIds.has(l.id) && l.status !== "converted");
+    const toConvert = sortedFiltered.filter((l: EngineLead) => selectedIds.has(l.id) && l.status !== "converted");
     toConvert.forEach(lead => {
       convertToPipeline.mutate(lead);
     });
@@ -828,10 +828,14 @@ function ResultsTable({ latestBatchId, onPurchaseLeads, greyedOut }: { latestBat
   };
 
   const handleBulkDelete = () => {
-    const toDelete = filtered.filter((l: EngineLead) => selectedIds.has(l.id));
+    const toDelete = sortedFiltered.filter((l: EngineLead) => selectedIds.has(l.id));
     toDelete.forEach(lead => deleteLead.mutate(lead.id));
     toast.success(`Removed ${toDelete.length} leads`);
     setSelectedIds(new Set());
+  };
+
+  const toggleScoreSort = () => {
+    setSortByScore(prev => prev === null ? "desc" : prev === "desc" ? "asc" : null);
   };
 
   if (isLoading) return <Skeleton className="h-40 w-full" />;
