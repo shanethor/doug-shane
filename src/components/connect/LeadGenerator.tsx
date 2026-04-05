@@ -1235,7 +1235,7 @@ export default function LeadGenerator() {
   const [hasGenerated, setHasGenerated] = useState(false);
   const [showAgentDrip, setShowAgentDrip] = useState(false);
   const [latestBatchId, setLatestBatchId] = useState<string | null>(null);
-  const [showPurchasePrompt, setShowPurchasePrompt] = useState(false);
+  const [purchaseDismissed, setPurchaseDismissed] = useState(false);
   const { data: studioQual } = useStudioQualification();
 
   useEffect(() => {
