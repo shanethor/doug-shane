@@ -475,175 +475,159 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasAgent, in
         </Card>
       )}
 
-
-      {/* Specialization multi-select */}
+      {/* ═══ Generate Toolbar: Geography + Generate button inline ═══ */}
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Users className="h-4 w-4 text-primary" />
-            Specializations
-          </CardTitle>
-          <p className="text-[10px] text-muted-foreground">
-            Select your verticals to see industry-specific lead sources
-          </p>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          {Object.entries(verticalsByGroup).map(([group, verts]) => (
-            <div key={group}>
-              <button
-                type="button"
-                onClick={() => toggleGroup(group)}
-                className="w-full flex items-center justify-between py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <span>{group}</span>
-                <div className="flex items-center gap-1.5">
-                  <Badge variant="secondary" className="text-[9px] px-1.5 py-0">
-                    {verts.filter(v => selectedVerticals.includes(v.id)).length}/{verts.length}
-                  </Badge>
-                  {expandedGroups.has(group) ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                </div>
-              </button>
-              {expandedGroups.has(group) && (
-                <div className="grid grid-cols-2 gap-1.5 pb-2">
-                  {verts.map(v => (
-                    <button
-                      key={v.id}
-                      type="button"
-                      onClick={() => toggleVertical(v.id)}
-                      className={`rounded-md border p-2 text-left text-[11px] font-medium transition-all ${
-                        selectedVerticals.includes(v.id)
-                          ? "border-primary bg-primary/5 text-foreground ring-1 ring-primary/20"
-                          : "border-border text-muted-foreground hover:border-primary/40"
-                      }`}
-                    >
-                      {v.label}
-                    </button>
-                  ))}
-                </div>
-              )}
+        <CardContent className="p-4">
+          {generating ? (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground flex items-center gap-1.5">
+                  <Sparkles className="h-3.5 w-3.5 animate-pulse text-primary" />
+                  {genStep}
+                </span>
+                <span className="font-medium text-foreground">{genProgress}%</span>
+              </div>
+              <Progress value={genProgress} className="h-2" />
+              <p className="text-[10px] text-muted-foreground text-center">
+                Estimated time: ~{Math.max(5, Math.round((100 - genProgress) * 0.4))}s remaining
+              </p>
             </div>
-          ))}
-          <p className="text-[10px] text-muted-foreground">
-            {selectedVerticals.length} specialization{selectedVerticals.length !== 1 ? "s" : ""} active
-            {selectedVerticals.length > 0 && ` — ${availableVerticals.filter(v => selectedVerticals.includes(v.id)).map(v => v.label).slice(0, 3).join(", ")}${selectedVerticals.length > 3 ? ` +${selectedVerticals.length - 3} more` : ""}`}
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* Targeting — master only */}
-      {isMaster && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Target className="h-4 w-4 text-primary" />
-              Targeting
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-3">
-              <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">Target Geography</label>
+          ) : (
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="flex items-center gap-2 flex-1 min-w-[200px]">
+                <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />
                 <Select value={geo} onValueChange={setGeo}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-9 text-xs flex-1"><SelectValue /></SelectTrigger>
                   <SelectContent className="max-h-60">
                     {US_STATES.map((st) => <SelectItem key={st} value={st}>{st}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-xs font-medium text-muted-foreground">
-                    Focus Sources ({activeSources.length} available)
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const allKeys = activeSources.map(s => s.key);
-                      setFocuses(prev => prev.length === allKeys.length ? [allKeys[0]] : allKeys);
-                    }}
-                    className="text-[10px] font-medium text-primary hover:underline"
-                  >
-                    {focuses.length === activeSources.length ? "Deselect all" : "Select all"}
-                  </button>
-                </div>
-                <div className="grid grid-cols-2 gap-2 max-h-[320px] overflow-y-auto pr-1">
-                  {activeSources.map(({ key, label, icon }) => {
-                    const Icon = ICON_MAP[icon] || FileText;
-                    return (
+              <Button onClick={handleGenerate} className="gap-1.5 shrink-0" size="default">
+                <Rocket className="h-4 w-4" /> Generate Leads
+              </Button>
+            </div>
+          )}
+          {userStates?.length && !generating ? (
+            <p className="text-[10px] text-muted-foreground mt-2">
+              Your states: {userStates.join(", ")}
+            </p>
+          ) : null}
+        </CardContent>
+      </Card>
+
+      {/* Specialization multi-select — collapsed by default */}
+      <Card>
+        <button
+          type="button"
+          onClick={() => setSpecsExpanded(!specsExpanded)}
+          className="w-full flex items-center justify-between p-4 text-left"
+        >
+          <div className="flex items-center gap-2">
+            <Users className="h-4 w-4 text-primary" />
+            <span className="text-sm font-semibold">Specializations</span>
+            <Badge variant="secondary" className="text-[9px] px-1.5 py-0">
+              {selectedVerticals.length} selected
+            </Badge>
+          </div>
+          {specsExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+        </button>
+        {specsExpanded && (
+          <CardContent className="pt-0 space-y-2">
+            <p className="text-[10px] text-muted-foreground">
+              Select your verticals to see industry-specific lead sources
+            </p>
+            {Object.entries(verticalsByGroup).map(([group, verts]) => (
+              <div key={group}>
+                <button
+                  type="button"
+                  onClick={() => toggleGroup(group)}
+                  className="w-full flex items-center justify-between py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <span>{group}</span>
+                  <div className="flex items-center gap-1.5">
+                    <Badge variant="secondary" className="text-[9px] px-1.5 py-0">
+                      {verts.filter(v => selectedVerticals.includes(v.id)).length}/{verts.length}
+                    </Badge>
+                    {expandedGroups.has(group) ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                  </div>
+                </button>
+                {expandedGroups.has(group) && (
+                  <div className="grid grid-cols-2 gap-1.5 pb-2">
+                    {verts.map(v => (
                       <button
-                        key={key}
+                        key={v.id}
                         type="button"
-                        onClick={() => toggleFocus(key)}
-                        className={`flex items-center gap-2 rounded-lg border p-2.5 text-left text-xs font-medium transition-all ${
-                          focuses.includes(key)
+                        onClick={() => toggleVertical(v.id)}
+                        className={`rounded-md border p-2 text-left text-[11px] font-medium transition-all ${
+                          selectedVerticals.includes(v.id)
                             ? "border-primary bg-primary/5 text-foreground ring-1 ring-primary/20"
                             : "border-border text-muted-foreground hover:border-primary/40"
                         }`}
                       >
-                        <Icon className={`h-3.5 w-3.5 shrink-0 ${focuses.includes(key) ? "text-primary" : ""}`} />
-                        {label}
+                        {v.label}
                       </button>
-                    );
-                  })}
-                </div>
-                <p className="text-[10px] text-muted-foreground mt-1">{focuses.length} source{focuses.length !== 1 ? "s" : ""} selected</p>
+                    ))}
+                  </div>
+                )}
               </div>
-            </div>
+            ))}
+            <p className="text-[10px] text-muted-foreground">
+              {selectedVerticals.length} specialization{selectedVerticals.length !== 1 ? "s" : ""} active
+              {selectedVerticals.length > 0 && ` — ${availableSpecializations.filter(s => selectedVerticals.includes(s.id)).map(s => s.label).slice(0, 3).join(", ")}${selectedVerticals.length > 3 ? ` +${selectedVerticals.length - 3} more` : ""}`}
+            </p>
           </CardContent>
-        </Card>
-      )}
+        )}
+      </Card>
 
-      {/* State filter — non-master users */}
-      {!isMaster && (
+      {/* Targeting — master only (focus sources) */}
+      {isMaster && (
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm flex items-center gap-2">
-              <MapPin className="h-4 w-4 text-primary" />
-              Geography
+              <Target className="h-4 w-4 text-primary" />
+              Focus Sources
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <Select value={geo} onValueChange={setGeo}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent className="max-h-60">
-                {US_STATES.map((st) => <SelectItem key={st} value={st}>{st}</SelectItem>)}
-              </SelectContent>
-            </Select>
-            {userStates?.length ? (
-              <p className="text-[10px] text-muted-foreground mt-2">
-                Your states: {userStates.join(", ")}
-              </p>
-            ) : null}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Generate — master only */}
-      {isMaster && (
-        <Card>
-          <CardContent className="pt-4 space-y-3">
-            {generating ? (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground flex items-center gap-1.5">
-                    <Sparkles className="h-3.5 w-3.5 animate-pulse text-primary" />
-                    {genStep}
-                  </span>
-                  <span className="font-medium text-foreground">{genProgress}%</span>
-                </div>
-                <Progress value={genProgress} className="h-2" />
-                <p className="text-[10px] text-muted-foreground text-center">
-                  Estimated time: ~{Math.max(5, Math.round((100 - genProgress) * 0.4))}s remaining
-                </p>
+          <CardContent className="space-y-4">
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-medium text-muted-foreground">
+                  {activeSources.length} available
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const allKeys = activeSources.map(s => s.key);
+                    setFocuses(prev => prev.length === allKeys.length ? [allKeys[0]] : allKeys);
+                  }}
+                  className="text-[10px] font-medium text-primary hover:underline"
+                >
+                  {focuses.length === activeSources.length ? "Deselect all" : "Select all"}
+                </button>
               </div>
-            ) : (
-              <Button onClick={handleGenerate} className="w-full gap-1.5" size="lg">
-                <Zap className="h-4 w-4" /> Generate Free Leads
-              </Button>
-            )}
-            <p className="text-[10px] text-muted-foreground text-center">
-              Sourced from 70+ verified public databases including state licensing boards, OSHA, EPA, NOAA, NRCA, PHCC, SAM.gov, SBA, court records, and more. Enriched via Apollo, Hunter & PDL.
-            </p>
+              <div className="grid grid-cols-2 gap-2 max-h-[320px] overflow-y-auto pr-1">
+                {activeSources.map(({ key, label, icon }) => {
+                  const Icon = ICON_MAP[icon] || FileText;
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => toggleFocus(key)}
+                      className={`flex items-center gap-2 rounded-lg border p-2.5 text-left text-xs font-medium transition-all ${
+                        focuses.includes(key)
+                          ? "border-primary bg-primary/5 text-foreground ring-1 ring-primary/20"
+                          : "border-border text-muted-foreground hover:border-primary/40"
+                      }`}
+                    >
+                      <Icon className={`h-3.5 w-3.5 shrink-0 ${focuses.includes(key) ? "text-primary" : ""}`} />
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-1">{focuses.length} source{focuses.length !== 1 ? "s" : ""} selected</p>
+            </div>
           </CardContent>
         </Card>
       )}
