@@ -41,7 +41,9 @@ async function searchGooglePlaces(
       const data = await resp.json();
       const places = data.places || [];
       console.log(`[google-places] New API success for "${query}" — ${places.length} results`);
-      return places.map((p: any) => {
+      return places
+        .filter((p: any) => isValidBusinessLead(p.displayName?.text || ""))
+        .map((p: any) => {
         const addr = p.formattedAddress || "";
         let city: string | null = null;
         let state: string | null = null;
@@ -104,6 +106,16 @@ async function searchGooglePlaces(
       state,
     };
   });
+}
+
+// ── Centralized business name filter — removes gov agencies, insurance competitors, lead services, etc. ──
+const NON_BUSINESS_PATTERN = /federal motor carrier|motor carrier compliance|department of transportation|highway patrol|public safety|dmv\b|dot office|chamber of commerce|\bassociation\b|licensing|compliance (office|bureau)|insurance agenc|insurance compan|lead(s)?\s*(generation|service|provider)|auto transport leads|safety administration|state police|city of |county of |town of |village of |\.gov\b|government|municipality/i;
+
+function isValidBusinessLead(name: string): boolean {
+  if (!name || name.length < 3 || name.length > 80) return false;
+  if (NON_BUSINESS_PATTERN.test(name)) return false;
+  if (/^(home|about|all|contact|motor carriers?)$/i.test(name)) return false;
+  return true;
 }
 
 // Map common abbreviations to full state names for better Google Places results
@@ -700,7 +712,7 @@ Deno.serve(async (req) => {
                 const key = name.toLowerCase().trim();
                 if (seenNames.has(key)) continue;
                 // Skip government agencies, associations, and non-business entities
-                if (/federal motor carrier|department of transportation|highway patrol|public safety|dmv|dot office|chamber of commerce|association|licensing|compliance office/i.test(name)) continue;
+                if (!isValidBusinessLead(name)) continue;
                 seenNames.add(key);
                 let state: string | null = null;
                 let city: string | null = null;
@@ -820,16 +832,18 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Score based on real signals only
-      const scored = allPlaces.map(p => {
-        let score = 50;
-        if (!p.website) score += 20;
-        if ((p.reviewCount ?? 0) < 10) score += 15;
-        if ((p.reviewCount ?? 0) === 0) score += 10;
-        if ((p.rating ?? 5) < 4.0) score += 5;
-        score = Math.min(score, 99);
-        return { ...p, score };
-      }).sort((a, b) => b.score - a.score);
+      // Final filter pass + score based on real signals only
+      const scored = allPlaces
+        .filter(p => isValidBusinessLead(p.company))
+        .map(p => {
+          let score = 50;
+          if (!p.website) score += 20;
+          if ((p.reviewCount ?? 0) < 10) score += 15;
+          if ((p.reviewCount ?? 0) === 0) score += 10;
+          if ((p.rating ?? 5) < 4.0) score += 5;
+          score = Math.min(score, 99);
+          return { ...p, score };
+        }).sort((a, b) => b.score - a.score);
 
       const topPlaces = scored.slice(0, 12);
 

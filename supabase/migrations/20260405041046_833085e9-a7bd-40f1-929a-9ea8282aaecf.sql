@@ -1,0 +1,1 @@
+UPDATE profiles SET connect_vertical = 'contractors', industry = 'contractors', specializations = ARRAY['general_contractor','roofing','plumbing','electrical','hvac','solar','flooring','painting','concrete','landscaping','demolition','fire_sprinkler','insulation','glazing','elevator'] WHERE user_id = '8ecf3602-1c1f-4022-b864-1e53cb47d59f'
