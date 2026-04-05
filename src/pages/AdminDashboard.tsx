@@ -293,6 +293,7 @@ export default function AdminDashboard() {
             <TabsTrigger value="bookings" className="gap-1.5 text-xs"><CalendarDays className="h-3.5 w-3.5" />Bookings</TabsTrigger>
             <TabsTrigger value="studio" className="gap-1.5 text-xs"><Wrench className="h-3.5 w-3.5" />Studio</TabsTrigger>
             <TabsTrigger value="industry-requests" className="gap-1.5 text-xs"><Globe className="h-3.5 w-3.5" />Industry Requests</TabsTrigger>
+            <TabsTrigger value="marketplace-requests" className="gap-1.5 text-xs"><Handshake className="h-3.5 w-3.5" />Marketplace</TabsTrigger>
           </TabsList>
         </div>
 
