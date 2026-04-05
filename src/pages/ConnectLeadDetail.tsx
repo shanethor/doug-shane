@@ -296,6 +296,112 @@ export default function ConnectLeadDetail() {
               </Card>
             )}
 
+            {/* Google Business Profile Card */}
+            {lead.source_url && lead.source_url.includes("google") && (() => {
+              const signal = lead.signal || "";
+              const ratingMatch = signal.match(/Rating:\s*([\d.]+)\/5/i);
+              const reviewMatch = signal.match(/(\d+)\s*Google\s*review/i);
+              const rating = ratingMatch ? parseFloat(ratingMatch[1]) : null;
+              const reviewCount = reviewMatch ? parseInt(reviewMatch[1]) : null;
+              const noWebsite = /no website found/i.test(signal);
+              const needsDigital = /needs digital presence/i.test(signal);
+
+              const fullStars = rating ? Math.floor(rating) : 0;
+              const hasHalf = rating ? (rating - fullStars) >= 0.3 : false;
+              const emptyStars = 5 - fullStars - (hasHalf ? 1 : 0);
+
+              return (
+                <Card className="overflow-hidden">
+                  <div className="bg-[hsl(var(--primary)/0.08)] px-4 py-3 flex items-center gap-2 border-b border-border">
+                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Map className="h-4 w-4 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold truncate">Google Business Profile</p>
+                      <p className="text-[10px] text-muted-foreground">Found on Google Maps</p>
+                    </div>
+                    <a
+                      href={lead.source_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary hover:text-primary/80 transition-colors"
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                    </a>
+                  </div>
+                  <CardContent className="p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-bold">{lead.company}</h3>
+                      {lead.state && (
+                        <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                          <MapPin className="h-3 w-3" /> {lead.state}
+                        </span>
+                      )}
+                    </div>
+
+                    {rating !== null && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg font-bold">{rating}</span>
+                        <div className="flex items-center gap-0.5">
+                          {Array.from({ length: fullStars }).map((_, i) => (
+                            <Star key={`f${i}`} className="h-4 w-4 fill-amber-400 text-amber-400" />
+                          ))}
+                          {hasHalf && <Star className="h-4 w-4 fill-amber-400/50 text-amber-400" />}
+                          {Array.from({ length: emptyStars }).map((_, i) => (
+                            <Star key={`e${i}`} className="h-4 w-4 text-muted-foreground/30" />
+                          ))}
+                        </div>
+                        {reviewCount !== null && (
+                          <span className="text-xs text-muted-foreground">({reviewCount} review{reviewCount !== 1 ? "s" : ""})</span>
+                        )}
+                      </div>
+                    )}
+
+                    {lead.industry && (
+                      <div className="flex items-center gap-1.5">
+                        <Building2 className="h-3 w-3 text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground">{lead.industry}</span>
+                      </div>
+                    )}
+
+                    {lead.phone && (
+                      <div className="flex items-center gap-1.5">
+                        <Phone className="h-3 w-3 text-muted-foreground" />
+                        <a href={`tel:${lead.phone}`} className="text-xs text-primary hover:underline">{lead.phone}</a>
+                      </div>
+                    )}
+
+                    {/* Insights badges */}
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {noWebsite && (
+                        <Badge variant="outline" className="text-[9px] border-amber-500/30 text-amber-600">⚠️ No website</Badge>
+                      )}
+                      {needsDigital && (
+                        <Badge variant="outline" className="text-[9px] border-amber-500/30 text-amber-600">Needs digital presence</Badge>
+                      )}
+                      {reviewCount !== null && reviewCount <= 10 && (
+                        <Badge variant="outline" className="text-[9px] border-emerald-500/30 text-emerald-600">Low review count — likely untouched</Badge>
+                      )}
+                      {rating !== null && rating < 4.0 && (
+                        <Badge variant="outline" className="text-[9px] border-blue-500/30 text-blue-600">Below avg rating — opportunity</Badge>
+                      )}
+                    </div>
+
+                    <a
+                      href={lead.source_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-2 w-full rounded-md border border-border hover:bg-muted/50 py-2 text-xs font-medium text-primary transition-colors"
+                    >
+                      <Map className="h-3.5 w-3.5" />
+                      View Full Google Maps Profile
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  </CardContent>
+                </Card>
+              );
+            })()}
+
             {/* Contact Info */}
             <Card>
               <CardHeader className="pb-3">
