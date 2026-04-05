@@ -19,7 +19,7 @@ import {
   ArrowUpRight, Eye, Trash2, Zap,
   Sparkles, Users, TrendingUp,
   Mail, Phone, RefreshCw, Gift, Lock, ChevronDown, ChevronUp,
-  Download, FileText, Building2, Globe,
+  Download, FileText, Building2, Globe, ArrowDownUp,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -659,7 +659,7 @@ function FitScoreBadge({ score }: { score: number }) {
   );
 }
 
-function ResultsTable({ latestBatchId, onPurchaseLeads }: { latestBatchId: string | null; onPurchaseLeads?: (count: number, leadIds: string[]) => void }) {
+function ResultsTable({ latestBatchId, onPurchaseLeads, greyedOut }: { latestBatchId: string | null; onPurchaseLeads?: (count: number, leadIds: string[]) => void; greyedOut?: boolean }) {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const { data: leads, isLoading } = useEngineLeads();
@@ -674,6 +674,7 @@ function ResultsTable({ latestBatchId, onPurchaseLeads }: { latestBatchId: strin
   const [enrichingId, setEnrichingId] = useState<string | null>(null);
   const [enrichingAll, setEnrichingAll] = useState(false);
   const [showAll, setShowAll] = useState(false);
+  const [sortByScore, setSortByScore] = useState<"asc" | "desc" | null>(null);
 
   const exportLeads = (format: "excel" | "emails" | "phones") => {
     const data = filtered.length ? filtered : (leads || []);
@@ -789,18 +790,23 @@ function ResultsTable({ latestBatchId, onPurchaseLeads }: { latestBatchId: strin
     return matchesSearch && matchesScore && matchesContact;
   });
 
-  // Separate latest batch from previous leads
-  const latestLeads = latestBatchId ? filtered.filter(l => l.batch_id === latestBatchId) : [];
-  const previousLeads = latestBatchId ? filtered.filter(l => l.batch_id !== latestBatchId) : filtered;
+  // Sort by score if active
+  const sortedFiltered = sortByScore
+    ? [...filtered].sort((a, b) => sortByScore === "desc" ? (b.score || 0) - (a.score || 0) : (a.score || 0) - (b.score || 0))
+    : filtered;
 
-  const allSelected = filtered.length > 0 && filtered.every((l: EngineLead) => selectedIds.has(l.id));
-  const someSelected = filtered.some((l: EngineLead) => selectedIds.has(l.id));
+  // Separate latest batch from previous leads
+  const latestLeads = latestBatchId ? sortedFiltered.filter(l => l.batch_id === latestBatchId) : [];
+  const previousLeads = latestBatchId ? sortedFiltered.filter(l => l.batch_id !== latestBatchId) : sortedFiltered;
+
+  const allSelected = sortedFiltered.length > 0 && sortedFiltered.every((l: EngineLead) => selectedIds.has(l.id));
+  const someSelected = sortedFiltered.some((l: EngineLead) => selectedIds.has(l.id));
 
   const toggleAll = () => {
     if (allSelected) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(filtered.map((l: EngineLead) => l.id)));
+      setSelectedIds(new Set(sortedFiltered.map((l: EngineLead) => l.id)));
     }
   };
 
@@ -813,7 +819,7 @@ function ResultsTable({ latestBatchId, onPurchaseLeads }: { latestBatchId: strin
   };
 
   const handleBulkConvert = () => {
-    const toConvert = filtered.filter((l: EngineLead) => selectedIds.has(l.id) && l.status !== "converted");
+    const toConvert = sortedFiltered.filter((l: EngineLead) => selectedIds.has(l.id) && l.status !== "converted");
     toConvert.forEach(lead => {
       convertToPipeline.mutate(lead);
     });
@@ -822,10 +828,14 @@ function ResultsTable({ latestBatchId, onPurchaseLeads }: { latestBatchId: strin
   };
 
   const handleBulkDelete = () => {
-    const toDelete = filtered.filter((l: EngineLead) => selectedIds.has(l.id));
+    const toDelete = sortedFiltered.filter((l: EngineLead) => selectedIds.has(l.id));
     toDelete.forEach(lead => deleteLead.mutate(lead.id));
     toast.success(`Removed ${toDelete.length} leads`);
     setSelectedIds(new Set());
+  };
+
+  const toggleScoreSort = () => {
+    setSortByScore(prev => prev === null ? "desc" : prev === "desc" ? "asc" : null);
   };
 
   if (isLoading) return <Skeleton className="h-40 w-full" />;
@@ -844,7 +854,7 @@ function ResultsTable({ latestBatchId, onPurchaseLeads }: { latestBatchId: strin
 
   return (
     <>
-    <Card>
+    <Card className={greyedOut ? "opacity-50 pointer-events-none select-none" : ""}>
       <CardHeader className="pb-3 space-y-3">
         <div className={`flex ${isMobile ? "flex-col gap-2" : "items-center justify-between"}`}>
           <div className="flex items-center justify-between">
@@ -1047,7 +1057,14 @@ function ResultsTable({ latestBatchId, onPurchaseLeads }: { latestBatchId: strin
                     <TableHead className="text-xs">Company</TableHead>
                     <TableHead className="text-xs">Contact</TableHead>
                     <TableHead className="text-xs">State</TableHead>
-                    <TableHead className="text-xs">Score</TableHead>
+                    <TableHead className="text-xs cursor-pointer select-none hover:text-primary transition-colors" onClick={toggleScoreSort}>
+                      <span className="flex items-center gap-1">
+                        Score
+                        <ArrowDownUp className={`h-3 w-3 ${sortByScore ? "text-primary" : "text-muted-foreground/50"}`} />
+                        {sortByScore === "desc" && <span className="text-[9px]">↓</span>}
+                        {sortByScore === "asc" && <span className="text-[9px]">↑</span>}
+                      </span>
+                    </TableHead>
                     <TableHead className="text-xs">Status</TableHead>
                     <TableHead className="text-xs text-right">Actions</TableHead>
                   </TableRow>
@@ -1368,6 +1385,18 @@ export default function LeadGenerator() {
         </div>
       </div>
 
+      {/* Post-generation purchase prompt — shown at top full width */}
+      {showPurchasePrompt && (
+        <PurchasePrompt
+          leads={newLeads}
+          userIndustry={userIndustry}
+          isSubscriber={subscribed}
+          hasAgent={hasAgent}
+          onPurchase={handlePurchaseLeads}
+          onDecline={handleDeclinePurchase}
+        />
+      )}
+
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1 space-y-4">
           <GenerateControls
@@ -1383,18 +1412,7 @@ export default function LeadGenerator() {
           />
         </div>
         <div className="lg:col-span-2 space-y-4">
-          {/* Post-generation purchase prompt — shown at top */}
-          {showPurchasePrompt && (
-            <PurchasePrompt
-              leads={newLeads}
-              userIndustry={userIndustry}
-              isSubscriber={subscribed}
-              hasAgent={hasAgent}
-              onPurchase={handlePurchaseLeads}
-              onDecline={handleDeclinePurchase}
-            />
-          )}
-          <ResultsTable latestBatchId={latestBatchId} />
+          <ResultsTable latestBatchId={latestBatchId} greyedOut={showPurchasePrompt} />
           {showPromo && <AuraAgentLeadPromo />}
         </div>
       </div>
