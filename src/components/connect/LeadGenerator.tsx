@@ -1253,6 +1253,12 @@ export default function LeadGenerator() {
   const [showAgentDrip, setShowAgentDrip] = useState(false);
   const [latestBatchId, setLatestBatchId] = useState<string | null>(null);
   const [purchaseDismissed, setPurchaseDismissed] = useState(false);
+  const [tipDismissed, setTipDismissed] = useState(() => {
+    try { return localStorage.getItem("lead-tip-dismissed") === "true"; } catch { return false; }
+  });
+  const [lastGeneratedAt, setLastGeneratedAt] = useState<number | null>(() => {
+    try { const v = localStorage.getItem("lead-last-generated"); return v ? parseInt(v) : null; } catch { return null; }
+  });
   const { data: studioQual } = useStudioQualification();
 
   useEffect(() => {
