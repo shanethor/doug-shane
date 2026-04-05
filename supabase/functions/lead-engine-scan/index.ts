@@ -24,47 +24,79 @@ async function searchGooglePlaces(
   query: string,
   apiKey: string,
 ): Promise<PlacesResult[]> {
-  // Use legacy Text Search API (widely enabled)
+  // Try Places API (New) first — uses POST with fieldMask
+  const newApiUrl = "https://places.googleapis.com/v1/places:searchText";
+  try {
+    const resp = await fetch(newApiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": apiKey,
+        "X-Goog-FieldMask": "places.displayName,places.formattedAddress,places.nationalPhoneNumber,places.websiteUri,places.rating,places.userRatingCount",
+      },
+      body: JSON.stringify({ textQuery: query, languageCode: "en" }),
+    });
+
+    if (resp.ok) {
+      const data = await resp.json();
+      const places = data.places || [];
+      console.log(`[google-places] New API success for "${query}" — ${places.length} results`);
+      return places.map((p: any) => {
+        const addr = p.formattedAddress || "";
+        let city: string | null = null;
+        let state: string | null = null;
+        const match = addr.match(/,\s*([^,]+),\s*([A-Z]{2})\s+\d/);
+        if (match) { city = match[1].trim(); state = match[2]; }
+        else {
+          const match2 = addr.match(/,\s*([^,]+),\s*([A-Z]{2}),/);
+          if (match2) { city = match2[1].trim(); state = match2[2]; }
+        }
+        return {
+          company: p.displayName?.text || "Unknown Business",
+          address: addr,
+          phone: p.nationalPhoneNumber || null,
+          website: p.websiteUri || null,
+          rating: p.rating || null,
+          reviewCount: p.userRatingCount || null,
+          city,
+          state,
+        };
+      });
+    }
+    const errText = await resp.text();
+    console.warn(`[google-places] New API error ${resp.status}: ${errText.slice(0, 300)}`);
+  } catch (e) {
+    console.warn(`[google-places] New API fetch error:`, e);
+  }
+
+  // Fallback to legacy Text Search API
   const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&key=${apiKey}`;
-
   const resp = await fetch(url);
-
   if (!resp.ok) {
     const errText = await resp.text();
-    console.error(`[google-places] API error ${resp.status}: ${errText.slice(0, 200)}`);
+    console.error(`[google-places] Legacy API error ${resp.status}: ${errText.slice(0, 200)}`);
     return [];
   }
-
   const data = await resp.json();
   if (data.status !== "OK" && data.status !== "ZERO_RESULTS") {
-    console.error(`[google-places] API status: ${data.status} — ${data.error_message || ""}`);
+    console.error(`[google-places] Legacy API status: ${data.status} — ${data.error_message || ""}`);
     return [];
   }
-
   const places = data.results || [];
-
   return places.map((p: any) => {
-    // Extract city and state from formatted_address
     let city: string | null = null;
     let state: string | null = null;
     const addr = p.formatted_address || "";
-    // Pattern: "City, ST ZIP, USA"
     const match = addr.match(/,\s*([^,]+),\s*([A-Z]{2})\s+\d/);
-    if (match) {
-      city = match[1].trim();
-      state = match[2];
-    } else {
-      // Try: "City, ST, USA"
+    if (match) { city = match[1].trim(); state = match[2]; }
+    else {
       const match2 = addr.match(/,\s*([^,]+),\s*([A-Z]{2}),/);
-      if (match2) {
-        city = match2[1].trim();
-        state = match2[2];
-      }
+      if (match2) { city = match2[1].trim(); state = match2[2]; }
     }
     return {
       company: p.name || "Unknown Business",
       address: addr,
-      phone: null, // Legacy API doesn't return phone in textsearch
+      phone: null,
       website: null,
       rating: p.rating || null,
       reviewCount: p.user_ratings_total || null,
@@ -156,10 +188,13 @@ function buildGoogleMapsQueries(settings: Record<string, string>): string[] {
       }
     } else {
       for (const st of states.slice(0, 4)) {
-        const isConstructionTrade = /contractor|roofing|plumbing|hvac|electrician|excavation|flooring|solar|drywall|insulation|glazing|elevator|fire sprinkler/i.test(ind);
-        const tradeQuery = isConstructionTrade
-          ? `${ind} contractor in ${st}`
-          : `${ind} company in ${st}`;
+        // If the industry term already contains "company", "contractor", "carrier" etc, use as-is
+        const alreadySpecific = /company|contractor|carrier|broker|dealer|service|fleet|operator|delivery|trucking|transport/i.test(ind);
+        const tradeQuery = alreadySpecific
+          ? `${ind} in ${st}`
+          : /contractor|roofing|plumbing|hvac|electrician|excavation|flooring|solar|drywall|insulation|glazing|elevator|fire sprinkler/i.test(ind)
+            ? `${ind} contractor in ${st}`
+            : `${ind} company in ${st}`;
         queries.push(tradeQuery);
       }
     }
@@ -645,9 +680,55 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Fallback: use Serper web search to find real businesses
+      // Fallback: use Serper maps endpoint for actual business listings, then web search
       if (allPlaces.length === 0 && SERPER_KEY) {
-        console.log(`[lead-engine-scan] Google Places returned 0 — falling back to Serper business search`);
+        console.log(`[lead-engine-scan] Google Places returned 0 — falling back to Serper maps + web search`);
+        
+        // Step 1: Try Serper Maps endpoint (returns actual Google Maps business listings)
+        for (const q of queries.slice(0, 6)) {
+          try {
+            const mapsResp = await fetch("https://google.serper.dev/maps", {
+              method: "POST",
+              headers: { "X-API-KEY": SERPER_KEY, "Content-Type": "application/json" },
+              body: JSON.stringify({ q, gl: "us" }),
+            });
+            if (mapsResp.ok) {
+              const mapsData = await mapsResp.json();
+              for (const p of (mapsData.places || [])) {
+                const name = p.title || "";
+                if (!name) continue;
+                const key = name.toLowerCase().trim();
+                if (seenNames.has(key)) continue;
+                // Skip government agencies, associations, and non-business entities
+                if (/federal motor carrier|department of transportation|highway patrol|public safety|dmv|dot office|chamber of commerce|association|licensing|compliance office/i.test(name)) continue;
+                seenNames.add(key);
+                let state: string | null = null;
+                let city: string | null = null;
+                const addr = p.address || "";
+                const stMatch = addr.match(/,\s*([A-Z]{2})\s+\d/);
+                if (stMatch) state = stMatch[1];
+                const cityMatch = addr.match(/,\s*([^,]+),\s*[A-Z]{2}/);
+                if (cityMatch) city = cityMatch[1].trim();
+                allPlaces.push({
+                  company: name,
+                  address: addr,
+                  phone: p.phoneNumber || null,
+                  website: p.website || null,
+                  rating: p.rating || null,
+                  reviewCount: p.ratingCount || null,
+                  city,
+                  state,
+                });
+              }
+              if ((mapsData.places || []).length > 0) {
+                console.log(`[lead-engine-scan] Serper Maps "${q}" → ${mapsData.places.length} businesses`);
+              }
+            }
+          } catch (e) { console.warn(`[lead-engine-scan] Serper Maps query failed:`, e); }
+        }
+        
+        // Step 2: If still not enough, supplement with regular web search
+        if (allPlaces.length < 10) {
         for (const q of queries.slice(0, 6)) {
           try {
             const resp = await fetch("https://google.serper.dev/search", {
@@ -684,24 +765,39 @@ Deno.serve(async (req) => {
                 state,
               });
             }
-            // Also extract from organic results that look like business listings
+            // Also extract from organic results that look like individual business pages
             for (const r of (data.organic || []).slice(0, 5)) {
               const title = r.title || "";
-              // Skip aggregator sites
-              if (/yelp|yellowpages|bbb|manta|mapquest|tripadvisor/i.test(r.link || "")) continue;
+              const link = r.link || "";
+              // Skip aggregator / directory / listicle / government / job sites
+              if (/yelp|yellowpages|bbb|manta|mapquest|tripadvisor|indeed|glassdoor|ziprecruiter|wikipedia|alltruckjobs|zippia|comparably|crunchbase\.com\/hub|listicle|cdljobs|\.gov\//i.test(link)) continue;
               if (!title || seenNames.has(title.toLowerCase().trim())) continue;
-              // Only include if it looks like a real business (not a list article)
-              if (/top \d|best \d|\d+ best/i.test(title)) continue;
+              // Skip list articles, search result pages, job postings, and generic non-business content
+              if (/top \d|best \d|\d+ best|\d+ largest|learn about \d|company search|search results|companies in|how to|what is|guide|blog|hiring|cdl drivers|motor carrier list|intrastate licens|enforcement/i.test(title)) continue;
+              // Skip very generic titles that are clearly not business names
+              if (/^(home|about|contact|services|all|motor carriers?)$/i.test(title.trim())) continue;
+              // Skip titles that are just location names (e.g., "DALLAS, TX")
+              if (/^[A-Z\s]+,\s*[A-Z]{2}$/i.test(title.trim())) continue;
+              // Skip titles containing aggregation keywords (unless they have LLC/Inc/Corp indicating a real business)
+              if (/freight shipping|ltl freight|shipping company|freight forwarder/i.test(title) && !/inc|llc|corp|co\.|l\.l\.c/i.test(title)) continue;
               seenNames.add(title.toLowerCase().trim());
               let state: string | null = null;
               const snippet = r.snippet || "";
               const stMatch = snippet.match(/\b([A-Z]{2})\b/);
               if (stMatch && STATE_FULL_NAMES[stMatch[1]]) state = stMatch[1];
+              // Clean company name: strip taglines, page titles, suffixes
+              let companyName = title.replace(/\s*[-|–—:]\s*(Home|About|Contact|Services|Official|Welcome|All|Overview|Premier|Leading|Your|Best|Top).*$/i, "").trim();
+              companyName = companyName.replace(/\s*\|\s*.*$/, "").trim(); // strip "| anything"
+              companyName = companyName.replace(/:\s*(Premier|Leading|Your|A |The |Best|Top|#1|No\.).*$/i, "").trim(); // strip taglines after colon
+              companyName = companyName.replace(/\s*[-–—]\s*[^-–—]*$/, "").trim();
+              if (companyName.length < 3 || companyName.length > 80) continue;
+              // Final check: skip if cleaned name is still generic
+              if (/^(home|about|all|contact|motor carriers?)$/i.test(companyName)) continue;
               allPlaces.push({
-                company: title.replace(/\s*[-|–]\s*.*$/, "").trim(),
+                company: companyName,
                 address: "",
                 phone: null,
-                website: r.link || null,
+                website: link || null,
                 rating: null,
                 reviewCount: null,
                 city: null,
@@ -713,6 +809,7 @@ Deno.serve(async (req) => {
             console.warn(`[lead-engine-scan] Serper query failed:`, e);
           }
         }
+        } // end if (allPlaces.length < 10)
       }
 
       console.log(`[lead-engine-scan] Google Maps total unique: ${allPlaces.length}`);
