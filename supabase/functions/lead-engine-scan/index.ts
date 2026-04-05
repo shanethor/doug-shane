@@ -652,7 +652,7 @@ Deno.serve(async (req) => {
     // ── GOOGLE MAPS PATH: Real data from Places API + enrichment
     // ═══════════════════════════════════════════════════════════
     if (source === "Google Maps") {
-      const GOOGLE_API_KEY = Deno.env.get("GOOGLE_CLOUD_API_KEY");
+      const GOOGLE_API_KEY = Deno.env.get("GOOGLE_PLACES_API_KEY") || Deno.env.get("GOOGLE_CLOUD_API_KEY");
       const SERPER_KEY = Deno.env.get("SERPER_API_KEY");
       
       const queries = buildGoogleMapsQueries(settings);
