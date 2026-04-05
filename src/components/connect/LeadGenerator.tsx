@@ -854,7 +854,7 @@ function ResultsTable({ latestBatchId, onPurchaseLeads, greyedOut }: { latestBat
 
   return (
     <>
-    <Card>
+    <Card className={greyedOut ? "opacity-50 pointer-events-none select-none" : ""}>
       <CardHeader className="pb-3 space-y-3">
         <div className={`flex ${isMobile ? "flex-col gap-2" : "items-center justify-between"}`}>
           <div className="flex items-center justify-between">
