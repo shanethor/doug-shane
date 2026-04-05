@@ -1344,7 +1344,7 @@ export default function LeadGenerator() {
         toast.info(`${batchLeads.length} leads released to the marketplace`);
       }
     }
-    setShowPurchasePrompt(false);
+    setPurchaseDismissed(true);
   };
 
   if (loading) return <Skeleton className="h-40 w-full" />;
