@@ -1384,9 +1384,9 @@ export default function LeadGenerator() {
         </div>
         <div className="lg:col-span-2 space-y-4">
           {/* Post-generation purchase prompt — shown at top */}
-          {showPurchasePrompt && latestLeads.length > 0 && (
+          {showPurchasePrompt && (
             <PurchasePrompt
-              leads={latestLeads}
+              leads={newLeads}
               userIndustry={userIndustry}
               isSubscriber={subscribed}
               hasAgent={hasAgent}
