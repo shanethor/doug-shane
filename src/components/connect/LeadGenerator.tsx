@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback, Fragment } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
-import SageGameplan from "./SageGameplan";
+import ClarkGameplan from "./ClarkGameplan";
 import AuraAgentLeadPromo from "./AuraAgentLeadPromo";
 import AuraAgentUpsellModal from "@/components/AuraAgentUpsellModal";
 import { useStudioQualification } from "@/hooks/useStudioQualification";
@@ -1167,7 +1167,7 @@ function ResultsTable({ latestBatchId, onPurchaseLeads, greyedOut }: { latestBat
 
     {/* Lead detail is now a separate page at /connect/leads/:id */}
     {gameplanLead && (
-      <SageGameplan lead={gameplanLead} onClose={() => setGameplanLead(null)} />
+      <ClarkGameplan lead={gameplanLead} onClose={() => setGameplanLead(null)} />
     )}
     </>
   );

@@ -68,7 +68,7 @@ async function streamChat({
 
 type SageView = "chat" | "support" | "ticket-form";
 
-export function SageFloatingChat() {
+export function ClarkFloatingChat() {
   const { user } = useAuth();
   const { getAccessiblePages } = useEarlyAccessWhitelist();
   const [open, setOpen] = useState(false);

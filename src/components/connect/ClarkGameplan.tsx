@@ -13,7 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { EngineLead } from "@/hooks/useLeadEngine";
 import ReactMarkdown from "react-markdown";
 
-interface SageGameplanProps {
+interface ClarkGameplanProps {
   lead: EngineLead;
   onClose: () => void;
 }
@@ -25,7 +25,7 @@ type GameplanPhase = {
   timing: string;
 };
 
-export default function SageGameplan({ lead, onClose }: SageGameplanProps) {
+export default function ClarkGameplan({ lead, onClose }: ClarkGameplanProps) {
   const [gameplan, setGameplan] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [generated, setGenerated] = useState(false);
