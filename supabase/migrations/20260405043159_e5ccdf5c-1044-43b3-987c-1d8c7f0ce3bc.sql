@@ -1,0 +1,2 @@
+ALTER TABLE public.unreached_leads ADD COLUMN IF NOT EXISTS expires_at timestamptz NOT NULL DEFAULT (now() + interval '24 hours');
+ALTER TABLE public.unreached_leads ADD COLUMN IF NOT EXISTS expiry_notified boolean NOT NULL DEFAULT false;

@@ -1382,8 +1382,7 @@ export default function LeadGenerator() {
           />
         </div>
         <div className="lg:col-span-2 space-y-4">
-          <ResultsTable latestBatchId={latestBatchId} />
-          {/* Post-generation purchase prompt */}
+          {/* Post-generation purchase prompt — shown at top */}
           {showPurchasePrompt && latestLeads.length > 0 && (
             <PurchasePrompt
               leads={latestLeads}
@@ -1394,6 +1393,7 @@ export default function LeadGenerator() {
               onDecline={handleDeclinePurchase}
             />
           )}
+          <ResultsTable latestBatchId={latestBatchId} />
           {showPromo && <AuraAgentLeadPromo />}
         </div>
       </div>
