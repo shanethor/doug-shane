@@ -1,0 +1,1 @@
+UPDATE profiles SET connect_vertical = 'trucking', industry = 'trucking', specializations = ARRAY['motor_carrier','owner_operator','freight_broker','fleet_operations','last_mile','intermodal','hazmat','tanker','refrigerated'] WHERE user_id = '8ecf3602-1c1f-4022-b864-1e53cb47d59f'
