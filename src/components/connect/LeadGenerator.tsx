@@ -1417,7 +1417,7 @@ export default function LeadGenerator() {
       {/* Post-generation purchase prompt — shown at top full width */}
       {showPurchasePrompt && (
         <PurchasePrompt
-          leads={newLeads}
+          leads={sellableLeads}
           userIndustry={userIndustry}
           isSubscriber={subscribed}
           hasAgent={hasAgent}
