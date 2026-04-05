@@ -799,14 +799,14 @@ function ResultsTable({ latestBatchId, onPurchaseLeads, greyedOut }: { latestBat
   const latestLeads = latestBatchId ? sortedFiltered.filter(l => l.batch_id === latestBatchId) : [];
   const previousLeads = latestBatchId ? sortedFiltered.filter(l => l.batch_id !== latestBatchId) : sortedFiltered;
 
-  const allSelected = filtered.length > 0 && filtered.every((l: EngineLead) => selectedIds.has(l.id));
-  const someSelected = filtered.some((l: EngineLead) => selectedIds.has(l.id));
+  const allSelected = sortedFiltered.length > 0 && sortedFiltered.every((l: EngineLead) => selectedIds.has(l.id));
+  const someSelected = sortedFiltered.some((l: EngineLead) => selectedIds.has(l.id));
 
   const toggleAll = () => {
     if (allSelected) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(filtered.map((l: EngineLead) => l.id)));
+      setSelectedIds(new Set(sortedFiltered.map((l: EngineLead) => l.id)));
     }
   };
 
