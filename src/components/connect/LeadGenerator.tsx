@@ -1367,8 +1367,10 @@ export default function LeadGenerator() {
 
   const pricing = getVerticalPricing(userIndustry);
   const showPromo = !hasAgent && studioQual?.qualified;
-  const newLeads = existingLeads?.filter(l => l.status === "new") ?? [];
-  const showPurchasePrompt = !purchaseDismissed && newLeads.length > 0;
+  const allNewLeads = existingLeads?.filter(l => l.status === "new") ?? [];
+  // Only sell leads that have contact info (email or phone) — matches default table filter
+  const sellableLeads = allNewLeads.filter(l => !!(l.email || l.phone));
+  const showPurchasePrompt = !purchaseDismissed && sellableLeads.length > 0;
 
   const handleDismissTip = () => {
     setTipDismissed(true);
@@ -1415,7 +1417,7 @@ export default function LeadGenerator() {
       {/* Post-generation purchase prompt — shown at top full width */}
       {showPurchasePrompt && (
         <PurchasePrompt
-          leads={newLeads}
+          leads={sellableLeads}
           userIndustry={userIndustry}
           isSubscriber={subscribed}
           hasAgent={hasAgent}
