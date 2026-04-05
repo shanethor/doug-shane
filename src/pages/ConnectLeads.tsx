@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Handshake, Rocket } from "lucide-react";
+import { Handshake, Rocket, ShoppingBag } from "lucide-react";
 import LeadMarketplace from "@/components/connect/LeadMarketplace";
 import LeadGenerator from "@/components/connect/LeadGenerator";
+import PurchasedLeads from "@/components/connect/PurchasedLeads";
 
 export default function ConnectLeads() {
   const [tab, setTab] = useState("generator");
