@@ -1305,13 +1305,14 @@ export default function LeadGenerator() {
 
   const handleGenerate = (opts: any) => {
     setHasGenerated(true);
-    // Track the latest batch IDs from the scan
     if (opts?.batch_ids?.length) {
       setLatestBatchId(opts.batch_ids[opts.batch_ids.length - 1]);
     }
-    // Reset dismiss state so purchase prompt shows for new batch
     if (opts?.leads_found > 0) {
       setPurchaseDismissed(false);
+      const now = Date.now();
+      setLastGeneratedAt(now);
+      try { localStorage.setItem("lead-last-generated", String(now)); } catch {}
     }
     qc.invalidateQueries({ queryKey: ["engine-leads"] });
     qc.invalidateQueries({ queryKey: ["engine-tier-summary"] });
