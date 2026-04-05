@@ -26,6 +26,10 @@ export default function ConnectLeads() {
               <Handshake className="h-4 w-4" />
               Marketplace
             </TabsTrigger>
+            <TabsTrigger value="purchased" className="gap-1.5">
+              <ShoppingBag className="h-4 w-4" />
+              Purchased Leads
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="generator" className="mt-4 animate-fade-in" style={{ animationDelay: "200ms", animationFillMode: "both" }}>
@@ -33,6 +37,9 @@ export default function ConnectLeads() {
           </TabsContent>
           <TabsContent value="marketplace" className="mt-4 animate-fade-in" style={{ animationDelay: "200ms", animationFillMode: "both" }}>
             <LeadMarketplace />
+          </TabsContent>
+          <TabsContent value="purchased" className="mt-4 animate-fade-in" style={{ animationDelay: "200ms", animationFillMode: "both" }}>
+            <PurchasedLeads />
           </TabsContent>
         </Tabs>
       </div>
