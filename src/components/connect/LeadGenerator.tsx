@@ -1306,7 +1306,7 @@ export default function LeadGenerator() {
     // In test mode: just claim the leads (no Stripe charge)
     // The leads stay in engine_leads for the user; we don't need to move them
     toast.success(`${count} lead${count !== 1 ? "s" : ""} claimed! They're yours to work.`);
-    setShowPurchasePrompt(false);
+    setPurchaseDismissed(true);
   };
 
   const handleDeclinePurchase = async () => {
