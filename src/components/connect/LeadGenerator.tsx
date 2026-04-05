@@ -660,8 +660,9 @@ function FitScoreBadge({ score }: { score: number }) {
   );
 }
 
-function ResultsTable({ latestBatchId }: { latestBatchId: string | null }) {
+function ResultsTable({ latestBatchId, onPurchaseLeads }: { latestBatchId: string | null; onPurchaseLeads?: (count: number, leadIds: string[]) => void }) {
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
   const { data: leads, isLoading } = useEngineLeads();
   const updateLead = useUpdateEngineLead();
   const deleteLead = useDeleteEngineLead();
@@ -670,7 +671,6 @@ function ResultsTable({ latestBatchId }: { latestBatchId: string | null }) {
   const [scoreFilter, setScoreFilter] = useState<string>("all");
   const [contactFilter, setContactFilter] = useState<string>("has_contact");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [selectedLead, setSelectedLead] = useState<EngineLead | null>(null);
   const [gameplanLead, setGameplanLead] = useState<EngineLead | null>(null);
   const [enrichingId, setEnrichingId] = useState<string | null>(null);
   const [enrichingAll, setEnrichingAll] = useState(false);
