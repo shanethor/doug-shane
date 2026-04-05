@@ -106,6 +106,16 @@ async function searchGooglePlaces(
   });
 }
 
+// ── Centralized business name filter — removes gov agencies, insurance competitors, lead services, etc. ──
+const NON_BUSINESS_PATTERN = /federal motor carrier|motor carrier compliance|department of transportation|highway patrol|public safety|dmv\b|dot office|chamber of commerce|\bassociation\b|licensing|compliance (office|bureau)|insurance agenc|insurance compan|lead(s)?\s*(generation|service|provider)|auto transport leads|safety administration|state police|city of |county of |town of |village of |\.gov\b|government|municipality/i;
+
+function isValidBusinessLead(name: string): boolean {
+  if (!name || name.length < 3 || name.length > 80) return false;
+  if (NON_BUSINESS_PATTERN.test(name)) return false;
+  if (/^(home|about|all|contact|motor carriers?)$/i.test(name)) return false;
+  return true;
+}
+
 // Map common abbreviations to full state names for better Google Places results
 const STATE_FULL_NAMES: Record<string, string> = {
   AL: "Alabama", AK: "Alaska", AZ: "Arizona", AR: "Arkansas", CA: "California",
