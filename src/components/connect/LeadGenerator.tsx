@@ -1235,7 +1235,7 @@ export default function LeadGenerator() {
   const [hasGenerated, setHasGenerated] = useState(false);
   const [showAgentDrip, setShowAgentDrip] = useState(false);
   const [latestBatchId, setLatestBatchId] = useState<string | null>(null);
-  const [showPurchasePrompt, setShowPurchasePrompt] = useState(false);
+  const [purchaseDismissed, setPurchaseDismissed] = useState(false);
   const { data: studioQual } = useStudioQualification();
 
   useEffect(() => {
@@ -1286,9 +1286,9 @@ export default function LeadGenerator() {
     if (opts?.batch_ids?.length) {
       setLatestBatchId(opts.batch_ids[opts.batch_ids.length - 1]);
     }
-    // Show purchase prompt after generation
+    // Reset dismiss state so purchase prompt shows for new batch
     if (opts?.leads_found > 0) {
-      setShowPurchasePrompt(true);
+      setPurchaseDismissed(false);
     }
     qc.invalidateQueries({ queryKey: ["engine-leads"] });
     qc.invalidateQueries({ queryKey: ["engine-tier-summary"] });
@@ -1306,7 +1306,7 @@ export default function LeadGenerator() {
     // In test mode: just claim the leads (no Stripe charge)
     // The leads stay in engine_leads for the user; we don't need to move them
     toast.success(`${count} lead${count !== 1 ? "s" : ""} claimed! They're yours to work.`);
-    setShowPurchasePrompt(false);
+    setPurchaseDismissed(true);
   };
 
   const handleDeclinePurchase = async () => {
@@ -1344,14 +1344,15 @@ export default function LeadGenerator() {
         toast.info(`${batchLeads.length} leads released to the marketplace`);
       }
     }
-    setShowPurchasePrompt(false);
+    setPurchaseDismissed(true);
   };
 
   if (loading) return <Skeleton className="h-40 w-full" />;
 
   const pricing = getVerticalPricing(userIndustry);
   const showPromo = !hasAgent && studioQual?.qualified;
-  const latestLeads = latestBatchId && existingLeads ? existingLeads.filter(l => l.batch_id === latestBatchId) : [];
+  const newLeads = existingLeads?.filter(l => l.status === "new") ?? [];
+  const showPurchasePrompt = !purchaseDismissed && newLeads.length > 0;
 
   return (
     <div className="space-y-6">
@@ -1383,9 +1384,9 @@ export default function LeadGenerator() {
         </div>
         <div className="lg:col-span-2 space-y-4">
           {/* Post-generation purchase prompt — shown at top */}
-          {showPurchasePrompt && latestLeads.length > 0 && (
+          {showPurchasePrompt && (
             <PurchasePrompt
-              leads={latestLeads}
+              leads={newLeads}
               userIndustry={userIndustry}
               isSubscriber={subscribed}
               hasAgent={hasAgent}
