@@ -712,7 +712,7 @@ Deno.serve(async (req) => {
                 const key = name.toLowerCase().trim();
                 if (seenNames.has(key)) continue;
                 // Skip government agencies, associations, and non-business entities
-                if (/federal motor carrier|department of transportation|highway patrol|public safety|dmv|dot office|chamber of commerce|association|licensing|compliance office/i.test(name)) continue;
+                if (!isValidBusinessLead(name)) continue;
                 seenNames.add(key);
                 let state: string | null = null;
                 let city: string | null = null;
