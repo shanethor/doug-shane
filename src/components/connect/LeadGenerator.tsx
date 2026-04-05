@@ -1385,6 +1385,18 @@ export default function LeadGenerator() {
         </div>
       </div>
 
+      {/* Post-generation purchase prompt — shown at top full width */}
+      {showPurchasePrompt && (
+        <PurchasePrompt
+          leads={newLeads}
+          userIndustry={userIndustry}
+          isSubscriber={subscribed}
+          hasAgent={hasAgent}
+          onPurchase={handlePurchaseLeads}
+          onDecline={handleDeclinePurchase}
+        />
+      )}
+
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1 space-y-4">
           <GenerateControls
@@ -1400,18 +1412,7 @@ export default function LeadGenerator() {
           />
         </div>
         <div className="lg:col-span-2 space-y-4">
-          {/* Post-generation purchase prompt — shown at top */}
-          {showPurchasePrompt && (
-            <PurchasePrompt
-              leads={newLeads}
-              userIndustry={userIndustry}
-              isSubscriber={subscribed}
-              hasAgent={hasAgent}
-              onPurchase={handlePurchaseLeads}
-              onDecline={handleDeclinePurchase}
-            />
-          )}
-          <ResultsTable latestBatchId={latestBatchId} />
+          <ResultsTable latestBatchId={latestBatchId} greyedOut={showPurchasePrompt} />
           {showPromo && <AuraAgentLeadPromo />}
         </div>
       </div>
