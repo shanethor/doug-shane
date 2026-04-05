@@ -82,25 +82,45 @@ function RouteFallback() {
 }
 
 /** Syncs dark-mode preference from the DB once the user is authenticated */
+function applyTheme(dark: boolean) {
+  document.documentElement.classList.toggle("dark", dark);
+  localStorage.setItem("aura-dark-mode", dark ? "true" : "false");
+}
+
+function syncThemeFromProfile(userId: string) {
+  supabase
+    .from("profiles")
+    .select("dark_mode, theme_preference")
+    .eq("user_id", userId)
+    .maybeSingle()
+    .then(({ data }) => {
+      if (!data) return;
+      const dbDark = (data as any).dark_mode;
+      if (dbDark !== null && dbDark !== undefined) {
+        applyTheme(!!dbDark);
+      } else if ((data as any).theme_preference) {
+        applyTheme((data as any).theme_preference === "dark");
+      }
+      // If neither is set, keep localStorage value (already applied by inline script)
+    });
+}
+
 function DarkModeSync() {
   useEffect(() => {
-    let ran = false;
+    // Sync on current session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (ran || !session?.user) return;
-      ran = true;
-      supabase
-        .from("profiles")
-        .select("dark_mode")
-        .eq("user_id", session.user.id)
-        .maybeSingle()
-        .then(({ data }) => {
-          if (data && (data as any).dark_mode !== null && (data as any).dark_mode !== undefined) {
-            const dark = !!(data as any).dark_mode;
-            document.documentElement.classList.toggle("dark", dark);
-            localStorage.setItem("aura-dark-mode", dark ? "true" : "false");
-          }
-        });
+      if (session?.user) syncThemeFromProfile(session.user.id);
     });
+
+    // Re-sync whenever auth state changes (login/logout)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        syncThemeFromProfile(session.user.id);
+      }
+      // On logout, keep current localStorage preference
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
   return null;
 }
