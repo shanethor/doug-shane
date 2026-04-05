@@ -975,7 +975,7 @@ function ResultsTable({ latestBatchId, onPurchaseLeads }: { latestBatchId: strin
                       onChange={() => toggleOne(lead.id)}
                       className="h-4 w-4 rounded border-border accent-primary cursor-pointer mt-0.5 shrink-0"
                     />
-                    <div className="flex-1 min-w-0" onClick={() => setSelectedLead(lead)}>
+                    <div className="flex-1 min-w-0" onClick={() => navigate(`/connect/leads/${lead.id}`)}>
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex items-center gap-1.5">
                             <p className="text-sm font-medium truncate">{lead.company}</p>
