@@ -680,9 +680,53 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Fallback: use Serper web search to find real businesses
+      // Fallback: use Serper maps endpoint for actual business listings, then web search
       if (allPlaces.length === 0 && SERPER_KEY) {
-        console.log(`[lead-engine-scan] Google Places returned 0 — falling back to Serper business search`);
+        console.log(`[lead-engine-scan] Google Places returned 0 — falling back to Serper maps + web search`);
+        
+        // Step 1: Try Serper Maps endpoint (returns actual Google Maps business listings)
+        for (const q of queries.slice(0, 6)) {
+          try {
+            const mapsResp = await fetch("https://google.serper.dev/maps", {
+              method: "POST",
+              headers: { "X-API-KEY": SERPER_KEY, "Content-Type": "application/json" },
+              body: JSON.stringify({ q, gl: "us" }),
+            });
+            if (mapsResp.ok) {
+              const mapsData = await mapsResp.json();
+              for (const p of (mapsData.places || [])) {
+                const name = p.title || "";
+                if (!name) continue;
+                const key = name.toLowerCase().trim();
+                if (seenNames.has(key)) continue;
+                seenNames.add(key);
+                let state: string | null = null;
+                let city: string | null = null;
+                const addr = p.address || "";
+                const stMatch = addr.match(/,\s*([A-Z]{2})\s+\d/);
+                if (stMatch) state = stMatch[1];
+                const cityMatch = addr.match(/,\s*([^,]+),\s*[A-Z]{2}/);
+                if (cityMatch) city = cityMatch[1].trim();
+                allPlaces.push({
+                  company: name,
+                  address: addr,
+                  phone: p.phoneNumber || null,
+                  website: p.website || null,
+                  rating: p.rating || null,
+                  reviewCount: p.ratingCount || null,
+                  city,
+                  state,
+                });
+              }
+              if ((mapsData.places || []).length > 0) {
+                console.log(`[lead-engine-scan] Serper Maps "${q}" → ${mapsData.places.length} businesses`);
+              }
+            }
+          } catch (e) { console.warn(`[lead-engine-scan] Serper Maps query failed:`, e); }
+        }
+        
+        // Step 2: If still not enough, supplement with regular web search
+        if (allPlaces.length < 10) {
         for (const q of queries.slice(0, 6)) {
           try {
             const resp = await fetch("https://google.serper.dev/search", {
