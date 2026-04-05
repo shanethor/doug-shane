@@ -4642,6 +4642,8 @@ export type Database = {
           email: string | null
           engine_lead_id: string | null
           est_premium: number | null
+          expires_at: string
+          expiry_notified: boolean
           id: string
           industry: string | null
           original_batch_id: string | null
@@ -4666,6 +4668,8 @@ export type Database = {
           email?: string | null
           engine_lead_id?: string | null
           est_premium?: number | null
+          expires_at?: string
+          expiry_notified?: boolean
           id?: string
           industry?: string | null
           original_batch_id?: string | null
@@ -4690,6 +4694,8 @@ export type Database = {
           email?: string | null
           engine_lead_id?: string | null
           est_premium?: number | null
+          expires_at?: string
+          expiry_notified?: boolean
           id?: string
           industry?: string | null
           original_batch_id?: string | null
