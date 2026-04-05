@@ -1074,7 +1074,7 @@ function ResultsTable({ latestBatchId, onPurchaseLeads }: { latestBatchId: strin
                         <input type="checkbox" checked={selectedIds.has(lead.id)} onChange={() => toggleOne(lead.id)} className="h-3.5 w-3.5 rounded border-border accent-primary cursor-pointer" />
                       </TableCell>
                       <TableCell className="py-2">
-                        <div className="cursor-pointer group" onClick={() => setSelectedLead(lead)}>
+                        <div className="cursor-pointer group" onClick={() => navigate(`/connect/leads/${lead.id}`)}>
                           <div className="flex items-center gap-1.5">
                             <p className="text-xs font-medium group-hover:text-primary transition-colors">{lead.company}</p>
                             {isNewLead(lead) && <Badge className="text-[8px] px-1.5 py-0 bg-emerald-500/15 text-emerald-500 border-emerald-500/30">NEW</Badge>}
