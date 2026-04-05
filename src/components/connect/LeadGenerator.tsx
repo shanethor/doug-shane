@@ -1378,19 +1378,47 @@ export default function LeadGenerator() {
   const newLeads = existingLeads?.filter(l => l.status === "new") ?? [];
   const showPurchasePrompt = !purchaseDismissed && newLeads.length > 0;
 
+  const handleDismissTip = () => {
+    setTipDismissed(true);
+    try { localStorage.setItem("lead-tip-dismissed", "true"); } catch {}
+  };
+
   return (
     <div className="space-y-6">
-      <div className="rounded-lg border bg-muted/30 p-4">
-        <div className="flex items-start gap-3">
-          <Sparkles className="h-5 w-5 text-primary mt-0.5 shrink-0" />
-          <div>
-            <p className="text-sm font-medium">AI-Powered {pricing.label} Lead Generation</p>
-            <p className="text-xs text-muted-foreground">
-              AURA sources and enriches leads tailored to your {pricing.label} industry from public web directories and data providers.
-            </p>
+      {/* Dismissible AI tip */}
+      {!tipDismissed && (
+        <div className="rounded-lg border bg-muted/30 p-4 relative">
+          <button
+            onClick={handleDismissTip}
+            className="absolute top-2 right-2 p-1 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+            aria-label="Dismiss"
+          >
+            <X className="h-4 w-4" />
+          </button>
+          <div className="flex items-start gap-3 pr-6">
+            <Sparkles className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+            <div>
+              <p className="text-sm font-medium">AI-Powered {pricing.label} Lead Generation</p>
+              <p className="text-xs text-muted-foreground">
+                AURA sources and enriches leads tailored to your {pricing.label} industry from public web directories and data providers.
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      )}
+
+      {/* ═══ Generate Leads Toolbar ═══ */}
+      <GenerateControls
+        onGenerate={handleGenerate}
+        userIndustry={userIndustry}
+        isSubscriber={subscribed}
+        hasAgent={hasAgent}
+        initialSpecializations={userSpecializations}
+        showAllVerticals={isMaster}
+        isMaster={isMaster}
+        userStates={userStates}
+        userSubCategories={userSpecializations}
+      />
 
       {/* Post-generation purchase prompt — shown at top full width */}
       {showPurchasePrompt && (
@@ -1404,25 +1432,9 @@ export default function LeadGenerator() {
         />
       )}
 
-      <div className="grid lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-1 space-y-4">
-          <GenerateControls
-            onGenerate={handleGenerate}
-            userIndustry={userIndustry}
-            isSubscriber={subscribed}
-            hasAgent={hasAgent}
-            initialSpecializations={userSpecializations}
-            showAllVerticals={isMaster}
-            isMaster={isMaster}
-            userStates={userStates}
-            userSubCategories={userSpecializations}
-          />
-        </div>
-        <div className="lg:col-span-2 space-y-4">
-          <ResultsTable latestBatchId={latestBatchId} greyedOut={showPurchasePrompt} />
-          {showPromo && <AuraAgentLeadPromo />}
-        </div>
-      </div>
+      {/* Results — fully blurred if unpurchased */}
+      <ResultsTable latestBatchId={latestBatchId} greyedOut={showPurchasePrompt} />
+      {showPromo && <AuraAgentLeadPromo />}
 
       {showAgentDrip && (
         <AuraAgentUpsellModal
