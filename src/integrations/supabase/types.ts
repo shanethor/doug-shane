@@ -4065,6 +4065,72 @@ export type Database = {
         }
         Relationships: []
       }
+      purchased_leads: {
+        Row: {
+          batch_id: string | null
+          company: string | null
+          contact_name: string | null
+          created_at: string
+          email: string | null
+          engine_lead_id: string | null
+          est_premium: number | null
+          id: string
+          industry: string | null
+          phone: string | null
+          purchased_at: string
+          score: number | null
+          signal: string | null
+          source: string | null
+          source_url: string | null
+          specializations: string[] | null
+          state: string | null
+          user_id: string
+          vertical: string | null
+        }
+        Insert: {
+          batch_id?: string | null
+          company?: string | null
+          contact_name?: string | null
+          created_at?: string
+          email?: string | null
+          engine_lead_id?: string | null
+          est_premium?: number | null
+          id?: string
+          industry?: string | null
+          phone?: string | null
+          purchased_at?: string
+          score?: number | null
+          signal?: string | null
+          source?: string | null
+          source_url?: string | null
+          specializations?: string[] | null
+          state?: string | null
+          user_id: string
+          vertical?: string | null
+        }
+        Update: {
+          batch_id?: string | null
+          company?: string | null
+          contact_name?: string | null
+          created_at?: string
+          email?: string | null
+          engine_lead_id?: string | null
+          est_premium?: number | null
+          id?: string
+          industry?: string | null
+          phone?: string | null
+          purchased_at?: string
+          score?: number | null
+          signal?: string | null
+          source?: string | null
+          source_url?: string | null
+          specializations?: string[] | null
+          state?: string | null
+          user_id?: string
+          vertical?: string | null
+        }
+        Relationships: []
+      }
       quote_documents: {
         Row: {
           created_at: string
