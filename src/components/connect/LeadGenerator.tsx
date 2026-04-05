@@ -1286,9 +1286,9 @@ export default function LeadGenerator() {
     if (opts?.batch_ids?.length) {
       setLatestBatchId(opts.batch_ids[opts.batch_ids.length - 1]);
     }
-    // Show purchase prompt after generation
+    // Reset dismiss state so purchase prompt shows for new batch
     if (opts?.leads_found > 0) {
-      setShowPurchasePrompt(true);
+      setPurchaseDismissed(false);
     }
     qc.invalidateQueries({ queryKey: ["engine-leads"] });
     qc.invalidateQueries({ queryKey: ["engine-tier-summary"] });
