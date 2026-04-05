@@ -1351,7 +1351,8 @@ export default function LeadGenerator() {
 
   const pricing = getVerticalPricing(userIndustry);
   const showPromo = !hasAgent && studioQual?.qualified;
-  const latestLeads = latestBatchId && existingLeads ? existingLeads.filter(l => l.batch_id === latestBatchId) : [];
+  const newLeads = existingLeads?.filter(l => l.status === "new") ?? [];
+  const showPurchasePrompt = !purchaseDismissed && newLeads.length > 0;
 
   return (
     <div className="space-y-6">
