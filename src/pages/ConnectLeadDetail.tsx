@@ -21,7 +21,8 @@ import { getAuthHeaders } from "@/lib/auth-fetch";
 type OutreachMode = "email" | "call" | "linkedin";
 
 export default function ConnectLeadDetail() {
-  const { engineLeadId } = useParams<{ engineLeadId: string }>();
+  const location = useLocation();
+  const engineLeadId = location.pathname.split("/connect/leads/")[1]?.split("/")[0];
   const navigate = useNavigate();
   const { user } = useAuth();
   const updateLead = useUpdateEngineLead();
