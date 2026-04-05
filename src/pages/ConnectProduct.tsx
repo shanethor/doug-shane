@@ -139,7 +139,10 @@ export default function ConnectProduct() {
 
   // Determine which page to render based on path
   const path = location.pathname;
+  // Check if we're on a lead detail page
+  const leadDetailMatch = path.match(/^\/connect\/leads\/([^/]+)$/);
   const getPage = () => {
+    if (leadDetailMatch) return "lead-detail";
     if (path.startsWith("/connect/dashboard")) return "dashboard";
     if (path.startsWith("/connect/property")) return "property";
     if (path.startsWith("/connect/intelligence")) return "intelligence";
