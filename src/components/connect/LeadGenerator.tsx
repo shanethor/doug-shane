@@ -19,7 +19,7 @@ import {
   ArrowUpRight, Eye, Trash2, Zap,
   Sparkles, Users, TrendingUp,
   Mail, Phone, RefreshCw, Gift, Lock, ChevronDown, ChevronUp,
-  Download, FileText, Building2, Globe,
+  Download, FileText, Building2, Globe, ArrowDownUp,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
