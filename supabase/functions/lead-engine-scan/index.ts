@@ -24,47 +24,78 @@ async function searchGooglePlaces(
   query: string,
   apiKey: string,
 ): Promise<PlacesResult[]> {
-  // Use legacy Text Search API (widely enabled)
+  // Try Places API (New) first — uses POST with fieldMask
+  const newApiUrl = "https://places.googleapis.com/v1/places:searchText";
+  try {
+    const resp = await fetch(newApiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": apiKey,
+        "X-Goog-FieldMask": "places.displayName,places.formattedAddress,places.nationalPhoneNumber,places.websiteUri,places.rating,places.userRatingCount",
+      },
+      body: JSON.stringify({ textQuery: query, languageCode: "en" }),
+    });
+
+    if (resp.ok) {
+      const data = await resp.json();
+      const places = data.places || [];
+      return places.map((p: any) => {
+        const addr = p.formattedAddress || "";
+        let city: string | null = null;
+        let state: string | null = null;
+        const match = addr.match(/,\s*([^,]+),\s*([A-Z]{2})\s+\d/);
+        if (match) { city = match[1].trim(); state = match[2]; }
+        else {
+          const match2 = addr.match(/,\s*([^,]+),\s*([A-Z]{2}),/);
+          if (match2) { city = match2[1].trim(); state = match2[2]; }
+        }
+        return {
+          company: p.displayName?.text || "Unknown Business",
+          address: addr,
+          phone: p.nationalPhoneNumber || null,
+          website: p.websiteUri || null,
+          rating: p.rating || null,
+          reviewCount: p.userRatingCount || null,
+          city,
+          state,
+        };
+      });
+    }
+    const errText = await resp.text();
+    console.warn(`[google-places] New API error ${resp.status}: ${errText.slice(0, 300)}`);
+  } catch (e) {
+    console.warn(`[google-places] New API fetch error:`, e);
+  }
+
+  // Fallback to legacy Text Search API
   const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&key=${apiKey}`;
-
   const resp = await fetch(url);
-
   if (!resp.ok) {
     const errText = await resp.text();
-    console.error(`[google-places] API error ${resp.status}: ${errText.slice(0, 200)}`);
+    console.error(`[google-places] Legacy API error ${resp.status}: ${errText.slice(0, 200)}`);
     return [];
   }
-
   const data = await resp.json();
   if (data.status !== "OK" && data.status !== "ZERO_RESULTS") {
-    console.error(`[google-places] API status: ${data.status} — ${data.error_message || ""}`);
+    console.error(`[google-places] Legacy API status: ${data.status} — ${data.error_message || ""}`);
     return [];
   }
-
   const places = data.results || [];
-
   return places.map((p: any) => {
-    // Extract city and state from formatted_address
     let city: string | null = null;
     let state: string | null = null;
     const addr = p.formatted_address || "";
-    // Pattern: "City, ST ZIP, USA"
     const match = addr.match(/,\s*([^,]+),\s*([A-Z]{2})\s+\d/);
-    if (match) {
-      city = match[1].trim();
-      state = match[2];
-    } else {
-      // Try: "City, ST, USA"
+    if (match) { city = match[1].trim(); state = match[2]; }
+    else {
       const match2 = addr.match(/,\s*([^,]+),\s*([A-Z]{2}),/);
-      if (match2) {
-        city = match2[1].trim();
-        state = match2[2];
-      }
+      if (match2) { city = match2[1].trim(); state = match2[2]; }
     }
     return {
       company: p.name || "Unknown Business",
       address: addr,
-      phone: null, // Legacy API doesn't return phone in textsearch
+      phone: null,
       website: null,
       rating: p.rating || null,
       reviewCount: p.user_ratings_total || null,
