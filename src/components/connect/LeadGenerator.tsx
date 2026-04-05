@@ -659,7 +659,7 @@ function FitScoreBadge({ score }: { score: number }) {
   );
 }
 
-function ResultsTable({ latestBatchId, onPurchaseLeads }: { latestBatchId: string | null; onPurchaseLeads?: (count: number, leadIds: string[]) => void }) {
+function ResultsTable({ latestBatchId, onPurchaseLeads, greyedOut }: { latestBatchId: string | null; onPurchaseLeads?: (count: number, leadIds: string[]) => void; greyedOut?: boolean }) {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const { data: leads, isLoading } = useEngineLeads();
@@ -674,6 +674,7 @@ function ResultsTable({ latestBatchId, onPurchaseLeads }: { latestBatchId: strin
   const [enrichingId, setEnrichingId] = useState<string | null>(null);
   const [enrichingAll, setEnrichingAll] = useState(false);
   const [showAll, setShowAll] = useState(false);
+  const [sortByScore, setSortByScore] = useState<"asc" | "desc" | null>(null);
 
   const exportLeads = (format: "excel" | "emails" | "phones") => {
     const data = filtered.length ? filtered : (leads || []);
