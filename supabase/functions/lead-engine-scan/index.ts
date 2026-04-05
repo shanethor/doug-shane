@@ -715,24 +715,33 @@ Deno.serve(async (req) => {
                 state,
               });
             }
-            // Also extract from organic results that look like business listings
+            // Also extract from organic results that look like individual business pages
             for (const r of (data.organic || []).slice(0, 5)) {
               const title = r.title || "";
-              // Skip aggregator sites
-              if (/yelp|yellowpages|bbb|manta|mapquest|tripadvisor/i.test(r.link || "")) continue;
+              const link = r.link || "";
+              // Skip aggregator / directory / listicle sites
+              if (/yelp|yellowpages|bbb|manta|mapquest|tripadvisor|indeed|glassdoor|ziprecruiter|wikipedia|alltruckjobs|zippia|comparably|crunchbase\.com\/hub|listicle/i.test(link)) continue;
               if (!title || seenNames.has(title.toLowerCase().trim())) continue;
-              // Only include if it looks like a real business (not a list article)
-              if (/top \d|best \d|\d+ best/i.test(title)) continue;
+              // Skip list articles, search result pages, and generic non-business content
+              if (/top \d|best \d|\d+ best|\d+ largest|learn about \d|company search|search results|companies in|how to|what is|guide|blog/i.test(title)) continue;
+              // Skip titles that are just location names (e.g., "DALLAS, TX")
+              if (/^[A-Z\s]+,\s*[A-Z]{2}$/i.test(title.trim())) continue;
+              // Skip titles containing aggregation keywords
+              if (/freight shipping|ltl freight|shipping company/i.test(title) && !/inc|llc|corp|co\./i.test(title)) continue;
               seenNames.add(title.toLowerCase().trim());
               let state: string | null = null;
               const snippet = r.snippet || "";
               const stMatch = snippet.match(/\b([A-Z]{2})\b/);
               if (stMatch && STATE_FULL_NAMES[stMatch[1]]) state = stMatch[1];
+              // Clean company name: strip trailing "- Site Title" etc
+              let companyName = title.replace(/\s*[-|–—:]\s*(Home|About|Contact|Services|Official|Welcome).*$/i, "").trim();
+              companyName = companyName.replace(/\s*[-|–—]\s*[^-|–—]*$/, "").trim();
+              if (companyName.length < 3 || companyName.length > 80) continue;
               allPlaces.push({
-                company: title.replace(/\s*[-|–]\s*.*$/, "").trim(),
+                company: companyName,
                 address: "",
                 phone: null,
-                website: r.link || null,
+                website: link || null,
                 rating: null,
                 reviewCount: null,
                 city: null,
