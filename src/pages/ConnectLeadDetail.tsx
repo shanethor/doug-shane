@@ -268,6 +268,19 @@ export default function ConnectLeadDetail() {
               <Target className="h-2.5 w-2.5" />Score {lead.score}
             </Badge>
           </div>
+          {/* Google Maps link */}
+          {lead.source_url && lead.source_url.includes("google") && (
+            <a
+              href={lead.source_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-xs text-primary hover:underline"
+            >
+              <Map className="h-3.5 w-3.5" />
+              View on Google Maps
+              <ExternalLink className="h-3 w-3" />
+            </a>
+          )}
         </div>
 
         <div className="grid lg:grid-cols-2 gap-6">
