@@ -119,7 +119,7 @@ function QuoteTicker() {
 export default function ConnectProduct() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { isPageGated } = useEarlyAccessWhitelist();
+  const { } = useEarlyAccessWhitelist();
   const { user } = useAuth();
   const isMaster = isMasterEmail(user?.email);
   const { subscribed, loading: subLoading } = useSubscription();
