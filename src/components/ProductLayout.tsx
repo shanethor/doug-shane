@@ -214,10 +214,9 @@ export function ProductLayout({
            }).map((item) => {
              const active = isActive(item.to, item.exact);
              const pageKey = item.to === "/connect" ? "connect" : item.to.replace("/connect/", "");
-             const gated = isPageGated(pageKey);
-             // For non-subscribed users, only "leads" is available (plus gated logic)
-             const isLeadsPage = pageKey === "leads";
-             const lockedForFree = !isFullAccess && !gated && !isLeadsPage;
+              const gated = isPageGated(pageKey);
+              const isFreePage = FREE_PAGES.includes(pageKey);
+              const lockedForFree = !isFullAccess && !gated && !isFreePage;
              return (
                <Link
                  key={item.to}
