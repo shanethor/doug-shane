@@ -81,6 +81,7 @@ export function useEngineLeads(tier?: number) {
       let q = supabase
         .from("engine_leads")
         .select("*")
+        .eq("owner_user_id", user!.id)
         .order("detected_at", { ascending: false });
       if (tier) q = q.eq("tier", tier);
       const { data, error } = await q;
@@ -100,6 +101,7 @@ export function useEngineActivity(limit = 10) {
       const { data, error } = await supabase
         .from("engine_activity")
         .select("*")
+        .eq("user_id", user!.id)
         .order("created_at", { ascending: false })
         .limit(limit);
       if (error) throw error;
@@ -137,11 +139,13 @@ export function useEngineKpis() {
       const { count: totalLeads } = await supabase
         .from("engine_leads")
         .select("*", { count: "exact", head: true })
+        .eq("owner_user_id", user!.id)
         .gte("detected_at", thirtyDaysAgo);
 
       const { data: bySource } = await supabase
         .from("engine_leads")
         .select("source, tier")
+        .eq("owner_user_id", user!.id)
         .gte("detected_at", thirtyDaysAgo);
 
       // Source breakdown
@@ -156,6 +160,7 @@ export function useEngineKpis() {
       const { count: converted } = await supabase
         .from("engine_leads")
         .select("*", { count: "exact", head: true })
+        .eq("owner_user_id", user!.id)
         .gte("detected_at", thirtyDaysAgo)
         .eq("status", "converted");
 
