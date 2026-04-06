@@ -9,7 +9,23 @@ import { supabase } from "@/integrations/supabase/client";
 import { executeCalendarActions, extractCalendarActions } from "@/lib/calendar-action-utils";
 import PreviousChats from "@/components/PreviousChats";
 
-type Msg = { role: "user" | "assistant"; content: string };
+type VisionBlock = { type: "text"; text: string } | { type: "image_url"; image_url: { url: string } };
+type MsgContent = string | VisionBlock[];
+type Msg = { role: "user" | "assistant"; content: MsgContent };
+
+function msgText(content: MsgContent): string {
+  if (typeof content === "string") return content;
+  return content.filter((b): b is { type: "text"; text: string } => b.type === "text").map(b => b.text).join("\n");
+}
+
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
 
 const SUGGESTIONS = [
   { icon: PlusCircle, label: "Add a lead", message: "I want to add a new lead to my pipeline. Walk me through it." },
@@ -190,8 +206,8 @@ export default function DemoAssistantTab({ onNavigate, isSubscriber = false }: {
     if (!user || messages.length < 2) return;
     if (conversationSaveTimer.current) clearTimeout(conversationSaveTimer.current);
     conversationSaveTimer.current = setTimeout(async () => {
-      const title = messages.find(m => m.role === "user")?.content?.slice(0, 80) || "New conversation";
-      const serializable = messages.map(m => ({ role: m.role, content: m.content }));
+      const title = msgText(messages.find(m => m.role === "user")?.content ?? "").slice(0, 80) || "New conversation";
+      const serializable = messages.map(m => ({ role: m.role, content: typeof m.content === "string" ? m.content : msgText(m.content) }));
       if (conversationId) {
         await supabase.from("sage_conversations").update({
           messages: serializable as any,
@@ -320,16 +336,35 @@ export default function DemoAssistantTab({ onNavigate, isSubscriber = false }: {
     }
   }, [navigate]);
 
-  const send = useCallback((text: string) => {
+  const send = useCallback(async (text: string) => {
     if (!text.trim() || loading) return;
     if (atLimit) {
       toast.error("You've reached your 10 free prompts today. Subscribe to AURA Connect for unlimited access.");
       return;
     }
-    const fileNote = attachedFiles.length > 0
-      ? `\n\n📎 Attached: ${attachedFiles.map(f => f.name).join(", ")}`
+
+    // Build vision content blocks for image attachments
+    const imageFiles = attachedFiles.filter(f => f.type.startsWith("image/"));
+    const nonImageFiles = attachedFiles.filter(f => !f.type.startsWith("image/"));
+    const fileNote = nonImageFiles.length > 0
+      ? `\n\n📎 Attached: ${nonImageFiles.map(f => f.name).join(", ")}`
       : "";
-    const userMsg: Msg = { role: "user", content: text.trim() + fileNote };
+
+    let userContent: MsgContent;
+    if (imageFiles.length > 0) {
+      const blocks: VisionBlock[] = [{ type: "text", text: text.trim() + fileNote }];
+      for (const img of imageFiles) {
+        try {
+          const b64 = await fileToBase64(img);
+          blocks.push({ type: "image_url", image_url: { url: b64 } });
+        } catch { /* skip failed reads */ }
+      }
+      userContent = blocks;
+    } else {
+      userContent = text.trim() + fileNote;
+    }
+
+    const userMsg: Msg = { role: "user", content: userContent };
     const history = [...messages, userMsg];
     setMessages(history);
     setInput("");
@@ -357,7 +392,6 @@ export default function DemoAssistantTab({ onNavigate, isSubscriber = false }: {
       onDone: () => {
         setLoading(false);
         setPromptCount(incrementDailyPromptCount());
-        // Process any action markers
         if (assistantSoFar) void processActionMarkers(assistantSoFar);
       },
       onError: (err) => { toast.error(err); setLoading(false); },
@@ -512,9 +546,14 @@ export default function DemoAssistantTab({ onNavigate, isSubscriber = false }: {
                       : "bg-card border border-border text-foreground"
                   }`}>
                     {isUser ? (
-                      <span className="whitespace-pre-wrap">{msg.content}</span>
+                      <>
+                        <span className="whitespace-pre-wrap">{msgText(msg.content)}</span>
+                        {Array.isArray(msg.content) && msg.content.filter((b): b is { type: "image_url"; image_url: { url: string } } => b.type === "image_url").map((b, j) => (
+                          <img key={j} src={b.image_url.url} alt="Attached" className="mt-2 max-h-40 rounded-lg" />
+                        ))}
+                      </>
                     ) : (
-                      <StreamingMessage content={msg.content} isStreaming={loading && isLastAssistant} onAction={handleAction} />
+                      <StreamingMessage content={msgText(msg.content)} isStreaming={loading && isLastAssistant} onAction={handleAction} />
                     )}
                   </div>
                 </div>

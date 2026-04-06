@@ -91,6 +91,12 @@ serve(async (req) => {
 
     const systemPrompt = buildSystemPrompt(enrichedContext);
 
+    // Pass messages as-is to support vision content blocks (multimodal)
+    const aiMessages = [
+      { role: "system", content: systemPrompt },
+      ...messages,
+    ];
+
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -99,10 +105,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: systemPrompt },
-          ...messages,
-        ],
+        messages: aiMessages,
         stream: true,
       }),
     });
