@@ -357,13 +357,14 @@ export default function DemoAssistantTab({ onNavigate, isSubscriber = false }: {
       onDelta: upsert,
       onDone: () => {
         setLoading(false);
+        setPromptCount(incrementDailyPromptCount());
         // Process any action markers
         if (assistantSoFar) void processActionMarkers(assistantSoFar);
       },
       onError: (err) => { toast.error(err); setLoading(false); },
       signal: ac.signal,
     });
-  }, [messages, loading, attachedFiles, processActionMarkers]);
+  }, [messages, loading, attachedFiles, processActionMarkers, atLimit]);
 
   const stop = useCallback(() => {
     abortRef.current?.abort();
