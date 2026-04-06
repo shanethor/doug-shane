@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import type { Database } from "@/integrations/supabase/types";
+import type { Database, Json } from "@/integrations/supabase/types";
 
 type EngineLeadInsert = Database["public"]["Tables"]["engine_leads"]["Insert"];
 type EngineLeadUpdate = Database["public"]["Tables"]["engine_leads"]["Update"];
@@ -208,7 +208,7 @@ export function useLogEngineActivity() {
     mutationFn: async (activity: Omit<EngineActivity, "id" | "user_id" | "created_at">) => {
       const { data, error } = await supabase
         .from("engine_activity")
-        .insert({ ...activity, user_id: user!.id } satisfies EngineActivityInsert)
+        .insert({ ...activity, metadata: activity.metadata as Json, user_id: user!.id } satisfies EngineActivityInsert)
         .select()
         .single();
       if (error) throw error;
@@ -228,7 +228,7 @@ export function useUpsertSourceConfig() {
       const { data, error } = await supabase
         .from("lead_source_configs")
         .upsert(
-          { ...config, user_id: user!.id, updated_at: new Date().toISOString() } satisfies LeadSourceConfigInsert,
+          { ...config, settings: (config.settings ?? {}) as Json, user_id: user!.id, updated_at: new Date().toISOString() } satisfies LeadSourceConfigInsert,
           { onConflict: "user_id,source" }
         )
         .select()
