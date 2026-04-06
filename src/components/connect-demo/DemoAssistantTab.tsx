@@ -9,8 +9,23 @@ import { supabase } from "@/integrations/supabase/client";
 import { executeCalendarActions, extractCalendarActions } from "@/lib/calendar-action-utils";
 import PreviousChats from "@/components/PreviousChats";
 
-type MsgContent = string | Array<{ type: "text"; text: string } | { type: "image_url"; image_url: { url: string } }>;
+type VisionBlock = { type: "text"; text: string } | { type: "image_url"; image_url: { url: string } };
+type MsgContent = string | VisionBlock[];
 type Msg = { role: "user" | "assistant"; content: MsgContent };
+
+function msgText(content: MsgContent): string {
+  if (typeof content === "string") return content;
+  return content.filter((b): b is { type: "text"; text: string } => b.type === "text").map(b => b.text).join("\n");
+}
+
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
 
 const SUGGESTIONS = [
   { icon: PlusCircle, label: "Add a lead", message: "I want to add a new lead to my pipeline. Walk me through it." },
