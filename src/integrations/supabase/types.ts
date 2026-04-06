@@ -4981,6 +4981,10 @@ export type Database = {
     }
     Functions: {
       get_accessible_lead_ids: { Args: { _user_id: string }; Returns: string[] }
+      get_engine_kpis: {
+        Args: { _since: string; _user_id: string }
+        Returns: Json
+      }
       get_user_role: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {

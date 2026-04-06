@@ -127,7 +127,7 @@ export function useLeadSourceConfigs() {
   });
 }
 
-/* ── KPIs (computed from engine_leads + leads/policies) ── */
+/* ── KPIs (single DB function call) ── */
 export function useEngineKpis() {
   const { user } = useAuth();
   return useQuery({
@@ -136,42 +136,17 @@ export function useEngineKpis() {
     queryFn: async () => {
       const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString();
 
-      const { count: totalLeads } = await supabase
-        .from("engine_leads")
-        .select("*", { count: "exact", head: true })
-        .eq("owner_user_id", user!.id)
-        .gte("detected_at", thirtyDaysAgo);
-
-      const { data: bySource } = await supabase
-        .from("engine_leads")
-        .select("source, tier")
-        .eq("owner_user_id", user!.id)
-        .gte("detected_at", thirtyDaysAgo);
-
-      // Source breakdown
-      const sourceMap: Record<string, { leads: number; tier1: number }> = {};
-      (bySource || []).forEach((r: { source: string; tier: number }) => {
-        if (!sourceMap[r.source]) sourceMap[r.source] = { leads: 0, tier1: 0 };
-        sourceMap[r.source].leads++;
-        if (r.tier === 1) sourceMap[r.source].tier1++;
+      const { data, error } = await supabase.rpc("get_engine_kpis", {
+        _user_id: user!.id,
+        _since: thirtyDaysAgo,
       });
+      if (error) throw error;
 
-      // Converted = status is 'converted' or has a lead_id
-      const { count: converted } = await supabase
-        .from("engine_leads")
-        .select("*", { count: "exact", head: true })
-        .eq("owner_user_id", user!.id)
-        .gte("detected_at", thirtyDaysAgo)
-        .eq("status", "converted");
-
+      const result = data as { totalLeads: number; converted: number; sourceBreakdown: { source: string; leads: number; tier1: number }[] };
       return {
-        totalLeads: totalLeads || 0,
-        converted: converted || 0,
-        sourceBreakdown: Object.entries(sourceMap).map(([source, v]) => ({
-          source,
-          leads: v.leads,
-          tier1: v.tier1,
-        })),
+        totalLeads: result.totalLeads || 0,
+        converted: result.converted || 0,
+        sourceBreakdown: result.sourceBreakdown || [],
       };
     },
   });
