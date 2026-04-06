@@ -36,10 +36,12 @@ export function useEarlyAccessWhitelist() {
 
   /** Returns list of page keys the user can actually access */
   const getAccessiblePages = (): string[] => {
+    const BLOCKED_MODULES = ["email", "calendar", "intelligence", "connect"];
     if (isMaster) {
-      return ["connect", "intelligence", "pipeline", "email", "calendar", "create", "leads", "property", "clark"];
+      return ["connect", "intelligence", "pipeline", "email", "calendar", "create", "leads", "property", "clark"]
+        .filter(p => !BLOCKED_MODULES.includes(p));
     }
-    const pages = [...UNGATED_PAGES.filter(p => p !== "property")];
+    const pages = [...UNGATED_PAGES.filter(p => p !== "property" && !BLOCKED_MODULES.includes(p))];
     if (canSeeProperty()) pages.push("property");
     return pages;
   };
