@@ -61,8 +61,10 @@ export default function ConnectOnboarding() {
   const [selectedPlan, setSelectedPlan] = useState<"free" | "pro" | null>(null);
 
   // ROI calculator (step 6)
-  const [commissionPerDeal, setCommissionPerDeal] = useState(2500);
-  const [closesPerMonth, setClosesPerMonth] = useState(3);
+  const [purchasedLeads, setPurchasedLeads] = useState<number>(20);
+  const [leadBasePrice, setLeadBasePrice] = useState<number>(18);
+  const [closeRatePct] = useState<number>(5);
+  const [commissionPerDeal, setCommissionPerDeal] = useState<number>(2500);
 
   // Industry request
   const [industryRequest, setIndustryRequest] = useState("");
@@ -219,7 +221,8 @@ export default function ConnectOnboarding() {
     setShowRequestInput(false);
     setRequestSubmitted(false);
     const config = CONNECT_VERTICALS.find(cv => cv.id === v);
-    if (config?.pricing?.avgPremium) {
+    if (config?.pricing) {
+      setLeadBasePrice(config.pricing.basePrice);
       setCommissionPerDeal(Math.round(config.pricing.avgPremium * 0.12));
     }
   };
@@ -335,10 +338,12 @@ export default function ConnectOnboarding() {
             {step === 4 && <ThemeStep theme={theme} onThemeChange={handleThemeChange} />}
             {step === 5 && (
               <TourStep
+                purchasedLeads={purchasedLeads}
+                setPurchasedLeads={setPurchasedLeads}
+                leadBasePrice={leadBasePrice}
+                setLeadBasePrice={setLeadBasePrice}
                 commissionPerDeal={commissionPerDeal}
                 setCommissionPerDeal={setCommissionPerDeal}
-                closesPerMonth={closesPerMonth}
-                setClosesPerMonth={setClosesPerMonth}
               />
             )}
             {step === 6 && (
@@ -717,18 +722,37 @@ function ThemeStep({ theme, onThemeChange }: { theme: string; onThemeChange: (da
 
 /* ── Step 6: Platform Tour — Lead Engine Explainer + ROI Calculator ── */
 function TourStep({
+  purchasedLeads, setPurchasedLeads,
+  leadBasePrice, setLeadBasePrice,
   commissionPerDeal, setCommissionPerDeal,
-  closesPerMonth, setClosesPerMonth,
 }: {
+  purchasedLeads: number; setPurchasedLeads: (n: number) => void;
+  leadBasePrice: number; setLeadBasePrice: (n: number) => void;
   commissionPerDeal: number; setCommissionPerDeal: (n: number) => void;
-  closesPerMonth: number; setClosesPerMonth: (n: number) => void;
 }) {
-  const exampleBase = 18;
-  const proPrice = Math.round(exampleBase * 0.6 * 100) / 100;
+  const FREE_LEADS_PRO = 10;
+  const PRO_SUB_FEE = 99;
+  const PRO_DISCOUNT = 0.6; // 40% off
+  const CLOSE_RATE = 0.05; // 5% — AURA enriched benchmark
 
-  const monthlyRevenue = commissionPerDeal * closesPerMonth;
-  const roiMultiple = Math.round(monthlyRevenue / 99);
-  const dealsToBreakEven = Math.ceil(99 / commissionPerDeal);
+  const proTotalLeads = purchasedLeads + FREE_LEADS_PRO;
+  const freeTotalLeads = purchasedLeads;
+  const proDeals = Math.max(0, Math.round(proTotalLeads * CLOSE_RATE));
+  const freeDeals = Math.max(0, Math.round(freeTotalLeads * CLOSE_RATE));
+  const proGross = proDeals * commissionPerDeal;
+  const freeGross = freeDeals * commissionPerDeal;
+  const leadCostFree = freeTotalLeads * leadBasePrice;
+  const leadCostPro = Math.round(purchasedLeads * leadBasePrice * PRO_DISCOUNT);
+  const totalCostFree = leadCostFree;
+  const totalCostPro = leadCostPro + PRO_SUB_FEE;
+  const netFree = freeGross - totalCostFree;
+  const netPro = proGross - totalCostPro;
+  const proAdvantage = netPro - netFree;
+
+  const fmt = (n: number) => '$' + Math.round(n).toLocaleString();
+
+  const exampleBase = leadBasePrice;
+  const proPrice = Math.round(exampleBase * PRO_DISCOUNT * 100) / 100;
 
   const TIER_INTENT: Record<string, string> = {
     Platinum: "Highest intent",
@@ -833,7 +857,6 @@ function TourStep({
         <p className="text-sm font-semibold mb-3">How the lead purchase flow works</p>
         {flowSteps.map((fs, i) => (
           <div key={i} className="flex gap-3">
-            {/* Number + line */}
             <div className="flex flex-col items-center">
               <div
                 className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0"
@@ -845,7 +868,6 @@ function TourStep({
                 <div className="w-px flex-1 min-h-[20px]" style={{ background: "hsl(140 12% 42% / 0.25)" }} />
               )}
             </div>
-            {/* Content */}
             <div className="pb-4 flex-1">
               <p className="text-[13px] font-medium leading-snug">
                 {fs.title}
@@ -867,9 +889,55 @@ function TourStep({
 
       {/* Section D — ROI Calculator */}
       <div className="rounded-xl border border-border p-5 space-y-5">
-        <p className="text-sm font-semibold">ROI Calculator</p>
+        <div>
+          <p className="text-sm font-semibold">ROI calculator — with lead costs & free credits</p>
+          <p className="text-[11px] text-muted-foreground mt-1">
+            Pro members receive 10 free leads/month automatically. Adjust the sliders to match your vertical and volume.
+          </p>
+          <div className="flex flex-wrap gap-2 mt-3">
+            {["10 free leads/month (Pro)", "40% off additional leads (Pro)", "AURA close rate ~5%"].map((pill) => (
+              <span key={pill} className="text-[10px] px-2.5 py-1 rounded-full font-medium" style={{ background: "hsl(140 50% 40% / 0.12)", color: "hsl(140 50% 55%)" }}>
+                {pill}
+              </span>
+            ))}
+          </div>
+        </div>
 
+        {/* Sliders */}
         <div className="space-y-4">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <div>
+                <label className="text-[12px] text-muted-foreground">Additional leads purchased / month</label>
+                <p className="text-[10px] text-muted-foreground/60">10 free leads are added automatically on top</p>
+              </div>
+              <span className="text-sm font-bold">{purchasedLeads}</span>
+            </div>
+            <Slider
+              value={[purchasedLeads]}
+              onValueChange={([v]) => setPurchasedLeads(v)}
+              min={0}
+              max={100}
+              step={5}
+              className="w-full"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-[12px] text-muted-foreground">Price per lead (your vertical)</label>
+              <span className="text-sm font-bold">${leadBasePrice}</span>
+            </div>
+            <Slider
+              value={[leadBasePrice]}
+              onValueChange={([v]) => setLeadBasePrice(v)}
+              min={9}
+              max={50}
+              step={1}
+              className="w-full"
+            />
+          </div>
+
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <label className="text-[12px] text-muted-foreground">Avg. commission / deal</label>
@@ -879,45 +947,112 @@ function TourStep({
               value={[commissionPerDeal]}
               onValueChange={([v]) => setCommissionPerDeal(v)}
               min={500}
-              max={10000}
-              step={500}
+              max={15000}
+              step={250}
               className="w-full"
             />
           </div>
 
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <label className="text-[12px] text-muted-foreground">Deals closed / month</label>
-              <span className="text-sm font-bold">{closesPerMonth}</span>
+          {/* Close rate — static */}
+          <div className="flex items-center justify-between py-1">
+            <label className="text-[12px] text-muted-foreground">Close rate</label>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-bold">5%</span>
+              <span className="text-[9px] px-2 py-0.5 rounded-full font-medium" style={{ background: "hsl(210 80% 55% / 0.12)", color: "hsl(210 80% 60%)" }}>
+                AURA enriched ~5%
+              </span>
             </div>
-            <Slider
-              value={[closesPerMonth]}
-              onValueChange={([v]) => setClosesPerMonth(v)}
-              min={1}
-              max={20}
-              step={1}
-              className="w-full"
-            />
           </div>
         </div>
 
+        {/* Result stat cards */}
         <div className="grid grid-cols-3 gap-3">
           <div className="p-3 rounded-lg bg-muted/30 border border-border text-center">
-            <p className="text-lg font-bold" style={{ color: "hsl(140 12% 58%)" }}>${monthlyRevenue.toLocaleString()}</p>
-            <p className="text-[10px] text-muted-foreground">Monthly revenue</p>
+            <p className="text-lg font-bold" style={{ color: "hsl(140 12% 58%)" }}>{proTotalLeads}</p>
+            <p className="text-[10px] text-muted-foreground">Total leads/month</p>
+            <p className="text-[9px] text-muted-foreground/60">10 free + {purchasedLeads} purchased</p>
           </div>
           <div className="p-3 rounded-lg bg-muted/30 border border-border text-center">
-            <p className="text-lg font-bold" style={{ color: "hsl(140 12% 58%)" }}>{roiMultiple}x</p>
-            <p className="text-[10px] text-muted-foreground">ROI on Pro</p>
+            <p className="text-lg font-bold" style={{ color: "hsl(140 12% 58%)" }}>{proDeals}</p>
+            <p className="text-[10px] text-muted-foreground">Deals closed</p>
+            <p className="text-[9px] text-muted-foreground/60">at 5% close rate</p>
           </div>
           <div className="p-3 rounded-lg bg-muted/30 border border-border text-center">
-            <p className="text-lg font-bold" style={{ color: "hsl(140 12% 58%)" }}>{dealsToBreakEven}</p>
-            <p className="text-[10px] text-muted-foreground">Deals to break even</p>
+            <p className="text-lg font-bold" style={{ color: "hsl(140 50% 50%)" }}>{fmt(proGross)}</p>
+            <p className="text-[10px] text-muted-foreground">Gross commission</p>
           </div>
         </div>
 
-        <p className="text-[11px] text-muted-foreground text-center">
-          Based on $99/mo Connect Pro. Results vary by vertical and close rate.
+        {/* Comparison table */}
+        <div className="rounded-lg border border-border overflow-hidden">
+          <table className="w-full text-[12px]">
+            <thead>
+              <tr className="border-b border-border bg-muted/30">
+                <th className="text-left p-3 font-medium text-muted-foreground"></th>
+                <th className="text-center p-3 font-medium text-muted-foreground">Free plan</th>
+                <th className="text-center p-3 font-medium" style={{ color: "hsl(140 12% 58%)" }}>Pro plan</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr className="border-b border-border">
+                <td className="p-3 text-muted-foreground">Leads available</td>
+                <td className="p-3 text-center">{freeTotalLeads}</td>
+                <td className="p-3 text-center font-medium" style={{ color: "hsl(140 50% 50%)" }}>{proTotalLeads} (10 free)</td>
+              </tr>
+              <tr className="border-b border-border">
+                <td className="p-3 text-muted-foreground">Lead cost</td>
+                <td className="p-3 text-center">{fmt(leadCostFree)}</td>
+                <td className="p-3 text-center font-medium" style={{ color: "hsl(140 50% 50%)" }}>{fmt(leadCostPro)}</td>
+              </tr>
+              <tr className="border-b border-border">
+                <td className="p-3 text-muted-foreground">Subscription</td>
+                <td className="p-3 text-center">—</td>
+                <td className="p-3 text-center">$99</td>
+              </tr>
+              <tr className="border-b border-border">
+                <td className="p-3 text-muted-foreground">Total cost</td>
+                <td className="p-3 text-center">{fmt(totalCostFree)}</td>
+                <td className="p-3 text-center">{fmt(totalCostPro)}</td>
+              </tr>
+              <tr>
+                <td className="p-3 font-semibold">Net profit</td>
+                <td className="p-3 text-center font-bold text-base">{fmt(netFree)}</td>
+                <td className="p-3 text-center font-bold text-base">
+                  <span style={{ color: "hsl(140 50% 50%)" }}>{fmt(netPro)}</span>
+                  <span className="block mt-1">
+                    {proAdvantage > 0 && (
+                      <span className="text-[9px] px-2 py-0.5 rounded-full font-medium" style={{ background: "hsl(140 50% 40% / 0.15)", color: "hsl(140 50% 55%)" }}>
+                        Save {fmt(proAdvantage)}
+                      </span>
+                    )}
+                    {proAdvantage < 0 && (
+                      <span className="text-[9px] px-2 py-0.5 rounded-full font-medium" style={{ background: "hsl(38 80% 50% / 0.15)", color: "hsl(38 80% 55%)" }}>
+                        {fmt(Math.abs(proAdvantage))} more
+                      </span>
+                    )}
+                    {proAdvantage === 0 && (
+                      <span className="text-[9px] px-2 py-0.5 rounded-full font-medium" style={{ background: "hsl(210 80% 55% / 0.12)", color: "hsl(210 80% 60%)" }}>
+                        Break even
+                      </span>
+                    )}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        {/* Dynamic footnote */}
+        <p className="text-[11px] text-muted-foreground text-center leading-relaxed">
+          {proAdvantage > 0 && (
+            <>At {purchasedLeads} purchased leads + 10 free, closing {proDeals} deal(s) at 5%, Pro puts an extra {fmt(proAdvantage)}/mo in your pocket vs buying at full price.</>
+          )}
+          {proAdvantage < 0 && (
+            <>At this volume, the subscription cost outweighs the lead discount. Increase purchased leads to see Pro pay off.</>
+          )}
+          {proAdvantage === 0 && (
+            <>At this volume, Pro and Free cost the same — but Pro gives you 10 extra leads at no charge.</>
+          )}
         </p>
       </div>
     </div>
