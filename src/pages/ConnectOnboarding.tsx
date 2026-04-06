@@ -74,7 +74,7 @@ export default function ConnectOnboarding() {
     if (!user?.id) return;
     const cached = localStorage.getItem(`aura_onboarding_completed_${user.id}`);
     if (cached === "true") {
-      navigate("/connect", { replace: true });
+      navigate("/connect/leads", { replace: true });
       return;
     }
     supabase
