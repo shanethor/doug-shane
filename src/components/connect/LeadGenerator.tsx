@@ -1175,13 +1175,19 @@ function PurchasePrompt({ leads, userIndustry, isSubscriber, hasAgent, onPurchas
   onDecline: () => void;
 }) {
   const pricing = getVerticalPricing(userIndustry);
-  const discount = hasAgent ? 0.5 : isSubscriber ? 0.6 : 1;
+  const subDiscount = hasAgent ? 0.5 : isSubscriber ? 0.6 : 1;
   const totalLeads = leads.length;
   
   const packOptions = [1, 5, 10, 25].filter(n => n <= totalLeads);
   if (!packOptions.includes(totalLeads)) packOptions.push(totalLeads);
 
-  const getPrice = (count: number) => Math.round(count * pricing.basePrice * discount);
+  // Bulk discount: 5% off per 5 leads, max 25% off — stacks with Pro/Agent
+  const getBulkDiscount = (count: number) => Math.min(Math.floor(count / 5) * 0.05, 0.25);
+  const getPrice = (count: number) => {
+    const bulk = 1 - getBulkDiscount(count);
+    return Math.round(count * pricing.basePrice * subDiscount * bulk);
+  };
+  const getBulkPct = (count: number) => Math.round(getBulkDiscount(count) * 100);
 
   return (
     <Card className="animate-fade-in border-primary/30 bg-primary/5">
