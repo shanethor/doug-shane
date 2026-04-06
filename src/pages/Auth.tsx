@@ -191,7 +191,7 @@ export default function Auth() {
           }
           await supabase
             .from("profiles")
-            .upsert(profileUpdate, { onConflict: "user_id" });
+            .upsert(profileUpdate as any, { onConflict: "user_id" });
         }
 
         toast.success("Account created! Check your email for a confirmation link. Your account will be reviewed by an administrator before you can access AURA.");
