@@ -3917,7 +3917,10 @@ export type Database = {
           id: string
           industry: string | null
           intake_email_alias: string | null
+          job_title: string | null
+          monthly_target: number | null
           onboarding_completed: boolean | null
+          onboarding_plan_selected: string | null
           openai_api_key_encrypted: string | null
           phone: string | null
           specializations: string[] | null
@@ -3943,7 +3946,10 @@ export type Database = {
           id?: string
           industry?: string | null
           intake_email_alias?: string | null
+          job_title?: string | null
+          monthly_target?: number | null
           onboarding_completed?: boolean | null
+          onboarding_plan_selected?: string | null
           openai_api_key_encrypted?: string | null
           phone?: string | null
           specializations?: string[] | null
@@ -3969,7 +3975,10 @@ export type Database = {
           id?: string
           industry?: string | null
           intake_email_alias?: string | null
+          job_title?: string | null
+          monthly_target?: number | null
           onboarding_completed?: boolean | null
+          onboarding_plan_selected?: string | null
           openai_api_key_encrypted?: string | null
           phone?: string | null
           specializations?: string[] | null
