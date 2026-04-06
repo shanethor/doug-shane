@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Zap, X, Send, Loader2, Minus, Maximize2, LifeBuoy, ArrowLeft } from "lucide-react";
+import { Zap, X, Send, Loader2, Minus, Maximize2, LifeBuoy, ArrowLeft, Paperclip } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ReactMarkdown from "react-markdown";
@@ -9,7 +9,23 @@ import { useAuth } from "@/hooks/useAuth";
 import { useEarlyAccessWhitelist } from "@/hooks/useEarlyAccessWhitelist";
 import { executeCalendarActions as runCalendarActions, extractCalendarActions } from "@/lib/calendar-action-utils";
 
-type Msg = { role: "user" | "assistant"; content: string };
+type VisionBlock = { type: "text"; text: string } | { type: "image_url"; image_url: { url: string } };
+type MsgContent = string | VisionBlock[];
+type Msg = { role: "user" | "assistant"; content: MsgContent };
+
+function msgText(c: MsgContent): string {
+  if (typeof c === "string") return c;
+  return c.filter((b): b is { type: "text"; text: string } => b.type === "text").map(b => b.text).join("\n");
+}
+
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result as string);
+    r.onerror = reject;
+    r.readAsDataURL(file);
+  });
+}
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/connect-assistant`;
 
@@ -80,6 +96,8 @@ export function ClarkFloatingChat() {
   const [streamContent, setStreamContent] = useState("");
   const abortRef = useRef<AbortController | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [attachedImage, setAttachedImage] = useState<string | null>(null);
 
   // Support tickets
   const [tickets, setTickets] = useState<any[]>([]);
@@ -124,17 +142,28 @@ export function ClarkFloatingChat() {
 
   const send = useCallback(async () => {
     if (!input.trim() || streaming) return;
-    const userMsg: Msg = { role: "user", content: input.trim() };
+
+    let userContent: MsgContent;
+    if (attachedImage) {
+      userContent = [
+        { type: "text", text: input.trim() },
+        { type: "image_url", image_url: { url: attachedImage } },
+      ];
+    } else {
+      userContent = input.trim();
+    }
+
+    const userMsg: Msg = { role: "user", content: userContent };
     const newMsgs = [...messages, userMsg];
     setMessages(newMsgs);
     setInput("");
+    setAttachedImage(null);
     setStreaming(true);
     setStreamContent("");
     const ctrl = new AbortController();
     abortRef.current = ctrl;
     let full = "";
 
-    // Build accessible pages context so Clark only helps with what the user can see
     const accessiblePages = getAccessiblePages();
     const scopeContext: Msg = {
       role: "user",
@@ -154,7 +183,7 @@ export function ClarkFloatingChat() {
       onError: (e) => { toast.error(e); setStreaming(false); },
       signal: ctrl.signal,
     });
-  }, [executeCalendarActions, getAccessiblePages, input, messages, streaming]);
+  }, [executeCalendarActions, getAccessiblePages, input, messages, streaming, attachedImage]);
 
   const submitTicket = async () => {
     if (!user || !ticketTitle.trim()) return;
