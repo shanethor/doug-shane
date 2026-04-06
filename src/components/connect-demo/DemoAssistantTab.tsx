@@ -502,14 +502,15 @@ export default function DemoAssistantTab({ onNavigate, isSubscriber = false }: {
               return (
                 <div key={i} className={`flex ${isUser ? "justify-end" : "justify-start"} animate-fade-in`}>
                   {!isUser && (
-                    <div className="h-7 w-7 rounded-full flex items-center justify-center shrink-0 mr-2.5 mt-1" style={{ background: "hsl(140 12% 42% / 0.15)" }}>
-                      <Sparkles className="h-3.5 w-3.5" style={{ color: "hsl(140 12% 58%)" }} />
+                    <div className="h-7 w-7 rounded-full flex items-center justify-center shrink-0 mr-2.5 mt-1 bg-primary/15">
+                      <Sparkles className="h-3.5 w-3.5 text-primary" />
                     </div>
                   )}
-                  <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm`} style={isUser
-                    ? { background: "hsl(140 12% 42%)", color: "white" }
-                    : { background: "hsl(240 8% 9%)", border: "1px solid hsl(240 6% 14%)" }
-                  }>
+                  <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm ${
+                    isUser
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-card border border-border text-foreground"
+                  }`}>
                     {isUser ? (
                       <span className="whitespace-pre-wrap">{msg.content}</span>
                     ) : (
@@ -522,15 +523,15 @@ export default function DemoAssistantTab({ onNavigate, isSubscriber = false }: {
 
             {loading && messages[messages.length - 1]?.role === "user" && (
               <div className="flex justify-start animate-fade-in">
-                <div className="h-7 w-7 rounded-full flex items-center justify-center shrink-0 mr-2.5 mt-1" style={{ background: "hsl(140 12% 42% / 0.15)" }}>
-                  <Sparkles className="h-3.5 w-3.5" style={{ color: "hsl(140 12% 58%)" }} />
+                <div className="h-7 w-7 rounded-full flex items-center justify-center shrink-0 mr-2.5 mt-1 bg-primary/15">
+                  <Sparkles className="h-3.5 w-3.5 text-primary" />
                 </div>
-                <div className="rounded-2xl px-4 py-3 text-sm" style={{ background: "hsl(240 8% 9%)", border: "1px solid hsl(240 6% 14%)" }}>
+                <div className="rounded-2xl px-4 py-3 text-sm bg-card border border-border">
                   <span className="flex gap-1.5 items-center">
-                    <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: "hsl(140 12% 58%)", animationDelay: "0ms" }} />
-                    <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: "hsl(140 12% 58%)", animationDelay: "150ms" }} />
-                    <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: "hsl(140 12% 58%)", animationDelay: "300ms" }} />
-                    <span className="text-xs ml-2" style={{ color: "hsl(240 5% 40%)" }}>Clark is pulling your real data…</span>
+                    <span className="w-1.5 h-1.5 rounded-full animate-bounce bg-primary" style={{ animationDelay: "0ms" }} />
+                    <span className="w-1.5 h-1.5 rounded-full animate-bounce bg-primary" style={{ animationDelay: "150ms" }} />
+                    <span className="w-1.5 h-1.5 rounded-full animate-bounce bg-primary" style={{ animationDelay: "300ms" }} />
+                    <span className="text-xs ml-2 text-muted-foreground">Clark is pulling your real data…</span>
                   </span>
                 </div>
               </div>
@@ -541,19 +542,18 @@ export default function DemoAssistantTab({ onNavigate, isSubscriber = false }: {
             {attachedFiles.length > 0 && (
               <div className="mb-2 flex flex-wrap gap-2 max-w-2xl mx-auto">
                 {attachedFiles.map((f, i) => (
-                  <div key={i} className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs" style={{ border: "1px solid hsl(240 6% 14%)", color: "hsl(240 5% 70%)" }}>
-                    <Paperclip className="h-3 w-3" style={{ color: "hsl(240 5% 46%)" }} />
+                  <div key={i} className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs border border-border text-muted-foreground">
+                    <Paperclip className="h-3 w-3 text-muted-foreground" />
                     <span className="max-w-[120px] truncate">{f.name}</span>
-                    <button onClick={() => removeFile(i)}><X className="h-3 w-3" style={{ color: "hsl(240 5% 46%)" }} /></button>
+                    <button onClick={() => removeFile(i)}><X className="h-3 w-3 text-muted-foreground" /></button>
                   </div>
                 ))}
               </div>
             )}
             <div
-              className="flex items-end gap-2 rounded-xl p-4 max-w-2xl mx-auto transition-shadow focus-within:shadow-[0_0_24px_-4px_hsl(140_12%_42%_/_0.25)]"
-              style={{ background: "hsl(240 8% 9%)", border: "1px solid hsl(240 6% 14%)" }}
+              className="flex items-end gap-2 rounded-xl p-4 max-w-2xl mx-auto transition-shadow focus-within:shadow-[0_0_24px_-4px_hsl(var(--primary)_/_0.25)] bg-card border border-border"
             >
-              <Button variant="ghost" size="icon" className="shrink-0 h-9 w-9" style={{ color: "hsl(240 5% 46%)" }} onClick={() => fileInputRef.current?.click()}>
+              <Button variant="ghost" size="icon" className="shrink-0 h-9 w-9 text-muted-foreground" onClick={() => fileInputRef.current?.click()}>
                 <Paperclip className="h-4 w-4" />
               </Button>
               <textarea
@@ -562,15 +562,14 @@ export default function DemoAssistantTab({ onNavigate, isSubscriber = false }: {
                 onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(input); } }}
                 placeholder="Ask Clark anything..."
                 rows={2}
-                className="flex-1 resize-none bg-transparent border-0 outline-none text-sm min-h-[48px] max-h-36 py-2"
-                style={{ color: "white" }}
+                className="flex-1 resize-none bg-transparent border-0 outline-none text-sm min-h-[48px] max-h-36 py-2 text-foreground placeholder:text-muted-foreground"
               />
               {loading ? (
-                <Button size="icon" variant="ghost" onClick={stop} className="shrink-0 h-9 w-9" style={{ color: "hsl(240 5% 46%)" }}>
+                <Button size="icon" variant="ghost" onClick={stop} className="shrink-0 h-9 w-9 text-muted-foreground">
                   <Loader2 className="h-4 w-4 animate-spin" />
                 </Button>
               ) : (
-                <Button size="icon" onClick={() => send(input)} disabled={!input.trim()} className="shrink-0 h-9 w-9" style={{ background: "hsl(140 12% 42%)", color: "white" }}>
+                <Button size="icon" onClick={() => send(input)} disabled={!input.trim()} className="shrink-0 h-9 w-9 bg-primary text-primary-foreground hover:bg-primary/90">
                   <Send className="h-4 w-4" />
                 </Button>
               )}
