@@ -6,9 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { isMasterEmail, isWhitelistedEmail } from "@/lib/master-accounts";
 
 // Pages that are always accessible (not gated)
-// Free-tier pages: leads, dashboard, clark, pipeline are free for all users
-// Subscription only gates: lead discounts, free leads, and Create (beta)
-const UNGATED_PAGES = ["pipeline", "leads", "studio", "property", "clark", "dashboard", "connect", "intelligence", "email", "calendar"];
+const UNGATED_PAGES = ["pipeline", "leads", "studio", "property", "clark", "create"];
 
 export function useEarlyAccessWhitelist() {
   const { user } = useAuth();
