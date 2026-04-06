@@ -1216,13 +1216,18 @@ function PurchasePrompt({ leads, userIndustry, isSubscriber, hasAgent, onPurchas
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-muted-foreground text-xs font-bold">
                 {count}
               </div>
-              <div>
+              <div className="flex items-center gap-2">
                 <span className="text-sm font-semibold">
                   {count === totalLeads ? `All ${count} Leads` : `${count} Lead${count !== 1 ? "s" : ""}`}
                 </span>
-                <span className="text-[10px] text-muted-foreground ml-2">
+                <span className="text-[10px] text-muted-foreground">
                   ${Math.round(getPrice(count) / count)}/lead
                 </span>
+                {getBulkPct(count) > 0 && (
+                  <Badge variant="outline" className="text-[9px] text-emerald-500 border-emerald-500/30 px-1 py-0">
+                    {getBulkPct(count)}% bulk
+                  </Badge>
+                )}
               </div>
             </div>
             <span className="text-sm font-bold">${getPrice(count).toLocaleString()}</span>
