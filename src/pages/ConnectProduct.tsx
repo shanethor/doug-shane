@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { ProductLayout } from "@/components/ProductLayout";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
-import { MASTER_EMAILS } from "@/components/ProductProtectedRoute";
+import { isMasterEmail } from "@/lib/master-accounts";
 import { ComingSoonGate } from "@/components/connect/ComingSoonGate";
 import { useEarlyAccessWhitelist } from "@/hooks/useEarlyAccessWhitelist";
 import { Loader2 } from "lucide-react";
@@ -121,7 +121,7 @@ export default function ConnectProduct() {
   const navigate = useNavigate();
   const { isPageGated } = useEarlyAccessWhitelist();
   const { user } = useAuth();
-  const isMaster = MASTER_EMAILS.includes(user?.email?.toLowerCase() ?? "");
+  const isMaster = isMasterEmail(user?.email);
   const { subscribed, loading: subLoading } = useSubscription();
   const canAccessFullSite = isMaster || subscribed;
   const [showIntro, setShowIntro] = useState(() => {

@@ -26,7 +26,7 @@ import { useConnectNavConfig, ALL_CONNECT_TABS } from "@/hooks/useConnectNavConf
 import { CONNECT_VERTICALS } from "@/lib/connect-verticals";
 import HelpTicketDialog from "@/components/HelpTicketDialog";
 
-const MASTER_EMAILS = new Set(["shane@houseofthor.com", "dwenz17@gmail.com"]);
+import { isMasterEmail } from "@/lib/master-accounts";
 
 const ALL_US_STATES = [
   "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA",
@@ -87,7 +87,7 @@ export default function ProductSettings() {
   const [icloudConnection, setIcloudConnection] = useState<any>(null);
   const [icloudLoaded, setIcloudLoaded] = useState(false);
 
-  const isMaster = user?.email ? MASTER_EMAILS.has(user.email.toLowerCase()) : false;
+  const isMaster = isMasterEmail(user?.email);
 
   const verticalConfig = useMemo(
     () => CONNECT_VERTICALS.find((v) => v.id === editVertical),

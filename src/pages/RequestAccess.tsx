@@ -11,10 +11,7 @@ import ConnectUpsellPopup from "@/components/ConnectUpsellPopup";
 import { CONNECT_VERTICALS, type ConnectVerticalConfig } from "@/lib/connect-verticals";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 
-const MASTER_EMAILS = new Set([
-  "shane@houseofthor.com",
-  "dwenz17@gmail.com",
-]);
+import { isMasterEmail } from "@/lib/master-accounts";
 
 const ALL_US_STATES = [
   "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA",
@@ -74,7 +71,7 @@ export default function RequestAccess() {
     if (!user?.email) return;
 
     const email = user.email.toLowerCase();
-    if (MASTER_EMAILS.has(email)) {
+    if (isMasterEmail(email)) {
       navigate("/connect", { replace: true });
     }
   }, [user?.email, navigate]);

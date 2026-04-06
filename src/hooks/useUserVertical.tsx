@@ -3,14 +3,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { getVerticalConfig, getAllVerticals, type ConnectVerticalConfig } from "@/lib/connect-verticals";
 
-const MASTER_EMAILS = new Set(["shane@houseofthor.com", "dwenz17@gmail.com"]);
+import { isMasterEmail } from "@/lib/master-accounts";
 
 export function useUserVertical() {
   const { user } = useAuth();
   const [vertical, setVertical] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const isMaster = user?.email ? MASTER_EMAILS.has(user.email.toLowerCase()) : false;
+  const isMaster = isMasterEmail(user?.email);
 
   useEffect(() => {
     if (!user?.id) { setLoading(false); return; }

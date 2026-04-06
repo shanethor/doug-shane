@@ -3,16 +3,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-const WHITELISTED_EMAILS = [
-  "shane@houseofthor.com",
-  "dwenz17@gmail.com",
-  "shafer.cailin@gmail.com",
-];
-
-const MASTER_EMAILS = [
-  "shane@houseofthor.com",
-  "dwenz17@gmail.com",
-];
+import { isMasterEmail, isWhitelistedEmail } from "@/lib/master-accounts";
 
 // Pages that are always accessible (not gated)
 const UNGATED_PAGES = ["pipeline", "leads", "studio", "property", "clark", "create"];
@@ -20,8 +11,8 @@ const UNGATED_PAGES = ["pipeline", "leads", "studio", "property", "clark", "crea
 export function useEarlyAccessWhitelist() {
   const { user } = useAuth();
   const email = user?.email?.toLowerCase() ?? "";
-  const isWhitelisted = WHITELISTED_EMAILS.includes(email);
-  const isMaster = MASTER_EMAILS.includes(email);
+  const isWhitelisted = isWhitelistedEmail(email);
+  const isMaster = isMasterEmail(email);
   const [userIndustry, setUserIndustry] = useState<string | null>(null);
 
   useEffect(() => {
