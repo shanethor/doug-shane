@@ -282,9 +282,16 @@ export function ClarkFloatingChat() {
                   }>
                   {m.role === "assistant" ? (
                     <div className="prose prose-sm prose-invert max-w-none [&_p]:my-1 [&_p]:text-xs [&_p]:leading-relaxed [&_li]:text-xs [&_strong]:text-white [&_code]:text-[10px] [&_code]:bg-white/5 [&_code]:px-1 [&_code]:rounded">
-                      <ReactMarkdown>{stripActionMarkers(m.content)}</ReactMarkdown>
+                      <ReactMarkdown>{stripActionMarkers(msgText(m.content))}</ReactMarkdown>
                     </div>
-                  ) : m.content}
+                  ) : (
+                    <>
+                      <span>{msgText(m.content)}</span>
+                      {Array.isArray(m.content) && m.content.filter((b): b is { type: "image_url"; image_url: { url: string } } => b.type === "image_url").map((b, j) => (
+                        <img key={j} src={b.image_url.url} alt="Attached" className="mt-1.5 max-h-24 rounded" />
+                      ))}
+                    </>
+                  )}
                 </div>
               </div>
             ))}
@@ -305,16 +312,32 @@ export function ClarkFloatingChat() {
             )}
             <div ref={bottomRef} />
           </div>
-          <div className="px-3 py-2 flex items-center gap-2 shrink-0" style={{ borderTop: "1px solid hsl(240 6% 14%)" }}>
-            <Input
-              value={input} onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask Clark anything…"
-              className="h-8 text-xs bg-transparent border-white/10 text-white placeholder:text-white/30"
-              onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
-            />
-            <Button size="icon" className="h-8 w-8 shrink-0" style={{ background: "hsl(140 12% 42%)" }} onClick={send} disabled={!input.trim() || streaming}>
-              <Send className="h-3.5 w-3.5" />
-            </Button>
+          <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={async (e) => {
+            const file = e.target.files?.[0];
+            if (file) { try { setAttachedImage(await fileToBase64(file)); } catch {} }
+            e.target.value = "";
+          }} />
+          <div className="px-3 py-2 shrink-0 space-y-1.5" style={{ borderTop: "1px solid hsl(240 6% 14%)" }}>
+            {attachedImage && (
+              <div className="flex items-center gap-1.5">
+                <img src={attachedImage} alt="Preview" className="h-8 rounded" />
+                <button onClick={() => setAttachedImage(null)} className="text-white/40 hover:text-white/70"><X className="h-3 w-3" /></button>
+              </div>
+            )}
+            <div className="flex items-center gap-2">
+              <button onClick={() => fileInputRef.current?.click()} className="p-1 rounded hover:bg-white/10" title="Attach image">
+                <Paperclip className="h-3.5 w-3.5" style={{ color: attachedImage ? "hsl(140 12% 58%)" : "hsl(240 5% 50%)" }} />
+              </button>
+              <Input
+                value={input} onChange={(e) => setInput(e.target.value)}
+                placeholder="Ask Clark anything…"
+                className="h-8 text-xs bg-transparent border-white/10 text-white placeholder:text-white/30"
+                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
+              />
+              <Button size="icon" className="h-8 w-8 shrink-0" style={{ background: "hsl(140 12% 42%)" }} onClick={send} disabled={(!input.trim() && !attachedImage) || streaming}>
+                <Send className="h-3.5 w-3.5" />
+              </Button>
+            </div>
           </div>
         </>
       )}
