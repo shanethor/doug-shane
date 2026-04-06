@@ -4,14 +4,15 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Slider } from "@/components/ui/slider";
 import {
   ArrowRight, ArrowLeft, Sun, Moon, Sparkles, Target, Brain,
   Rocket, CheckCircle, Palette, Zap, TrendingUp, Users, Globe,
   MapPin, Search, Briefcase, Check, Mail, Calendar, Network,
-  MessageCircle, X,
+  MessageCircle, X, Database, BarChart3, Shield,
 } from "lucide-react";
 import { toast } from "sonner";
-import { CONNECT_VERTICALS } from "@/lib/connect-verticals";
+import { CONNECT_VERTICALS, LEAD_SCORE_TIERS } from "@/lib/connect-verticals";
 
 const ALL_US_STATES = [
   "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA",
@@ -27,7 +28,7 @@ const STEPS = [
   { id: "industry", title: "Industry", badge: "REQ" as const },
   { id: "states", title: "Territory", badge: "REQ" as const },
   { id: "theme", title: "Appearance", badge: null },
-  { id: "tour", title: "Platform Tour", badge: null },
+  { id: "tour", title: "Lead Engine", badge: null },
   { id: "plan", title: "Choose Plan", badge: "PRO" as const },
   { id: "ready", title: "All Set", badge: null },
 ];
@@ -57,7 +58,11 @@ export default function ConnectOnboarding() {
   const [monthlyTarget, setMonthlyTarget] = useState("");
 
   // Step 7 — Plan
-  const [selectedPlan, setSelectedPlan] = useState<"free" | "pro">("free");
+  const [selectedPlan, setSelectedPlan] = useState<"free" | "pro" | null>(null);
+
+  // ROI calculator (step 6)
+  const [commissionPerDeal, setCommissionPerDeal] = useState(2500);
+  const [closesPerMonth, setClosesPerMonth] = useState(3);
 
   // Industry request
   const [industryRequest, setIndustryRequest] = useState("");
@@ -134,7 +139,7 @@ export default function ConnectOnboarding() {
   };
 
   const handleComplete = async (plan?: "free" | "pro") => {
-    const finalPlan = plan || selectedPlan;
+    const finalPlan = plan || selectedPlan || "free";
     setSaving(true);
     try {
       if (user) {
@@ -173,9 +178,53 @@ export default function ConnectOnboarding() {
     }
   };
 
-  const progressWidth = `${((step + 1) / STEPS.length) * 100}%`;
+  const handleStartTrial = async () => {
+    setSaving(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-checkout", {
+        body: { product: "connect" },
+      });
+      if (error) throw error;
+      if (data?.url) {
+        // Save onboarding state before redirecting to Stripe
+        if (user) {
+          await supabase.from("profiles").update({
+            onboarding_completed: true,
+            theme_preference: theme,
+            connect_vertical: selectedVertical || null,
+            industry: selectedVertical || null,
+            specializations: selectedSubVerticals.length > 0 ? selectedSubVerticals : null,
+            states_of_operation: selectedStates.length > 0 ? selectedStates : null,
+            full_name: `${firstName} ${lastName}`.trim() || null,
+            agency_name: agencyName || null,
+            job_title: userRole || null,
+            monthly_target: parseMonthlyTarget(monthlyTarget),
+            onboarding_plan_selected: "pro",
+          } as any).eq("user_id", user.id);
+          localStorage.setItem(`aura_onboarding_completed_${user.id}`, "true");
+        }
+        window.location.href = data.url;
+      } else if (data?.schedule_id) {
+        await handleComplete("pro");
+      }
+    } catch (err: any) {
+      toast.error("Failed to start trial — please try again.");
+      setSaving(false);
+    }
+  };
 
-  // Determine if current step is the plan step (no nav buttons)
+  // When vertical is selected in IndustryStep, update commission estimate
+  const handleSetVertical = (v: string) => {
+    setSelectedVertical(v);
+    setShowRequestInput(false);
+    setRequestSubmitted(false);
+    const config = CONNECT_VERTICALS.find(cv => cv.id === v);
+    if (config?.pricing?.avgPremium) {
+      setCommissionPerDeal(Math.round(config.pricing.avgPremium * 0.12));
+    }
+  };
+
+  const progressWidth = `${((step + 1) / STEPS.length) * 100}%`;
   const isPlanStep = STEPS[step]?.id === "plan";
   const isLastStep = step === STEPS.length - 1;
 
@@ -198,7 +247,6 @@ export default function ConnectOnboarding() {
                 <div className="flex items-center gap-3 py-2.5 px-2 rounded-lg transition-colors"
                   style={isActive ? { background: "hsl(140 12% 42% / 0.08)" } : {}}
                 >
-                  {/* Dot */}
                   <div
                     className="w-[22px] h-[22px] rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 transition-all"
                     style={
@@ -211,26 +259,19 @@ export default function ConnectOnboarding() {
                   >
                     {isDone ? <Check className="h-3 w-3" /> : i + 1}
                   </div>
-                  {/* Label */}
                   <span
                     className="text-[13px] font-medium flex-1"
                     style={{ color: isActive ? "white" : isDone ? "hsl(240 5% 60%)" : "hsl(240 5% 46%)" }}
                   >
                     {s.title}
                   </span>
-                  {/* Badge */}
                   {s.badge === "REQ" && (
-                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded" style={{ background: "hsl(0 70% 55% / 0.15)", color: "hsl(0 70% 65%)" }}>
-                      REQ
-                    </span>
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded" style={{ background: "hsl(0 70% 55% / 0.15)", color: "hsl(0 70% 65%)" }}>REQ</span>
                   )}
                   {s.badge === "PRO" && (
-                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded" style={{ background: "hsl(38 92% 50% / 0.15)", color: "hsl(38 80% 60%)" }}>
-                      PRO
-                    </span>
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded" style={{ background: "hsl(38 92% 50% / 0.15)", color: "hsl(38 80% 60%)" }}>PRO</span>
                   )}
                 </div>
-                {/* Divider */}
                 {i < STEPS.length - 1 && (
                   <div className="ml-[14px] w-px h-2" style={{ background: "hsl(240 5% 20%)" }} />
                 )}
@@ -242,21 +283,12 @@ export default function ConnectOnboarding() {
 
       {/* ── Right Content ── */}
       <div className="flex-1 flex flex-col min-h-screen">
-        {/* Progress bar */}
         <div className="w-full h-1 bg-muted shrink-0">
-          <div
-            className="h-full transition-all duration-500 ease-out"
-            style={{ width: progressWidth, background: "hsl(140 12% 42%)" }}
-          />
+          <div className="h-full transition-all duration-500 ease-out" style={{ width: progressWidth, background: "hsl(140 12% 42%)" }} />
         </div>
 
-        {/* Step content */}
         <div className="flex-1 overflow-y-auto px-4 md:px-8 py-8 md:py-12">
-          <div
-            key={step}
-            className="max-w-2xl mx-auto"
-            style={{ animation: "onb-fadeUp 0.4s cubic-bezier(0.16,1,0.3,1) forwards" }}
-          >
+          <div key={step} className="max-w-2xl mx-auto" style={{ animation: "onb-fadeUp 0.4s cubic-bezier(0.16,1,0.3,1) forwards" }}>
             {step === 0 && <WelcomeStep />}
             {step === 1 && (
               <InfoStep
@@ -270,7 +302,7 @@ export default function ConnectOnboarding() {
             {step === 2 && (
               <IndustryStep
                 selectedVertical={selectedVertical}
-                setSelectedVertical={(v) => { setSelectedVertical(v); setShowRequestInput(false); setRequestSubmitted(false); }}
+                setSelectedVertical={handleSetVertical}
                 selectedSubVerticals={selectedSubVerticals}
                 setSelectedSubVerticals={setSelectedSubVerticals}
                 verticalSearch={verticalSearch}
@@ -301,42 +333,36 @@ export default function ConnectOnboarding() {
               <StatesStep selectedStates={selectedStates} setSelectedStates={setSelectedStates} />
             )}
             {step === 4 && <ThemeStep theme={theme} onThemeChange={handleThemeChange} />}
-            {step === 5 && <TourStep selectedVertical={selectedVertical} />}
+            {step === 5 && (
+              <TourStep
+                commissionPerDeal={commissionPerDeal}
+                setCommissionPerDeal={setCommissionPerDeal}
+                closesPerMonth={closesPerMonth}
+                setClosesPerMonth={setClosesPerMonth}
+              />
+            )}
             {step === 6 && (
               <PlanStep
                 saving={saving}
-                onSelect={(plan) => {
-                  setSelectedPlan(plan);
-                  if (plan === "pro") {
-                    handleComplete("pro");
-                  } else {
-                    setStep(7);
-                  }
+                onSelectFree={() => {
+                  setSelectedPlan("free");
+                  handleComplete("free");
                 }}
+                onStartTrial={handleStartTrial}
               />
             )}
-            {step === 7 && <ReadyStep firstName={firstName} saving={saving} onComplete={() => handleComplete("free")} />}
+            {step === 7 && <ReadyStep firstName={firstName} saving={saving} onComplete={() => handleComplete(selectedPlan || "free")} />}
           </div>
         </div>
 
-        {/* Nav row — hidden on plan and ready steps */}
         {!isPlanStep && !isLastStep && (
           <div className="shrink-0 p-4 md:p-6 flex items-center justify-between max-w-2xl mx-auto w-full border-t border-border">
-            <Button
-              variant="ghost"
-              onClick={goBack}
-              disabled={step === 0}
-              className="gap-2 text-muted-foreground"
-            >
+            <Button variant="ghost" onClick={goBack} disabled={step === 0} className="gap-2 text-muted-foreground">
               <ArrowLeft className="h-4 w-4" /> Back
             </Button>
             <span className="text-xs text-muted-foreground">{step + 1} / {STEPS.length}</span>
-            <Button
-              onClick={goNext}
-              className="gap-2 text-white border-0"
-              style={{ background: "hsl(140 12% 42%)" }}
-            >
-              {step === 0 ? "Get Started" : "Continue"} <ArrowRight className="h-4 w-4" />
+            <Button onClick={goNext} className="gap-2 text-white border-0" style={{ background: "hsl(140 12% 42%)" }}>
+              {step === 0 ? "Get Started" : step === 5 ? "See Pro Plans →" : "Continue"} <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
         )}
@@ -360,6 +386,14 @@ function Eyebrow({ children }: { children: React.ReactNode }) {
   return <p className="text-[11px] uppercase tracking-widest text-muted-foreground mb-1">{children}</p>;
 }
 
+function GreenBadge({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded inline-flex items-center ml-1" style={{ background: "hsl(140 12% 42% / 0.15)", color: "hsl(140 12% 58%)" }}>
+      {children}
+    </span>
+  );
+}
+
 /* ── Step 1: Welcome ── */
 function WelcomeStep() {
   const features = [
@@ -373,7 +407,7 @@ function WelcomeStep() {
 
   return (
     <div className="space-y-6">
-      <Eyebrow>Step 1 of 8</Eyebrow>
+      <Eyebrow>Step 1 of {STEPS.length}</Eyebrow>
       <h1 className="text-3xl font-bold tracking-tight">Welcome to AURA Connect</h1>
       <p className="text-muted-foreground leading-relaxed max-w-lg">
         Your AI-powered business development platform. This setup takes 90 seconds — and at the end you'll see exactly what's free vs. what unlocks with Pro.
@@ -419,11 +453,9 @@ function InfoStep({
 }) {
   return (
     <div className="space-y-6 max-w-md">
-      <Eyebrow>Step 2 of 8 · Required</Eyebrow>
+      <Eyebrow>Step 2 of {STEPS.length} · Required</Eyebrow>
       <h2 className="text-2xl font-bold tracking-tight">Tell us about yourself</h2>
-      <p className="text-sm text-muted-foreground">
-        This personalizes your dashboard, Clark's coaching, and your lead targeting.
-      </p>
+      <p className="text-sm text-muted-foreground">This personalizes your dashboard, Clark's coaching, and your lead targeting.</p>
       <div className="space-y-4 pt-2">
         <div className="grid grid-cols-2 gap-3">
           <div>
@@ -497,13 +529,10 @@ function IndustryStep({
 
   return (
     <div className="space-y-5">
-      <Eyebrow>Step 3 of 8 · Required</Eyebrow>
+      <Eyebrow>Step 3 of {STEPS.length} · Required</Eyebrow>
       <h2 className="text-2xl font-bold tracking-tight">Your Industry <span className="text-destructive">*</span></h2>
-      <p className="text-sm text-muted-foreground">
-        Select the vertical you operate in. This personalizes your leads, pipeline, and AI insights.
-      </p>
+      <p className="text-sm text-muted-foreground">Select the vertical you operate in. This personalizes your leads, pipeline, and AI insights.</p>
 
-      {/* Collapsed summary */}
       {selectedVertical && !industryExpanded ? (
         <button
           onClick={() => setIndustryExpanded(true)}
@@ -520,26 +549,15 @@ function IndustryStep({
         <div className="space-y-3">
           <div className="relative max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-            <Input
-              value={verticalSearch}
-              onChange={(e) => setVerticalSearch(e.target.value)}
-              placeholder="Search verticals…"
-              className="pl-9 h-10 bg-muted/30 border-border"
-            />
+            <Input value={verticalSearch} onChange={(e) => setVerticalSearch(e.target.value)} placeholder="Search verticals…" className="pl-9 h-10 bg-muted/30 border-border" />
           </div>
-
-          {/* 2-column pill grid */}
           <div className="grid grid-cols-2 gap-2 max-h-56 overflow-y-auto pr-1">
             {filtered.map((v) => (
               <button
                 key={v.id}
                 onClick={() => handleSelectVertical(v.id)}
                 className="p-3 rounded-xl border transition-all text-left"
-                style={
-                  selectedVertical === v.id
-                    ? { borderColor: "hsl(140 12% 42%)", background: "hsl(140 12% 42% / 0.08)" }
-                    : {}
-                }
+                style={selectedVertical === v.id ? { borderColor: "hsl(140 12% 42%)", background: "hsl(140 12% 42% / 0.08)" } : {}}
               >
                 <div className="flex items-center gap-2">
                   {selectedVertical === v.id && <Check className="h-3.5 w-3.5 shrink-0" style={{ color: "hsl(140 12% 58%)" }} />}
@@ -549,7 +567,6 @@ function IndustryStep({
               </button>
             ))}
           </div>
-
           {selectedVertical && (
             <button onClick={() => setIndustryExpanded(false)} className="text-xs font-medium hover:underline" style={{ color: "hsl(140 12% 58%)" }}>
               Done — continue to specializations ↓
@@ -558,7 +575,6 @@ function IndustryStep({
         </div>
       )}
 
-      {/* Request another industry */}
       {!requestSubmitted ? (
         <div className="max-w-md space-y-2">
           {!showRequestInput ? (
@@ -583,7 +599,6 @@ function IndustryStep({
         </div>
       )}
 
-      {/* Sub-verticals — 3 columns */}
       {verticalConfig && verticalConfig.subVerticals.length > 0 && (
         <div className="text-left max-w-lg space-y-2 pt-2">
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
@@ -595,11 +610,7 @@ function IndustryStep({
                 key={sv.id}
                 onClick={() => toggleSub(sv.id)}
                 className="rounded-lg border p-2 text-[11px] font-medium transition-all text-left"
-                style={
-                  selectedSubVerticals.includes(sv.id)
-                    ? { borderColor: "hsl(140 12% 42%)", background: "hsl(140 12% 42% / 0.1)", color: "var(--foreground)" }
-                    : {}
-                }
+                style={selectedSubVerticals.includes(sv.id) ? { borderColor: "hsl(140 12% 42%)", background: "hsl(140 12% 42% / 0.1)" } : {}}
               >
                 {sv.label}
               </button>
@@ -625,7 +636,7 @@ function StatesStep({ selectedStates, setSelectedStates }: {
 
   return (
     <div className="space-y-5">
-      <Eyebrow>Step 4 of 8 · Required</Eyebrow>
+      <Eyebrow>Step 4 of {STEPS.length} · Required</Eyebrow>
       <h2 className="text-2xl font-bold tracking-tight">Territory <span className="text-destructive">*</span></h2>
       <p className="text-sm text-muted-foreground max-w-md">Select the states where you do business. This sets your default lead targeting territory.</p>
 
@@ -642,11 +653,7 @@ function StatesStep({ selectedStates, setSelectedStates }: {
               key={st}
               onClick={() => toggle(st)}
               className="rounded-lg border px-1 py-1.5 text-[11px] font-medium transition-all"
-              style={
-                selectedStates.includes(st)
-                  ? { borderColor: "hsl(140 12% 42%)", background: "hsl(140 12% 42% / 0.12)" }
-                  : {}
-              }
+              style={selectedStates.includes(st) ? { borderColor: "hsl(140 12% 42%)", background: "hsl(140 12% 42% / 0.12)" } : {}}
             >
               {st}
             </button>
@@ -661,12 +668,11 @@ function StatesStep({ selectedStates, setSelectedStates }: {
 function ThemeStep({ theme, onThemeChange }: { theme: string; onThemeChange: (dark: boolean) => void }) {
   return (
     <div className="space-y-6 max-w-md">
-      <Eyebrow>Step 5 of 8</Eyebrow>
+      <Eyebrow>Step 5 of {STEPS.length}</Eyebrow>
       <h2 className="text-2xl font-bold tracking-tight">Choose Your Look</h2>
       <p className="text-sm text-muted-foreground">Pick a theme. You can change this anytime in settings.</p>
 
       <div className="flex gap-4 pt-2">
-        {/* Dark card */}
         <button
           onClick={() => onThemeChange(true)}
           className="flex-1 p-4 rounded-xl transition-all text-center"
@@ -683,7 +689,6 @@ function ThemeStep({ theme, onThemeChange }: { theme: string; onThemeChange: (da
           <span className="text-sm font-medium block">Dark</span>
           <p className="text-[10px] text-muted-foreground mt-1">Easy on the eyes</p>
         </button>
-        {/* Light card */}
         <button
           onClick={() => onThemeChange(false)}
           className="flex-1 p-4 rounded-xl transition-all text-center"
@@ -710,109 +715,276 @@ function ThemeStep({ theme, onThemeChange }: { theme: string; onThemeChange: (da
   );
 }
 
-/* ── Step 6: Platform Tour ── */
-function TourStep({ selectedVertical }: { selectedVertical: string }) {
-  const verticalLabel = CONNECT_VERTICALS.find(v => v.id === selectedVertical)?.label || "contractors";
+/* ── Step 6: Platform Tour — Lead Engine Explainer + ROI Calculator ── */
+function TourStep({
+  commissionPerDeal, setCommissionPerDeal,
+  closesPerMonth, setClosesPerMonth,
+}: {
+  commissionPerDeal: number; setCommissionPerDeal: (n: number) => void;
+  closesPerMonth: number; setClosesPerMonth: (n: number) => void;
+}) {
+  const exampleBase = 18;
+  const proPrice = Math.round(exampleBase * 0.6 * 100) / 100;
 
-  const freeFeatures = [
-    "AI Lead Engine (scans 70+ databases)",
-    "Sales Pipeline & Deal Tracking",
-    "Clark AI — 10 queries/day",
-    "AURA Score & Lead Enrichment",
-    "Network & Contact Management",
-  ];
+  const monthlyRevenue = commissionPerDeal * closesPerMonth;
+  const roiMultiple = Math.round(monthlyRevenue / 99);
+  const dealsToBreakEven = Math.ceil(99 / commissionPerDeal);
 
-  const clarkMessages = [
-    { role: "user", text: `What's the best way to approach a ${verticalLabel} prospect?` },
-    { role: "assistant", text: `Great question! For ${verticalLabel}, I'd recommend leading with risk — mention industry-specific exposures they might not realize they have. Open with a question like "How are you currently handling [specific risk]?" to start a consultative conversation.` },
-    { role: "assistant", text: "Want me to draft an outreach email for this vertical?" },
+  const TIER_INTENT: Record<string, string> = {
+    Platinum: "Highest intent",
+    Gold: "Strong signal",
+    Silver: "Early signal",
+    Bronze: "Nurture",
+  };
+
+  const TIER_DOT_COLORS: Record<string, string> = {
+    Platinum: "hsl(270 60% 60%)",
+    Gold: "hsl(45 90% 55%)",
+    Silver: "hsl(220 10% 60%)",
+    Bronze: "hsl(25 60% 45%)",
+  };
+
+  const flowSteps = [
+    {
+      title: "Run the lead engine",
+      desc: "Select your vertical, territory, and filters. AURA scans 70+ databases and surfaces matched prospects — available to both free and Pro users.",
+      badge: null,
+    },
+    {
+      title: "Review generated leads & claim yours",
+      desc: "A purchase prompt shows how many leads were generated. Choose 1, 5, 10, or all — priced per lead. Unclaimed leads become available to other users.",
+      badge: null,
+    },
+    {
+      title: "Pay per lead — Pro subscribers get 40% off automatically",
+      desc: "Free users pay full price. Connect Pro subscribers automatically pay 40% less on every purchased lead — no codes, no friction.",
+      badge: "Auto-applied",
+      chips: true,
+    },
+    {
+      title: "Pro users also get free leads credited monthly",
+      desc: "Your free monthly allotment is credited automatically at the start of each billing cycle — based on your vertical. They appear in your lead engine ready to claim, no action needed.",
+      badge: "Pro only",
+    },
+    {
+      title: "Leads land directly in your pipeline",
+      desc: "Purchased leads auto-import at the 'New Lead' stage. Clark sees them immediately and can suggest an outreach strategy.",
+      badge: null,
+    },
   ];
 
   return (
-    <div className="space-y-6">
-      <Eyebrow>Step 6 of 8 · Platform Tour</Eyebrow>
-      <h2 className="text-2xl font-bold tracking-tight">Here's what's waiting inside</h2>
-      <p className="text-sm text-muted-foreground">Before we talk pricing — a look at what you can use starting today, and a preview of Clark.</p>
+    <div className="space-y-8">
+      <div>
+        <Eyebrow>Step 6 of {STEPS.length} · Lead Engine</Eyebrow>
+        <h2 className="text-2xl font-bold tracking-tight mt-1">How leads work — and what Pro changes for you</h2>
+        <p className="text-sm text-muted-foreground mt-2">
+          Anyone can buy leads. Connect Pro makes them significantly cheaper — plus gives you a monthly free allotment automatically credited to your account.
+        </p>
+      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-        {/* Free features */}
-        <div className="space-y-3">
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Free with AURA</p>
-          {freeFeatures.map((f) => (
-            <div key={f} className="flex items-start gap-2">
-              <Check className="h-4 w-4 shrink-0 mt-0.5" style={{ color: "hsl(140 12% 58%)" }} />
-              <span className="text-sm">{f}</span>
+      {/* Section A — Stat cards */}
+      <div className="grid grid-cols-3 gap-3">
+        {[
+          { value: "70+", label: "Data sources scanned" },
+          { value: "0–100", label: "AURA opportunity score" },
+          { value: "40%", label: "Pro discount on purchases" },
+        ].map(({ value, label }) => (
+          <div key={label} className="p-4 rounded-xl bg-card border border-border text-center">
+            <p className="text-2xl font-bold" style={{ color: "hsl(140 12% 58%)" }}>{value}</p>
+            <p className="text-[11px] text-muted-foreground mt-1">{label}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Section B — What each lead includes + Score tiers */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="rounded-xl border border-border p-4 space-y-2.5">
+          <p className="text-sm font-semibold">What each lead includes</p>
+          {[
+            "Business name, address, phone",
+            "Decision-maker contact info",
+            "Industry, size, revenue signals",
+            "Trigger event (permit, filing, etc.)",
+            "AURA score + tier rating",
+            "Suggested outreach angle from Clark",
+          ].map((item) => (
+            <div key={item} className="flex items-start gap-2">
+              <Check className="h-3.5 w-3.5 shrink-0 mt-0.5" style={{ color: "hsl(140 12% 58%)" }} />
+              <span className="text-[12px]">{item}</span>
             </div>
           ))}
         </div>
 
-        {/* Clark preview */}
-        <div className="rounded-xl border border-border p-4 space-y-3" style={{ background: "hsl(240 8% 7%)" }}>
-          <div className="flex items-center gap-2 mb-2">
-            <Brain className="h-4 w-4" style={{ color: "hsl(140 12% 58%)" }} />
-            <span className="text-xs font-medium text-white/80">Clark Preview</span>
-          </div>
-          {clarkMessages.map((msg, i) => (
-            <div
-              key={i}
-              className="rounded-lg px-3 py-2 text-[12px] leading-relaxed"
-              style={
-                msg.role === "user"
-                  ? { background: "hsl(140 12% 42% / 0.15)", color: "hsl(140 12% 75%)", marginLeft: "auto", maxWidth: "85%", textAlign: "right" }
-                  : { background: "hsl(240 6% 12%)", color: "hsl(240 5% 80%)", maxWidth: "90%" }
-              }
-            >
-              {msg.text}
+        <div className="rounded-xl border border-border p-4 space-y-2.5">
+          <p className="text-sm font-semibold">AURA score tiers</p>
+          {LEAD_SCORE_TIERS.map((t) => (
+            <div key={t.tier} className="flex items-center gap-2.5 py-1">
+              <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: TIER_DOT_COLORS[t.tier] }} />
+              <span className="text-[12px] font-medium flex-1">{t.tier} <span className="text-muted-foreground font-normal">{t.scoreMin}–{t.scoreMax}</span></span>
+              <span className="text-[10px] text-muted-foreground">{TIER_INTENT[t.tier]}</span>
             </div>
           ))}
         </div>
       </div>
 
-      <div className="p-3 rounded-lg border text-sm" style={{ background: "hsl(140 12% 42% / 0.06)", borderColor: "hsl(140 12% 42% / 0.2)", color: "hsl(140 12% 65%)" }}>
-        <strong>Coming next:</strong> See how Connect Pro unlocks unlimited Clark, email, Create Studio, and your full network.
+      {/* Section C — How the lead purchase flow works */}
+      <div className="space-y-1">
+        <p className="text-sm font-semibold mb-3">How the lead purchase flow works</p>
+        {flowSteps.map((fs, i) => (
+          <div key={i} className="flex gap-3">
+            {/* Number + line */}
+            <div className="flex flex-col items-center">
+              <div
+                className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0"
+                style={{ background: "hsl(140 12% 42%)", color: "white" }}
+              >
+                {i + 1}
+              </div>
+              {i < flowSteps.length - 1 && (
+                <div className="w-px flex-1 min-h-[20px]" style={{ background: "hsl(140 12% 42% / 0.25)" }} />
+              )}
+            </div>
+            {/* Content */}
+            <div className="pb-4 flex-1">
+              <p className="text-[13px] font-medium leading-snug">
+                {fs.title}
+                {fs.badge && <GreenBadge>{fs.badge}</GreenBadge>}
+              </p>
+              <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">{fs.desc}</p>
+              {fs.chips && (
+                <div className="flex gap-2 mt-2">
+                  <span className="text-[10px] px-2 py-1 rounded bg-muted border border-border">Free user: ${exampleBase}/lead</span>
+                  <span className="text-[10px] px-2 py-1 rounded" style={{ background: "hsl(140 12% 42% / 0.12)", color: "hsl(140 12% 58%)", border: "1px solid hsl(140 12% 42% / 0.2)" }}>
+                    Pro subscriber: ${proPrice}/lead
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Section D — ROI Calculator */}
+      <div className="rounded-xl border border-border p-5 space-y-5">
+        <p className="text-sm font-semibold">ROI Calculator</p>
+
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-[12px] text-muted-foreground">Avg. commission / deal</label>
+              <span className="text-sm font-bold">${commissionPerDeal.toLocaleString()}</span>
+            </div>
+            <Slider
+              value={[commissionPerDeal]}
+              onValueChange={([v]) => setCommissionPerDeal(v)}
+              min={500}
+              max={10000}
+              step={500}
+              className="w-full"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-[12px] text-muted-foreground">Deals closed / month</label>
+              <span className="text-sm font-bold">{closesPerMonth}</span>
+            </div>
+            <Slider
+              value={[closesPerMonth]}
+              onValueChange={([v]) => setClosesPerMonth(v)}
+              min={1}
+              max={20}
+              step={1}
+              className="w-full"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-3">
+          <div className="p-3 rounded-lg bg-muted/30 border border-border text-center">
+            <p className="text-lg font-bold" style={{ color: "hsl(140 12% 58%)" }}>${monthlyRevenue.toLocaleString()}</p>
+            <p className="text-[10px] text-muted-foreground">Monthly revenue</p>
+          </div>
+          <div className="p-3 rounded-lg bg-muted/30 border border-border text-center">
+            <p className="text-lg font-bold" style={{ color: "hsl(140 12% 58%)" }}>{roiMultiple}x</p>
+            <p className="text-[10px] text-muted-foreground">ROI on Pro</p>
+          </div>
+          <div className="p-3 rounded-lg bg-muted/30 border border-border text-center">
+            <p className="text-lg font-bold" style={{ color: "hsl(140 12% 58%)" }}>{dealsToBreakEven}</p>
+            <p className="text-[10px] text-muted-foreground">Deals to break even</p>
+          </div>
+        </div>
+
+        <p className="text-[11px] text-muted-foreground text-center">
+          Based on $99/mo Connect Pro. Results vary by vertical and close rate.
+        </p>
       </div>
     </div>
   );
 }
 
 /* ── Step 7: Choose Plan ── */
-function PlanStep({ saving, onSelect }: { saving: boolean; onSelect: (plan: "free" | "pro") => void }) {
+function PlanStep({ saving, onSelectFree, onStartTrial }: {
+  saving: boolean;
+  onSelectFree: () => void;
+  onStartTrial: () => void;
+}) {
   const freeFeatures = [
-    { label: "Lead Engine (50 leads/mo)", included: true },
-    { label: "Sales Pipeline", included: true },
+    { label: "Lead engine access", included: true },
+    { label: "Full-price lead purchases", included: true },
+    { label: "Sales pipeline", included: true },
     { label: "Clark AI (10 queries/day)", included: true },
-    { label: "Network & Contacts", included: true },
-    { label: "Email Intelligence", included: false },
-    { label: "Create Studio", included: false },
-    { label: "Calendar & Connect", included: false },
-    { label: "Unlimited Clark", included: false },
+    { label: "Contact management", included: true },
+    { label: "Free monthly leads", included: false },
+    { label: "40% off purchased leads", included: false },
+    { label: "Email intelligence", included: false },
+    { label: "Create studio", included: false },
+    { label: "Unlimited Clark queries", included: false },
+    { label: "Connect network & cadences", included: false },
+    { label: "Calendar integration", included: false },
   ];
 
   const proFeatures = [
-    "Everything in Free",
-    "Unlimited Lead Generation",
-    "Unlimited Clark queries",
-    "Email Intelligence & Sync",
-    "Create Studio (AI graphics)",
-    "Full Network Map",
-    "Smart Calendar & Cadences",
-    "Priority Support",
+    { label: "Everything in Free", badge: null },
+    { label: "Free leads monthly", badge: "Auto-credited" },
+    { label: "40% off all lead purchases", badge: "Permanent" },
+    { label: "Unlimited Clark AI queries", badge: null },
+    { label: "Email intelligence & sync", badge: null },
+    { label: "Create studio — branded marketing assets", badge: null },
+    { label: "Connect network, cadences & referrals", badge: null },
+    { label: "Calendar integration", badge: null },
   ];
 
   return (
     <div className="space-y-6">
-      <Eyebrow>Step 7 of 8 · Choose Your Plan</Eyebrow>
+      <Eyebrow>Step 7 of {STEPS.length} · Choose Your Plan</Eyebrow>
       <h2 className="text-2xl font-bold tracking-tight">Start free. Upgrade when you're ready.</h2>
       <p className="text-sm text-muted-foreground">No credit card required. Connect Pro unlocks the full platform — cancel anytime.</p>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+      {/* Trial highlight */}
+      <div className="rounded-lg p-4 bg-card border border-border flex items-start gap-4" style={{ borderLeft: "3px solid hsl(140 12% 42%)" }}>
+        <div className="flex-1">
+          <p className="text-sm font-semibold">3-day free trial — Connect Pro</p>
+          <p className="text-[11px] text-muted-foreground mt-1">
+            Full access to every Pro feature. No charge until day 4. Cancel any time before then in Settings — you pay nothing.
+          </p>
+        </div>
+        <div className="text-right shrink-0">
+          <p className="text-[12px] font-medium">Then $99/mo <span className="text-muted-foreground font-normal">for 3 months</span></p>
+          <p className="text-[11px] text-muted-foreground">$249/mo after intro period</p>
+        </div>
+      </div>
+
+      {/* Plan cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* FREE */}
         <div className="rounded-xl border border-border p-5 space-y-4">
           <div>
             <p className="text-lg font-bold">FREE</p>
             <div className="flex items-baseline gap-1 mt-1">
               <span className="text-3xl font-bold">$0</span>
-              <span className="text-sm text-muted-foreground">forever</span>
+              <span className="text-sm text-muted-foreground">always free</span>
             </div>
           </div>
           <div className="space-y-2">
@@ -831,7 +1003,6 @@ function PlanStep({ saving, onSelect }: { saving: boolean; onSelect: (plan: "fre
 
         {/* PRO */}
         <div className="rounded-xl p-5 space-y-4 relative overflow-hidden" style={{ border: "1px solid hsl(140 12% 42%)" }}>
-          {/* Ribbon */}
           <div
             className="absolute top-3 -right-8 px-8 py-0.5 text-[9px] font-bold text-white"
             style={{ background: "hsl(140 12% 42%)", transform: "rotate(35deg)", transformOrigin: "center" }}
@@ -842,34 +1013,41 @@ function PlanStep({ saving, onSelect }: { saving: boolean; onSelect: (plan: "fre
             <p className="text-lg font-bold">CONNECT PRO</p>
             <div className="flex items-baseline gap-1 mt-1">
               <span className="text-3xl font-bold">$99</span>
-              <span className="text-sm text-muted-foreground">per month</span>
+              <span className="text-sm text-muted-foreground">/mo <span className="text-[10px]">for 3 months, then $249/mo</span></span>
             </div>
           </div>
           <div className="space-y-2">
-            {proFeatures.map((label) => (
+            {proFeatures.map(({ label, badge }) => (
               <div key={label} className="flex items-center gap-2 text-sm">
                 <Check className="h-4 w-4 shrink-0" style={{ color: "hsl(140 12% 58%)" }} />
-                <span>{label}</span>
+                <span className="font-medium">
+                  {label}
+                  {badge && <GreenBadge>{badge}</GreenBadge>}
+                </span>
               </div>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Action buttons */}
+      {/* CTA buttons */}
       <div className="grid grid-cols-2 gap-3 pt-2">
-        <Button variant="ghost" className="h-11" onClick={() => onSelect("free")} disabled={saving}>
-          Start with Free <ArrowRight className="h-4 w-4 ml-1" />
+        <Button variant="ghost" className="h-11" onClick={onSelectFree} disabled={saving}>
+          Continue with Free <ArrowRight className="h-4 w-4 ml-1" />
         </Button>
         <Button
           className="h-11 text-white border-0"
           style={{ background: "hsl(140 12% 42%)" }}
-          onClick={() => onSelect("pro")}
+          onClick={onStartTrial}
           disabled={saving}
         >
-          {saving ? "Saving…" : "Start Pro — $99/mo"} <ArrowRight className="h-4 w-4 ml-1" />
+          {saving ? "Starting…" : "Start 3-day free trial"} <ArrowRight className="h-4 w-4 ml-1" />
         </Button>
       </div>
+
+      <p className="text-[11px] text-muted-foreground text-center">
+        No credit card needed. You'll be asked before any charge occurs.
+      </p>
     </div>
   );
 }
@@ -885,7 +1063,7 @@ function ReadyStep({ firstName, saving, onComplete }: { firstName: string; savin
 
   return (
     <div className="space-y-6 text-center max-w-lg mx-auto">
-      <Eyebrow>Step 8 of 8</Eyebrow>
+      <Eyebrow>Step {STEPS.length} of {STEPS.length}</Eyebrow>
       <div className="w-[52px] h-[52px] rounded-full flex items-center justify-center mx-auto" style={{ background: "hsl(140 12% 42% / 0.15)", border: "2px solid hsl(140 12% 42%)" }}>
         <CheckCircle className="h-7 w-7" style={{ color: "hsl(140 12% 58%)" }} />
       </div>
