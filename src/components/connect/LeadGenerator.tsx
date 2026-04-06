@@ -1175,13 +1175,19 @@ function PurchasePrompt({ leads, userIndustry, isSubscriber, hasAgent, onPurchas
   onDecline: () => void;
 }) {
   const pricing = getVerticalPricing(userIndustry);
-  const discount = hasAgent ? 0.5 : isSubscriber ? 0.6 : 1;
+  const subDiscount = hasAgent ? 0.5 : isSubscriber ? 0.6 : 1;
   const totalLeads = leads.length;
   
   const packOptions = [1, 5, 10, 25].filter(n => n <= totalLeads);
   if (!packOptions.includes(totalLeads)) packOptions.push(totalLeads);
 
-  const getPrice = (count: number) => Math.round(count * pricing.basePrice * discount);
+  // Bulk discount: 5% off per 5 leads, max 25% off — stacks with Pro/Agent
+  const getBulkDiscount = (count: number) => Math.min(Math.floor(count / 5) * 0.05, 0.25);
+  const getPrice = (count: number) => {
+    const bulk = 1 - getBulkDiscount(count);
+    return Math.round(count * pricing.basePrice * subDiscount * bulk);
+  };
+  const getBulkPct = (count: number) => Math.round(getBulkDiscount(count) * 100);
 
   return (
     <Card className="animate-fade-in border-primary/30 bg-primary/5">
@@ -1210,13 +1216,18 @@ function PurchasePrompt({ leads, userIndustry, isSubscriber, hasAgent, onPurchas
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-muted-foreground text-xs font-bold">
                 {count}
               </div>
-              <div>
+              <div className="flex items-center gap-2">
                 <span className="text-sm font-semibold">
                   {count === totalLeads ? `All ${count} Leads` : `${count} Lead${count !== 1 ? "s" : ""}`}
                 </span>
-                <span className="text-[10px] text-muted-foreground ml-2">
+                <span className="text-[10px] text-muted-foreground">
                   ${Math.round(getPrice(count) / count)}/lead
                 </span>
+                {getBulkPct(count) > 0 && (
+                  <Badge variant="outline" className="text-[9px] text-emerald-500 border-emerald-500/30 px-1 py-0">
+                    {getBulkPct(count)}% bulk
+                  </Badge>
+                )}
               </div>
             </div>
             <span className="text-sm font-bold">${getPrice(count).toLocaleString()}</span>
