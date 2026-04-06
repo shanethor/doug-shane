@@ -166,7 +166,7 @@ export function useCreateEngineLead() {
     mutationFn: async (lead: Partial<EngineLead>) => {
       const { data, error } = await supabase
         .from("engine_leads")
-        .insert({ ...lead, owner_user_id: user!.id } as any)
+        .insert({ ...lead, owner_user_id: user!.id, company: lead.company ?? "" } satisfies EngineLeadInsert)
         .select()
         .single();
       if (error) throw error;
@@ -186,7 +186,7 @@ export function useUpdateEngineLead() {
     mutationFn: async ({ id, ...updates }: Partial<EngineLead> & { id: string }) => {
       const { data, error } = await supabase
         .from("engine_leads")
-        .update(updates as any)
+        .update(updates as EngineLeadUpdate)
         .eq("id", id)
         .select()
         .single();
@@ -208,7 +208,7 @@ export function useLogEngineActivity() {
     mutationFn: async (activity: Omit<EngineActivity, "id" | "user_id" | "created_at">) => {
       const { data, error } = await supabase
         .from("engine_activity")
-        .insert({ ...activity, user_id: user!.id } as any)
+        .insert({ ...activity, user_id: user!.id } satisfies EngineActivityInsert)
         .select()
         .single();
       if (error) throw error;
@@ -228,7 +228,7 @@ export function useUpsertSourceConfig() {
       const { data, error } = await supabase
         .from("lead_source_configs")
         .upsert(
-          { ...config, user_id: user!.id, updated_at: new Date().toISOString() } as any,
+          { ...config, user_id: user!.id, updated_at: new Date().toISOString() } satisfies LeadSourceConfigInsert,
           { onConflict: "user_id,source" }
         )
         .select()
@@ -277,7 +277,7 @@ export function useConvertToPipeline() {
       // Link the engine lead
       const { error: updateErr } = await supabase
         .from("engine_leads")
-        .update({ status: "converted", lead_id: newLead.id } as any)
+        .update({ status: "converted", lead_id: newLead.id } satisfies EngineLeadUpdate)
         .eq("id", engineLead.id);
       if (updateErr) throw updateErr;
 
