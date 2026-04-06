@@ -458,7 +458,7 @@ export default function ConnectLeadDetail() {
             </Button>
           </div>
 
-          {/* Right column — Draft Outreach */}
+          {/* Right column — Draft Outreach + Google Maps */}
           <div className="space-y-4">
             <Card>
               <CardHeader className="pb-3">
@@ -523,6 +523,66 @@ export default function ConnectLeadDetail() {
                 )}
               </CardContent>
             </Card>
+
+            {/* Embedded Google Maps */}
+            {lead.source_url && lead.source_url.includes("google") && (
+              <Card>
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Map className="h-4 w-4 text-primary" />
+                      Google Maps
+                    </CardTitle>
+                    <a
+                      href={lead.source_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[10px] text-primary hover:underline flex items-center gap-1"
+                    >
+                      Open in Maps <ExternalLink className="h-3 w-3" />
+                    </a>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <div className="w-full aspect-[4/3] rounded-b-lg overflow-hidden">
+                    <iframe
+                      title={`${lead.company} on Google Maps`}
+                      width="100%"
+                      height="100%"
+                      style={{ border: 0 }}
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                      src={`https://www.google.com/maps/embed/v1/search?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${encodeURIComponent(lead.company + (lead.state ? " " + lead.state : ""))}`}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Fallback: no Google source but we can still show a map search */}
+            {(!lead.source_url || !lead.source_url.includes("google")) && (
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Map className="h-4 w-4 text-primary" />
+                    Location
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <div className="w-full aspect-[4/3] rounded-b-lg overflow-hidden">
+                    <iframe
+                      title={`${lead.company} location`}
+                      width="100%"
+                      height="100%"
+                      style={{ border: 0 }}
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                      src={`https://www.google.com/maps/embed/v1/search?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${encodeURIComponent(lead.company + (lead.state ? " " + lead.state : ""))}`}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </div>
