@@ -1046,7 +1046,7 @@ function PlanStep({ saving, onSelectFree, onStartTrial }: {
       </div>
 
       <p className="text-[11px] text-muted-foreground text-center">
-        No credit card needed. You'll be asked before any charge occurs.
+        Cancel anytime during your trial in Settings — no charge until day 4.
       </p>
     </div>
   );
