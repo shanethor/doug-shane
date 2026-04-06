@@ -162,6 +162,7 @@ export function ProductLayout({
   const location = useLocation();
   const showProperty = canSeeProperty();
   const isFullAccess = isMaster || subscribed;
+  const FREE_PAGES = ["dashboard", "leads", "pipeline", "sage", "clark"];
   const [collapsed, setCollapsed] = useState(() => {
     try { return localStorage.getItem("sidebar-collapsed") === "true"; } catch { return false; }
   });
