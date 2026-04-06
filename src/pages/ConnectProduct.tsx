@@ -5,7 +5,6 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
 import { isMasterEmail } from "@/lib/master-accounts";
 import { ComingSoonGate } from "@/components/connect/ComingSoonGate";
-import { useEarlyAccessWhitelist } from "@/hooks/useEarlyAccessWhitelist";
 import { Loader2 } from "lucide-react";
 
 // Lazy-load heavy sub-pages to keep the ConnectProduct chunk small
@@ -119,7 +118,6 @@ function QuoteTicker() {
 export default function ConnectProduct() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { } = useEarlyAccessWhitelist();
   const { user } = useAuth();
   const isMaster = isMasterEmail(user?.email);
   const { subscribed, loading: subLoading } = useSubscription();
