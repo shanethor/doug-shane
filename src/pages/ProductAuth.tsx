@@ -18,12 +18,12 @@ const FEATURES = [
   { icon: Zap, label: "Clark Assistant" },
 ];
 
-const MASTER_EMAILS = ["shane@houseofthor.com", "dwenz17@gmail.com"];
+import { isMasterEmail } from "@/lib/master-accounts";
 const SKIP_2FA_EMAILS = ["shane@houseofthor.com", "dwenz17@gmail.com", "john@smith.com", "jane@smith.com"];
 
 function useProductRoute(user: any) {
   const email = user?.email?.toLowerCase() ?? "";
-  const destination = MASTER_EMAILS.includes(email) ? "/connect" : null;
+  const destination = isMasterEmail(email) ? "/connect" : null;
   return { destination, checking: false };
 }
 
@@ -134,7 +134,7 @@ export default function ProductAuth() {
         if (error) throw error;
 
         const signedInEmail = data.user?.email?.toLowerCase() ?? "";
-        if (MASTER_EMAILS.includes(signedInEmail)) {
+        if (isMasterEmail(signedInEmail)) {
           navigate("/connect", { replace: true });
         } else {
           const { data: profile } = await supabase
@@ -174,7 +174,7 @@ export default function ProductAuth() {
 
       // Navigate to onboarding or dashboard
       const signedInEmail = user?.email?.toLowerCase() ?? email.toLowerCase();
-      if (MASTER_EMAILS.includes(signedInEmail)) {
+      if (isMasterEmail(signedInEmail)) {
         navigate("/connect", { replace: true });
       } else {
         navigate("/connect/onboarding", { replace: true });

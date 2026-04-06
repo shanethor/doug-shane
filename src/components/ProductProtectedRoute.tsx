@@ -3,10 +3,7 @@ import { Navigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-export const MASTER_EMAILS = [
-  "shane@houseofthor.com",
-  "dwenz17@gmail.com",
-];
+import { isMasterEmail, MASTER_EMAILS } from "@/lib/master-accounts";
 
 const ONBOARDING_KEY = "aura_onboarding_completed";
 
@@ -20,7 +17,7 @@ export function ProductProtectedRoute({ children }: { children: React.ReactNode 
   const [checkingOnboarding, setCheckingOnboarding] = useState(!cachedComplete);
   const [onboardingCompleted, setOnboardingCompleted] = useState<boolean>(cachedComplete);
 
-  const isMaster = MASTER_EMAILS.includes(user?.email?.toLowerCase() ?? "");
+  const isMaster = isMasterEmail(user?.email);
   const isOnboardingPage = location.pathname === "/connect/onboarding";
 
   useEffect(() => {

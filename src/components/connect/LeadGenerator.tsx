@@ -1230,7 +1230,7 @@ function PurchasePrompt({ leads, userIndustry, isSubscriber, hasAgent, onPurchas
   );
 }
 
-const MASTER_EMAILS = ["shane@houseofthor.com", "dwenz17@gmail.com"];
+import { isMasterEmail } from "@/lib/master-accounts";
 
 export default function LeadGenerator() {
   const qc = useQueryClient();
@@ -1257,7 +1257,7 @@ export default function LeadGenerator() {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        setIsMaster(MASTER_EMAILS.includes(user.email?.toLowerCase() ?? ""));
+        setIsMaster(isMasterEmail(user.email));
         const { data: profile } = await supabase
           .from("profiles")
           .select("industry, specializations")
