@@ -18,15 +18,15 @@ import { useSubscription } from "@/hooks/useSubscription";
 
 const CONNECT_NAV = [
   { to: "/connect/dashboard", label: "Dashboard", icon: LayoutDashboard, premium: false, beta: false },
+  { to: "/connect/leads", label: "Leads", icon: Target, premium: false, beta: false },
+  { to: "/connect/pipeline", label: "Pipeline", icon: BarChart3, premium: false, beta: false },
+  { to: "/connect/clark", label: "Clark", icon: Zap, premium: false, beta: false },
+  { to: "/connect/create", label: "Create", icon: Sparkles, premium: false, beta: true },
   { to: "/connect", label: "Connect", icon: Network, exact: true, premium: false, beta: false },
   { to: "/connect/intelligence", label: "Intelligence", icon: Brain, premium: false, beta: false },
-  { to: "/connect/pipeline", label: "Pipeline", icon: BarChart3, premium: false, beta: false },
   { to: "/connect/email", label: "Email", icon: Mail, premium: false, beta: false },
   { to: "/connect/calendar", label: "Calendar", icon: Calendar, premium: false, beta: false },
-  { to: "/connect/create", label: "Create", icon: Sparkles, premium: false, beta: true },
-  { to: "/connect/leads", label: "Leads", icon: Target, premium: false, beta: false },
   { to: "/connect/property", label: "Property", icon: Home, premium: true, beta: false },
-  { to: "/connect/clark", label: "Clark", icon: Zap, premium: false, beta: false },
 ];
 
 const ICON_MAP: Record<string, any> = {

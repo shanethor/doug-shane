@@ -19,7 +19,7 @@ export const ALL_CONNECT_TABS: ConnectNavTab[] = [
   { id: "property", label: "Property", to: "/connect/property" },
 ];
 
-const DEFAULT_VISIBLE_IDS = ["dashboard", "connect", "intelligence", "pipeline", "email", "calendar"];
+const DEFAULT_VISIBLE_IDS = ["dashboard", "leads", "pipeline", "sage", "create", "connect", "intelligence", "email", "calendar"];
 const STORAGE_KEY = "connect_nav_config";
 
 export type ConnectNavConfig = {
