@@ -181,6 +181,10 @@ export default function DemoAssistantTab({ onNavigate, isSubscriber = false }: {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [promptCount, setPromptCount] = useState(getDailyPromptCount);
   const atLimit = !isSubscriber && promptCount >= MAX_FREE_PROMPTS;
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const conversationSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Auto-save conversation
   useEffect(() => {
