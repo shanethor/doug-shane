@@ -11,14 +11,10 @@ export default function AuraAgentLeadPromo() {
 
   return (
     <>
-    <Card className="border-none overflow-hidden" style={{
-      background: "linear-gradient(135deg, hsl(25 80% 10%), hsl(30 60% 6%))",
-      border: "1px solid hsl(25 80% 25%)",
-    }}>
+    <Card className="border-none overflow-hidden bg-orange-950 dark:bg-orange-950 border border-orange-800/40">
       <CardContent className="p-5">
         <div className="flex items-start gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl shrink-0"
-            style={{ background: "hsl(25 90% 50% / 0.2)" }}>
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl shrink-0 bg-orange-500/20">
             <Bot className="h-6 w-6 text-orange-400" />
           </div>
           <div className="flex-1 min-w-0">
