@@ -3922,6 +3922,7 @@ export type Database = {
           phone: string | null
           specializations: string[] | null
           states_of_operation: string[] | null
+          stripe_customer_id: string | null
           theme_preference: string | null
           timezone: string | null
           updated_at: string
@@ -3947,6 +3948,7 @@ export type Database = {
           phone?: string | null
           specializations?: string[] | null
           states_of_operation?: string[] | null
+          stripe_customer_id?: string | null
           theme_preference?: string | null
           timezone?: string | null
           updated_at?: string
@@ -3972,6 +3974,7 @@ export type Database = {
           phone?: string | null
           specializations?: string[] | null
           states_of_operation?: string[] | null
+          stripe_customer_id?: string | null
           theme_preference?: string | null
           timezone?: string | null
           updated_at?: string
