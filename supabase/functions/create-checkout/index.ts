@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
+import { resolveStripeCustomer } from "../_shared/stripe-customer.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -21,9 +22,10 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const supabaseClient = createClient(
+  const supaAdmin = createClient(
     Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+    { auth: { persistSession: false } }
   );
 
   try {
@@ -31,7 +33,7 @@ serve(async (req) => {
 
     const authHeader = req.headers.get("Authorization")!;
     const token = authHeader.replace("Bearer ", "");
-    const { data } = await supabaseClient.auth.getUser(token);
+    const { data } = await supaAdmin.auth.getUser(token);
     const user = data.user;
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { email: user.email });
@@ -40,19 +42,9 @@ serve(async (req) => {
       apiVersion: "2025-08-27.basil",
     });
 
-    // Find or create Stripe customer
-    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
-    let customerId: string;
-    if (customers.data.length > 0) {
-      customerId = customers.data[0].id;
-    } else {
-      const newCustomer = await stripe.customers.create({
-        email: user.email,
-        metadata: { user_id: user.id },
-      });
-      customerId = newCustomer.id;
-      logStep("Created new Stripe customer", { customerId });
-    }
+    // Resolve or create Stripe customer by ID
+    const { customerId } = (await resolveStripeCustomer(stripe, supaAdmin, user.id, user.email))!;
+    logStep("Resolved Stripe customer", { customerId });
 
     // Check if already subscribed
     const existingSubs = await stripe.subscriptions.list({ customer: customerId, status: "active", limit: 1 });
@@ -80,7 +72,6 @@ serve(async (req) => {
     const isStudio = product === "studio";
 
     if (isStudio) {
-      // Studio: simple checkout with its own price
       const priceId = body.price_id || "price_1TF5I1EISdUzafyhMrDOU8II";
       const sessionParams: any = {
         customer: customerId,
@@ -105,20 +96,18 @@ serve(async (req) => {
     }
 
     // AURA Connect: Use Subscription Schedule for auto price transition
-    // Phase 1: 14-day trial + 3 months at $149.99
-    // Phase 2: $249.99/mo ongoing
     const now = Math.floor(Date.now() / 1000);
 
     const schedule = await stripe.subscriptionSchedules.create({
       customer: customerId,
       start_date: now,
-      end_behavior: "release", // subscription continues after schedule ends
+      end_behavior: "release",
       metadata: { user_id: user.id, branch: selectedBranch, product: "connect" },
       phases: [
         {
           items: [{ price: CONNECT_INTRO_PRICE, quantity: 1 }],
-          iterations: 3, // 3 months at intro price
-          trial_end: now + (3 * 24 * 60 * 60), // 3-day trial
+          iterations: 3,
+          trial_end: now + (3 * 24 * 60 * 60),
           metadata: { pricing_phase: "intro", user_id: user.id, branch: selectedBranch },
         },
         {
@@ -134,8 +123,6 @@ serve(async (req) => {
       standardPrice: CONNECT_STANDARD_PRICE,
     });
 
-    // Since subscription schedules create the subscription directly (no checkout page),
-    // we redirect to success URL
     return new Response(JSON.stringify({
       url: successUrl,
       schedule_id: schedule.id,

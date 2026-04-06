@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+import { resolveStripeCustomer } from "../_shared/stripe-customer.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -33,17 +34,18 @@ serve(async (req) => {
     if (!authHeader) throw new Error("No authorization header provided");
 
     const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await supabaseClient.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) throw new Error(`Auth error: ${claimsError?.message || "Invalid token"}`);
-    const email = claimsData.claims.email as string;
-    if (!email) throw new Error("User not authenticated or email not available");
-    const user = { email };
+    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
+    if (userError) throw new Error(`Auth error: ${userError.message}`);
+    const user = userData.user;
+    if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { email: user.email });
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
-    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
 
-    if (customers.data.length === 0) {
+    // Resolve customer by ID (profiles table) → fallback to email → don't create
+    const result = await resolveStripeCustomer(stripe, supabaseClient, user.id, user.email, { createIfMissing: false });
+
+    if (!result) {
       logStep("No Stripe customer found");
       return new Response(JSON.stringify({ subscribed: false }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -51,7 +53,7 @@ serve(async (req) => {
       });
     }
 
-    const customerId = customers.data[0].id;
+    const customerId = result.customerId;
     logStep("Found customer", { customerId });
 
     // Check active subs
