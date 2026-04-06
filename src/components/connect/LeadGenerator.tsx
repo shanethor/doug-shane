@@ -1352,9 +1352,9 @@ export default function LeadGenerator() {
       const { error } = await supabase.from("purchased_leads").insert(rows as any);
       if (error) throw error;
 
-      // Mark purchased leads as "contacted" so they don't show as new again
+      // Mark purchased leads as "unlocked" so they don't show as new again
       for (const l of toPurchase) {
-        await supabase.from("engine_leads").update({ status: "contacted" } as any).eq("id", l.id);
+        await supabase.from("engine_leads").update({ status: "unlocked" } as any).eq("id", l.id);
       }
 
       qc.invalidateQueries({ queryKey: ["engine-leads"] });

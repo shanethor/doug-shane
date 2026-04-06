@@ -558,7 +558,7 @@ export default function LeadEnginePanel() {
           <SelectContent>
             <SelectItem value="all">All Statuses</SelectItem>
             <SelectItem value="new">New</SelectItem>
-            <SelectItem value="contacted">Contacted</SelectItem>
+            <SelectItem value="unlocked">Unlocked</SelectItem>
             <SelectItem value="qualified">Qualified</SelectItem>
             <SelectItem value="converted">Converted</SelectItem>
           </SelectContent>
