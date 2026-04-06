@@ -177,23 +177,21 @@ export default function Auth() {
         });
         if (error) throw error;
 
-        // Update profile with agency and pending status
+        // Update profile — upsert avoids race with handle_new_user trigger
         if (signUpData.user) {
-          setTimeout(async () => {
-            const profileUpdate: Record<string, any> = {
-              full_name: fullName,
-              approval_status: "pending",
-              industry: selectedIndustry,
-            };
-            if (selectedAgency) {
-              profileUpdate.agency_id = selectedAgency.id;
-              profileUpdate.agency_name = selectedAgency.name;
-            }
-            await supabase
-              .from("profiles")
-              .update(profileUpdate)
-              .eq("user_id", signUpData.user!.id);
-          }, 1000);
+          const profileUpdate: Record<string, any> = {
+            user_id: signUpData.user.id,
+            full_name: fullName,
+            approval_status: "pending",
+            industry: selectedIndustry,
+          };
+          if (selectedAgency) {
+            profileUpdate.agency_id = selectedAgency.id;
+            profileUpdate.agency_name = selectedAgency.name;
+          }
+          await supabase
+            .from("profiles")
+            .upsert(profileUpdate as any, { onConflict: "user_id" });
         }
 
         toast.success("Account created! Check your email for a confirmation link. Your account will be reviewed by an administrator before you can access AURA.");

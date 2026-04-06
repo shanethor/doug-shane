@@ -110,14 +110,14 @@ export default function ProductAuth() {
         });
         if (error) throw error;
 
-        // Save vertical to profile
+        // Save vertical to profile — upsert avoids race with handle_new_user trigger
         if (signUpData.user) {
-          setTimeout(async () => {
-            await supabase
-              .from("profiles")
-              .update({ industry: industryKey, connect_vertical: industryKey } as any)
-              .eq("user_id", signUpData.user!.id);
-          }, 1000);
+          await supabase
+            .from("profiles")
+            .upsert(
+              { user_id: signUpData.user.id, industry: industryKey, connect_vertical: industryKey } as any,
+              { onConflict: "user_id" }
+            );
         }
 
         // With auto-confirm, user is immediately signed in — send 2FA code (skip for test accounts)
