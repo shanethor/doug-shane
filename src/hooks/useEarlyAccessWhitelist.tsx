@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { isMasterEmail, isWhitelistedEmail } from "@/lib/master-accounts";
 
 // Pages that are always accessible (not gated)
-const UNGATED_PAGES = ["pipeline", "leads", "studio", "property", "clark", "create"];
+const UNGATED_PAGES = ["dashboard", "pipeline", "leads", "studio", "property", "clark", "create"];
 
 export function useEarlyAccessWhitelist() {
   const { user } = useAuth();
