@@ -388,6 +388,8 @@ function WelcomeStep() {
                 style={
                   tier === "FREE"
                     ? { background: "hsl(140 12% 42% / 0.12)", color: "hsl(140 12% 58%)" }
+                    : tier.includes("PAID")
+                    ? { background: "hsl(200 60% 50% / 0.12)", color: "hsl(200 60% 60%)" }
                     : { background: "hsl(38 92% 50% / 0.12)", color: "hsl(38 80% 55%)" }
                 }
               >
