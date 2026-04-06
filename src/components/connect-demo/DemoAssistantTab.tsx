@@ -149,7 +149,28 @@ function StreamingMessage({ content, isStreaming, onAction }: { content: string;
   );
 }
 
-export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: string) => void }) {
+const DAILY_LIMIT_KEY = "clark_daily_prompts";
+const MAX_FREE_PROMPTS = 10;
+
+function getDailyPromptCount(): number {
+  try {
+    const raw = localStorage.getItem(DAILY_LIMIT_KEY);
+    if (!raw) return 0;
+    const { date, count } = JSON.parse(raw);
+    if (date !== new Date().toISOString().slice(0, 10)) return 0;
+    return count;
+  } catch { return 0; }
+}
+
+function incrementDailyPromptCount(): number {
+  const today = new Date().toISOString().slice(0, 10);
+  const current = getDailyPromptCount();
+  const next = current + 1;
+  localStorage.setItem(DAILY_LIMIT_KEY, JSON.stringify({ date: today, count: next }));
+  return next;
+}
+
+export default function DemoAssistantTab({ onNavigate, isSubscriber = false }: { onNavigate?: (tab: string) => void; isSubscriber?: boolean }) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [messages, setMessages] = useState<Msg[]>([]);
@@ -158,6 +179,8 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
   const [dragOver, setDragOver] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
+  const [promptCount, setPromptCount] = useState(getDailyPromptCount);
+  const atLimit = !isSubscriber && promptCount >= MAX_FREE_PROMPTS;
   const scrollRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -300,6 +323,10 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
 
   const send = useCallback((text: string) => {
     if (!text.trim() || loading) return;
+    if (atLimit) {
+      toast.error("You've reached your 10 free prompts today. Subscribe to AURA Connect for unlimited access.");
+      return;
+    }
     const fileNote = attachedFiles.length > 0
       ? `\n\n📎 Attached: ${attachedFiles.map(f => f.name).join(", ")}`
       : "";
@@ -330,13 +357,14 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
       onDelta: upsert,
       onDone: () => {
         setLoading(false);
+        setPromptCount(incrementDailyPromptCount());
         // Process any action markers
         if (assistantSoFar) void processActionMarkers(assistantSoFar);
       },
       onError: (err) => { toast.error(err); setLoading(false); },
       signal: ac.signal,
     });
-  }, [messages, loading, attachedFiles, processActionMarkers]);
+  }, [messages, loading, attachedFiles, processActionMarkers, atLimit]);
 
   const stop = useCallback(() => {
     abortRef.current?.abort();
@@ -429,6 +457,22 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
               </Button>
             </div>
           </div>
+
+          {/* Free tier limit banner */}
+          {!isSubscriber && (
+            <div className="w-full max-w-2xl text-center">
+              {atLimit ? (
+                <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-3">
+                  <p className="text-sm font-medium text-amber-400">Daily limit reached ({MAX_FREE_PROMPTS}/{MAX_FREE_PROMPTS})</p>
+                  <p className="text-xs text-muted-foreground mt-1">Subscribe to AURA Connect for unlimited Clark access</p>
+                </div>
+              ) : (
+                <p className="text-[11px] text-muted-foreground">
+                  {MAX_FREE_PROMPTS - promptCount} free prompt{MAX_FREE_PROMPTS - promptCount !== 1 ? "s" : ""} remaining today
+                </p>
+              )}
+            </div>
+          )}
 
           <div className="w-full max-w-2xl grid grid-cols-2 sm:grid-cols-4 gap-2" style={{ animation: "sageFadeIn 0.6s cubic-bezier(0.16,1,0.3,1) 0.35s both" }}>
             {SUGGESTIONS.map((s) => (

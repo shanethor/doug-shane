@@ -162,6 +162,7 @@ export function ProductLayout({
   const location = useLocation();
   const showProperty = canSeeProperty();
   const isFullAccess = isMaster || subscribed;
+  const FREE_PAGES = ["dashboard", "leads", "pipeline", "sage", "clark"];
   const [collapsed, setCollapsed] = useState(() => {
     try { return localStorage.getItem("sidebar-collapsed") === "true"; } catch { return false; }
   });
@@ -214,10 +215,9 @@ export function ProductLayout({
            }).map((item) => {
              const active = isActive(item.to, item.exact);
              const pageKey = item.to === "/connect" ? "connect" : item.to.replace("/connect/", "");
-             const gated = isPageGated(pageKey);
-             // For non-subscribed users, only "leads" is available (plus gated logic)
-             const isLeadsPage = pageKey === "leads";
-             const lockedForFree = !isFullAccess && !gated && !isLeadsPage;
+              const gated = isPageGated(pageKey);
+              const isFreePage = FREE_PAGES.includes(pageKey);
+              const lockedForFree = !isFullAccess && !gated && !isFreePage;
              return (
                <Link
                  key={item.to}
