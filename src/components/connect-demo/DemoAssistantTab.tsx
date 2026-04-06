@@ -9,7 +9,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { executeCalendarActions, extractCalendarActions } from "@/lib/calendar-action-utils";
 import PreviousChats from "@/components/PreviousChats";
 
-type Msg = { role: "user" | "assistant"; content: string };
+type MsgContent = string | Array<{ type: "text"; text: string } | { type: "image_url"; image_url: { url: string } }>;
+type Msg = { role: "user" | "assistant"; content: MsgContent };
 
 const SUGGESTIONS = [
   { icon: PlusCircle, label: "Add a lead", message: "I want to add a new lead to my pipeline. Walk me through it." },
