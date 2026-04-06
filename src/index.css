@@ -15,8 +15,8 @@
     --popover: 220 20% 100%;
     --popover-foreground: 220 30% 12%;
 
-    --primary: 220 55% 22%;
-    --primary-foreground: 220 20% 96%;
+    --primary: 140 12% 42%;
+    --primary-foreground: 0 0% 100%;
 
     --secondary: 220 15% 93%;
     --secondary-foreground: 220 30% 12%;
@@ -24,7 +24,7 @@
     --muted: 220 12% 94%;
     --muted-foreground: 220 12% 48%;
 
-    --accent: 220 40% 55%;
+    --accent: 140 12% 55%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 70% 55%;
@@ -32,7 +32,7 @@
 
     --border: 220 18% 88%;
     --input: 220 18% 88%;
-    --ring: 220 55% 22%;
+    --ring: 140 12% 42%;
 
     --radius: 0.625rem;
 
@@ -40,19 +40,19 @@
     --warning: 38 92% 50%;
 
     /* AURA gradient tokens */
-    --aura-navy: 220 55% 22%;
-    --aura-steel: 220 15% 55%;
-    --aura-silver: 220 10% 78%;
-    --aura-glow: 220 40% 55%;
+    --aura-navy: 140 12% 30%;
+    --aura-steel: 140 8% 50%;
+    --aura-silver: 140 6% 72%;
+    --aura-glow: 140 12% 42%;
 
     --sidebar-background: 220 25% 97%;
     --sidebar-foreground: 220 30% 20%;
-    --sidebar-primary: 220 55% 22%;
+    --sidebar-primary: 140 12% 42%;
     --sidebar-primary-foreground: 220 20% 96%;
     --sidebar-accent: 220 15% 93%;
     --sidebar-accent-foreground: 220 30% 12%;
     --sidebar-border: 220 18% 88%;
-    --sidebar-ring: 220 55% 45%;
+    --sidebar-ring: 140 12% 42%;
   }
 
   .dark {
