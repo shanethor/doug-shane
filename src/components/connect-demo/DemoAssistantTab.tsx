@@ -323,6 +323,10 @@ export default function DemoAssistantTab({ onNavigate, isSubscriber = false }: {
 
   const send = useCallback((text: string) => {
     if (!text.trim() || loading) return;
+    if (atLimit) {
+      toast.error("You've reached your 10 free prompts today. Subscribe to AURA Connect for unlimited access.");
+      return;
+    }
     const fileNote = attachedFiles.length > 0
       ? `\n\n📎 Attached: ${attachedFiles.map(f => f.name).join(", ")}`
       : "";
