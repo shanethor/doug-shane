@@ -74,7 +74,7 @@ export default function ConnectOnboarding() {
     if (!user?.id) return;
     const cached = localStorage.getItem(`aura_onboarding_completed_${user.id}`);
     if (cached === "true") {
-      navigate("/connect", { replace: true });
+      navigate("/connect/leads", { replace: true });
       return;
     }
     supabase
@@ -85,7 +85,7 @@ export default function ConnectOnboarding() {
       .then(({ data }) => {
         if (data?.onboarding_completed) {
           localStorage.setItem(`aura_onboarding_completed_${user.id}`, "true");
-          navigate("/connect", { replace: true });
+          navigate("/connect/leads", { replace: true });
           return;
         }
         if (data?.connect_vertical) setSelectedVertical(data.connect_vertical);
@@ -169,7 +169,7 @@ export default function ConnectOnboarding() {
         }
         localStorage.setItem(`aura_onboarding_completed_${user.id}`, "true");
       }
-      navigate("/connect", { replace: true });
+      navigate("/connect/leads", { replace: true });
     } catch (err) {
       console.error("Onboarding completion error:", err);
       toast.error("Something went wrong — please try again.");
