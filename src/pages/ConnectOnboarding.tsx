@@ -363,7 +363,7 @@ function Eyebrow({ children }: { children: React.ReactNode }) {
 /* ── Step 1: Welcome ── */
 function WelcomeStep() {
   const features = [
-    { icon: Target, name: "AI Lead Engine", desc: "Scans 70+ verified databases for targeted prospects", tier: "FREE" },
+    { icon: Target, name: "AI Lead Engine", desc: "Scans 70+ verified databases for targeted prospects", tier: "💲 PAID/LEAD" },
     { icon: TrendingUp, name: "Sales Pipeline", desc: "Track deals from first contact to bind with AI scoring", tier: "FREE" },
     { icon: Brain, name: "Clark AI Copilot", desc: "Ask Clark anything — 10 queries/day free", tier: "FREE" },
     { icon: Sparkles, name: "Create Studio", desc: "Generate branded flyers, social posts, and marketing materials", tier: "PRO" },
@@ -388,6 +388,8 @@ function WelcomeStep() {
                 style={
                   tier === "FREE"
                     ? { background: "hsl(140 12% 42% / 0.12)", color: "hsl(140 12% 58%)" }
+                    : tier.includes("PAID")
+                    ? { background: "hsl(200 60% 50% / 0.12)", color: "hsl(200 60% 60%)" }
                     : { background: "hsl(38 92% 50% / 0.12)", color: "hsl(38 80% 55%)" }
                 }
               >
