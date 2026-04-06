@@ -8,7 +8,7 @@ import {
   Target, DollarSign, ArrowRight, Users, Zap, AlertTriangle,
   Sparkles, Send, Image, Palette, Clock, Plus, BarChart3,
   Loader2, FileText, ArrowUpRight, Calendar as CalendarIcon,
-  PenLine, ChevronRight, MessageSquare, Activity,
+  PenLine, ChevronRight, MessageSquare, Activity, Lock,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -55,7 +55,7 @@ function getScoreTier(score: number) {
   return SCORE_TIERS.find(t => score >= t.min) || SCORE_TIERS[3];
 }
 
-export default function ConnectDashboard() {
+export default function ConnectDashboard({ isSubscriber = false }: { isSubscriber?: boolean }) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { vertical, config } = useUserVertical();
@@ -427,38 +427,47 @@ export default function ConnectDashboard() {
         </Card>
 
         {/* ═══ ZONE D — Create Launchpad ═══ */}
-        <Card className="bg-card border-border">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-foreground flex items-center gap-2">
-              <Palette className="h-4 w-4 text-muted-foreground" />
-              Create Launchpad
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="p-3 rounded-lg bg-muted/20 text-center">
-              <Image className="h-8 w-8 mx-auto text-muted-foreground/40 mb-2" />
-              <p className="text-xs text-muted-foreground">Start from a template to create marketing content</p>
-              <Button size="sm" className="mt-2 gap-1.5 text-xs" onClick={() => navigate("/connect/create")}>
-                Open Create <ArrowRight className="h-3 w-3" />
-              </Button>
+        <div className="relative">
+          {!isSubscriber && (
+            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center rounded-xl backdrop-blur-md bg-background/60">
+              <Lock className="h-6 w-6 text-muted-foreground mb-2" />
+              <p className="text-sm font-medium text-foreground">Subscribe to unlock Create</p>
+              <p className="text-xs text-muted-foreground mt-1">Marketing tools for AURA Connect members</p>
             </div>
-            <div>
-              <p className="text-[10px] text-muted-foreground font-medium mb-2">Quick-start templates</p>
-              <div className="flex flex-wrap gap-1.5">
-                {templateChips.map(t => (
-                  <button
-                    key={t.id}
-                    onClick={() => navigate("/connect/create")}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] border border-border bg-muted/20 hover:bg-muted/40 transition-colors text-foreground"
-                  >
-                    <t.icon className="h-3 w-3 text-muted-foreground" />
-                    {t.name}
-                  </button>
-                ))}
+          )}
+          <Card className={`bg-card border-border ${!isSubscriber ? "pointer-events-none" : ""}`}>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-foreground flex items-center gap-2">
+                <Palette className="h-4 w-4 text-muted-foreground" />
+                Create Launchpad
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="p-3 rounded-lg bg-muted/20 text-center">
+                <Image className="h-8 w-8 mx-auto text-muted-foreground/40 mb-2" />
+                <p className="text-xs text-muted-foreground">Start from a template to create marketing content</p>
+                <Button size="sm" className="mt-2 gap-1.5 text-xs" onClick={() => navigate("/connect/create")}>
+                  Open Create <ArrowRight className="h-3 w-3" />
+                </Button>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+              <div>
+                <p className="text-[10px] text-muted-foreground font-medium mb-2">Quick-start templates</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {templateChips.map(t => (
+                    <button
+                      key={t.id}
+                      onClick={() => navigate("/connect/create")}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] border border-border bg-muted/20 hover:bg-muted/40 transition-colors text-foreground"
+                    >
+                      <t.icon className="h-3 w-3 text-muted-foreground" />
+                      {t.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       {/* ═══ ZONE E — Clark Quick Ask ═══ */}

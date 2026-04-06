@@ -149,7 +149,28 @@ function StreamingMessage({ content, isStreaming, onAction }: { content: string;
   );
 }
 
-export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: string) => void }) {
+const DAILY_LIMIT_KEY = "clark_daily_prompts";
+const MAX_FREE_PROMPTS = 10;
+
+function getDailyPromptCount(): number {
+  try {
+    const raw = localStorage.getItem(DAILY_LIMIT_KEY);
+    if (!raw) return 0;
+    const { date, count } = JSON.parse(raw);
+    if (date !== new Date().toISOString().slice(0, 10)) return 0;
+    return count;
+  } catch { return 0; }
+}
+
+function incrementDailyPromptCount(): number {
+  const today = new Date().toISOString().slice(0, 10);
+  const current = getDailyPromptCount();
+  const next = current + 1;
+  localStorage.setItem(DAILY_LIMIT_KEY, JSON.stringify({ date: today, count: next }));
+  return next;
+}
+
+export default function DemoAssistantTab({ onNavigate, isSubscriber = false }: { onNavigate?: (tab: string) => void; isSubscriber?: boolean }) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [messages, setMessages] = useState<Msg[]>([]);
@@ -158,10 +179,8 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
   const [dragOver, setDragOver] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const abortRef = useRef<AbortController | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const conversationSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [promptCount, setPromptCount] = useState(getDailyPromptCount);
+  const atLimit = !isSubscriber && promptCount >= MAX_FREE_PROMPTS;
 
   // Auto-save conversation
   useEffect(() => {
