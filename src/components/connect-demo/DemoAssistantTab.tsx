@@ -106,17 +106,17 @@ function StreamingMessage({ content, isStreaming, onAction }: { content: string;
 
   return (
     <div className="space-y-2">
-      <div className="prose prose-sm prose-invert max-w-none
-        [&_p]:my-2 [&_p]:leading-relaxed [&_p]:text-[hsl(240_5%_80%)]
-        [&_ul]:my-2 [&_li]:my-1 [&_li]:text-[hsl(240_5%_78%)]
-        [&_strong]:text-white [&_strong]:font-semibold
-        [&_h1]:text-lg [&_h1]:font-bold [&_h1]:text-white [&_h1]:mt-3 [&_h1]:mb-2
-        [&_h2]:text-base [&_h2]:font-semibold [&_h2]:text-white [&_h2]:mt-3 [&_h2]:mb-1.5
-        [&_h3]:text-sm [&_h3]:font-semibold [&_h3]:text-white [&_h3]:mt-2 [&_h3]:mb-1
-        [&_table]:text-xs [&_table]:border-collapse [&_th]:text-left [&_th]:py-1.5 [&_th]:px-2 [&_th]:font-semibold [&_th]:text-white [&_th]:border-b [&_th]:border-[hsl(240_6%_20%)]
-        [&_td]:py-1.5 [&_td]:px-2 [&_td]:text-[hsl(240_5%_72%)] [&_td]:border-b [&_td]:border-[hsl(240_6%_14%)]
-        [&_blockquote]:border-l-2 [&_blockquote]:border-[hsl(140_12%_42%)] [&_blockquote]:pl-3 [&_blockquote]:italic [&_blockquote]:text-[hsl(240_5%_65%)]
-        [&_code]:text-[hsl(140_12%_62%)] [&_code]:bg-[hsl(240_6%_12%)] [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs
+      <div className="prose prose-sm dark:prose-invert max-w-none
+        [&_p]:my-2 [&_p]:leading-relaxed [&_p]:text-muted-foreground
+        [&_ul]:my-2 [&_li]:my-1 [&_li]:text-muted-foreground
+        [&_strong]:text-foreground [&_strong]:font-semibold
+        [&_h1]:text-lg [&_h1]:font-bold [&_h1]:text-foreground [&_h1]:mt-3 [&_h1]:mb-2
+        [&_h2]:text-base [&_h2]:font-semibold [&_h2]:text-foreground [&_h2]:mt-3 [&_h2]:mb-1.5
+        [&_h3]:text-sm [&_h3]:font-semibold [&_h3]:text-foreground [&_h3]:mt-2 [&_h3]:mb-1
+        [&_table]:text-xs [&_table]:border-collapse [&_th]:text-left [&_th]:py-1.5 [&_th]:px-2 [&_th]:font-semibold [&_th]:text-foreground [&_th]:border-b [&_th]:border-border
+        [&_td]:py-1.5 [&_td]:px-2 [&_td]:text-muted-foreground [&_td]:border-b [&_td]:border-border
+        [&_blockquote]:border-l-2 [&_blockquote]:border-primary [&_blockquote]:pl-3 [&_blockquote]:italic [&_blockquote]:text-muted-foreground
+        [&_code]:text-primary [&_code]:bg-muted [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs
         ">
         <ReactMarkdown
           components={{
@@ -126,8 +126,7 @@ function StreamingMessage({ content, isStreaming, onAction }: { content: string;
                 const cleanText = text.replace(/[\[\]]/g, "");
                 return (
                   <button
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:brightness-110 mr-1.5 mt-1"
-                    style={{ background: "hsl(140 12% 42%)", color: "white" }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:brightness-110 mr-1.5 mt-1 bg-primary text-primary-foreground"
                     onClick={() => onAction?.(cleanText)}
                   >
                     <Sparkles className="h-3 w-3" />
@@ -135,7 +134,7 @@ function StreamingMessage({ content, isStreaming, onAction }: { content: string;
                   </button>
                 );
               }
-              return <a href={href} className="text-[hsl(140_12%_62%)] underline underline-offset-2 hover:text-[hsl(140_12%_72%)]">{children}</a>;
+              return <a href={href} className="text-primary underline underline-offset-2 hover:text-primary/80">{children}</a>;
             },
           }}
         >
@@ -143,7 +142,7 @@ function StreamingMessage({ content, isStreaming, onAction }: { content: string;
         </ReactMarkdown>
       </div>
       {isStreaming && (
-        <span className="inline-block w-1.5 h-4 rounded-sm animate-pulse" style={{ background: "hsl(140 12% 58%)" }} />
+        <span className="inline-block w-1.5 h-4 rounded-sm animate-pulse bg-primary" />
       )}
     </div>
   );
@@ -416,11 +415,11 @@ export default function DemoAssistantTab({ onNavigate, isSubscriber = false }: {
       {!hasMessages ? (
         <div className="flex-1 flex flex-col items-center justify-start pt-[8vh] px-4">
           <div className="flex items-center gap-2 mb-3" style={{ animation: "sageFadeIn 0.5s cubic-bezier(0.16,1,0.3,1) 0.05s both" }}>
-            <Sparkles className="h-5 w-5" style={{ color: "hsl(140 12% 58%)" }} />
-            <span className="text-xs font-medium uppercase tracking-widest" style={{ color: "hsl(140 12% 50%)" }}>Clark Assistant</span>
-            <span className="text-[9px] px-2 py-0.5 rounded-full font-medium" style={{ background: "hsl(140 50% 30% / 0.2)", color: "hsl(140 50% 65%)" }}>LIVE DATA</span>
+            <Sparkles className="h-5 w-5 text-primary" />
+            <span className="text-xs font-medium uppercase tracking-widest text-primary">Clark Assistant</span>
+            <span className="text-[9px] px-2 py-0.5 rounded-full font-medium bg-primary/20 text-primary">LIVE DATA</span>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-6 text-center" style={{ background: "linear-gradient(135deg, hsl(140 12% 62%), hsl(140 12% 45%), hsl(240 5% 80%))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", animation: "sageFadeIn 0.6s cubic-bezier(0.16,1,0.3,1) 0.15s both" }}>
+          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-6 text-center text-foreground" style={{ animation: "sageFadeIn 0.6s cubic-bezier(0.16,1,0.3,1) 0.15s both" }}>
             How can I help you today?
           </h1>
 
@@ -428,19 +427,18 @@ export default function DemoAssistantTab({ onNavigate, isSubscriber = false }: {
             {attachedFiles.length > 0 && (
               <div className="mb-2 flex flex-wrap gap-2">
                 {attachedFiles.map((f, i) => (
-                  <div key={i} className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs" style={{ border: "1px solid hsl(240 6% 14%)", color: "hsl(240 5% 70%)" }}>
-                    <Paperclip className="h-3 w-3" style={{ color: "hsl(240 5% 46%)" }} />
+                  <div key={i} className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs border border-border text-muted-foreground">
+                    <Paperclip className="h-3 w-3 text-muted-foreground" />
                     <span className="max-w-[120px] truncate">{f.name}</span>
-                    <button onClick={() => removeFile(i)}><X className="h-3 w-3" style={{ color: "hsl(240 5% 46%)" }} /></button>
+                    <button onClick={() => removeFile(i)}><X className="h-3 w-3 text-muted-foreground" /></button>
                   </div>
                 ))}
               </div>
             )}
             <div
-              className="flex items-end gap-2 rounded-xl p-4 transition-shadow focus-within:shadow-[0_0_24px_-4px_hsl(140_12%_42%_/_0.25)]"
-              style={{ background: "hsl(240 8% 9%)", border: "1px solid hsl(240 6% 14%)", boxShadow: "0 8px 32px -8px hsl(140 12% 42% / 0.08)" }}
+              className="flex items-end gap-2 rounded-xl p-4 transition-shadow focus-within:shadow-[0_0_24px_-4px_hsl(var(--primary)_/_0.25)] bg-card border border-border"
             >
-              <Button variant="ghost" size="icon" className="shrink-0 h-9 w-9" style={{ color: "hsl(240 5% 46%)" }} onClick={() => fileInputRef.current?.click()}>
+              <Button variant="ghost" size="icon" className="shrink-0 h-9 w-9 text-muted-foreground" onClick={() => fileInputRef.current?.click()}>
                 <Paperclip className="h-4 w-4" />
               </Button>
               <textarea
@@ -449,10 +447,9 @@ export default function DemoAssistantTab({ onNavigate, isSubscriber = false }: {
                 onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(input); } }}
                 placeholder="Ask Clark anything — your real data is connected…"
                 rows={3}
-                className="flex-1 resize-none bg-transparent border-0 outline-none text-sm min-h-[72px] max-h-48 py-2"
-                style={{ color: "white" }}
+                className="flex-1 resize-none bg-transparent border-0 outline-none text-sm min-h-[72px] max-h-48 py-2 text-foreground placeholder:text-muted-foreground"
               />
-              <Button size="icon" onClick={() => send(input)} disabled={!input.trim()} className="shrink-0 h-9 w-9" style={{ background: "hsl(140 12% 42%)", color: "white" }}>
+              <Button size="icon" onClick={() => send(input)} disabled={!input.trim()} className="shrink-0 h-9 w-9 bg-primary text-primary-foreground hover:bg-primary/90">
                 <Send className="h-4 w-4" />
               </Button>
             </div>
@@ -479,10 +476,9 @@ export default function DemoAssistantTab({ onNavigate, isSubscriber = false }: {
               <button
                 key={s.label}
                 onClick={() => send(s.message)}
-                className="flex items-center gap-2 p-3 rounded-lg text-left text-xs transition-all hover:bg-[hsl(240_8%_12%)] hover:border-[hsl(140_12%_42%_/_0.2)]"
-                style={{ border: "1px solid hsl(240 6% 14%)", color: "hsl(240 5% 70%)" }}
+                className="flex items-center gap-2 p-3 rounded-lg text-left text-xs transition-all border border-border text-muted-foreground hover:bg-muted/50 hover:text-foreground hover:border-primary/20"
               >
-                <s.icon className="h-4 w-4 shrink-0" style={{ color: "hsl(140 12% 58%)" }} />
+                <s.icon className="h-4 w-4 shrink-0 text-primary" />
                 {s.label}
               </button>
             ))}
