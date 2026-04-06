@@ -1,6 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import type { Database } from "@/integrations/supabase/types";
+
+type EngineLeadInsert = Database["public"]["Tables"]["engine_leads"]["Insert"];
+type EngineLeadUpdate = Database["public"]["Tables"]["engine_leads"]["Update"];
+type EngineActivityInsert = Database["public"]["Tables"]["engine_activity"]["Insert"];
+type LeadSourceConfigInsert = Database["public"]["Tables"]["lead_source_configs"]["Insert"];
 
 /* ── Types ── */
 export type EngineLead = {
