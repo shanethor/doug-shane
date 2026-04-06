@@ -458,6 +458,22 @@ export default function DemoAssistantTab({ onNavigate, isSubscriber = false }: {
             </div>
           </div>
 
+          {/* Free tier limit banner */}
+          {!isSubscriber && (
+            <div className="w-full max-w-2xl text-center">
+              {atLimit ? (
+                <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-3">
+                  <p className="text-sm font-medium text-amber-400">Daily limit reached ({MAX_FREE_PROMPTS}/{MAX_FREE_PROMPTS})</p>
+                  <p className="text-xs text-muted-foreground mt-1">Subscribe to AURA Connect for unlimited Clark access</p>
+                </div>
+              ) : (
+                <p className="text-[11px] text-muted-foreground">
+                  {MAX_FREE_PROMPTS - promptCount} free prompt{MAX_FREE_PROMPTS - promptCount !== 1 ? "s" : ""} remaining today
+                </p>
+              )}
+            </div>
+          )}
+
           <div className="w-full max-w-2xl grid grid-cols-2 sm:grid-cols-4 gap-2" style={{ animation: "sageFadeIn 0.6s cubic-bezier(0.16,1,0.3,1) 0.35s both" }}>
             {SUGGESTIONS.map((s) => (
               <button
