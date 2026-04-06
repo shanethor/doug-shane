@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { ProductProtectedRoute } from "@/components/ProductProtectedRoute";
+import { AdminRoute } from "@/components/AdminRoute";
 import { lazy, Suspense, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -215,7 +216,7 @@ const App = () => (
             <Route path="/insurance/acord/:formId" element={<ProtectedRoute><AcordFormPage /></ProtectedRoute>} />
             <Route path="/insurance/templates" element={<ProtectedRoute><TemplateEditor /></ProtectedRoute>} />
             <Route path="/insurance/forms" element={<ProtectedRoute><GeneratedForms /></ProtectedRoute>} />
-            <Route path="/insurance/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+            <Route path="/insurance/admin" element={<ProtectedRoute><AdminRoute><AdminDashboard /></AdminRoute></ProtectedRoute>} />
             <Route path="/insurance/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
             <Route path="/insurance/olddeck" element={<ProtectedRoute><OldDeck /></ProtectedRoute>} />
             <Route path="/insurance/form-test" element={<ProtectedRoute><FormTest /></ProtectedRoute>} />
