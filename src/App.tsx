@@ -96,13 +96,17 @@ function syncThemeFromProfile(userId: string) {
     .maybeSingle()
     .then(({ data }) => {
       if (!data) return;
-      const dbDark = (data as any).dark_mode;
-      if (dbDark !== null && dbDark !== undefined) {
-        applyTheme(!!dbDark);
-      } else if ((data as any).theme_preference) {
-        applyTheme((data as any).theme_preference === "dark");
+      const themePref = (data as any).theme_preference as string | null;
+      const dbDark = (data as any).dark_mode as boolean | null;
+
+      // Prefer explicit theme_preference (set during onboarding) first
+      if (themePref) {
+        applyTheme(themePref === "dark");
+      } else if (dbDark === true) {
+        // Only override to dark if explicitly true; ignore false default for new users
+        applyTheme(true);
       }
-      // If neither is set, keep localStorage value (already applied by inline script)
+      // Otherwise keep localStorage value (defaults to dark via main.tsx)
     });
 }
 
