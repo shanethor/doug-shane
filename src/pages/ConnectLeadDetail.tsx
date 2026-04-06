@@ -458,7 +458,7 @@ export default function ConnectLeadDetail() {
             </Button>
           </div>
 
-          {/* Right column — Draft Outreach */}
+          {/* Right column — Draft Outreach + Google Maps */}
           <div className="space-y-4">
             <Card>
               <CardHeader className="pb-3">
