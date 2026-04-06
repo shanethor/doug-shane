@@ -262,6 +262,12 @@ export function useConvertToPipeline() {
   const { user } = useAuth();
   return useMutation({
     mutationFn: async (engineLead: EngineLead) => {
+      // Ensure we have a fresh session
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) throw new Error("Please sign in to add leads to your pipeline");
+
+      const userId = session.user.id;
+
       // Create a real pipeline lead
       const { data: newLead, error: leadErr } = await supabase
         .from("leads")
@@ -274,7 +280,7 @@ export function useConvertToPipeline() {
           business_type: engineLead.industry,
           target_premium: engineLead.est_premium || null,
           lead_source: `Lead Engine – ${engineLead.source}`,
-          owner_user_id: user!.id,
+          owner_user_id: userId,
           stage: "prospect" as const,
           line_type: "commercial",
         })
