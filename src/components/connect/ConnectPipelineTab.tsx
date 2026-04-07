@@ -79,10 +79,12 @@ const PIPELINE_CONFIGS: Record<string, { label: string; stages: StageConfig[] }>
     label: "Trucking / Commercial Fleet",
     stages: [
       { key: "prospect", label: "Signal Detected", color: "bg-cyan-500/10 text-cyan-600 border-cyan-500/20" },
-      { key: "quoting", label: "Contacted", color: "bg-sky-500/10 text-sky-600 border-sky-500/20" },
-      { key: "presenting", label: "In Conversation", color: "bg-amber-500/10 text-amber-600 border-amber-500/20" },
-      { key: "bound", label: "Bound", color: "bg-green-500/10 text-green-600 border-green-500/20" },
-      { key: "lost", label: "Lost", color: "bg-red-500/10 text-red-600 border-red-500/20" },
+      { key: "cab_review", label: "CAB / SAFER Review", color: "bg-blue-500/10 text-blue-600 border-blue-500/20" },
+      { key: "quoting", label: "Submissions Out", color: "bg-sky-500/10 text-sky-600 border-sky-500/20" },
+      { key: "presenting", label: "Quote Presented", color: "bg-amber-500/10 text-amber-600 border-amber-500/20" },
+      { key: "binding", label: "Subjectivities / Filings", color: "bg-purple-500/10 text-purple-600 border-purple-500/20" },
+      { key: "bound", label: "Bound & Filed", color: "bg-green-500/10 text-green-600 border-green-500/20" },
+      { key: "lost", label: "Lost / Non-Renewed", color: "bg-red-500/10 text-red-600 border-red-500/20" },
     ],
   },
   real_estate: {
@@ -273,14 +275,16 @@ function WonDetailsDialog({
   onCancel: () => void;
 }) {
   const isInsurance = industry === "insurance";
+  const isTrucking = industry === "trucking";
   const isRealEstate = industry === "real_estate";
 
   const [form, setForm] = useState<Record<string, string>>(() => {
     const init: Record<string, string> = {};
-    if (isInsurance) {
+    if (isInsurance || isTrucking) {
       init.annual_premium = String(lead.target_premium || 0);
-      init.commission_pct = "15";
+      init.commission_pct = isTrucking ? "12" : "15";
       init.line_of_business = "";
+      init.power_units = isTrucking ? "1" : "";
       init.close_date = new Date().toISOString().slice(0, 10);
     } else if (isRealEstate) {
       init.sale_price = String(lead.target_premium || 0);
@@ -297,9 +301,9 @@ function WonDetailsDialog({
 
   const computed = useMemo(() => {
     const c = { ...form };
-    if (isInsurance) {
+    if (isInsurance || isTrucking) {
       const prem = Number(form.annual_premium) || 0;
-      const pct = Number(form.commission_pct) || 15;
+      const pct = Number(form.commission_pct) || (isTrucking ? 12 : 15);
       c.est_commission = String(Math.round(prem * pct / 100));
     } else if (isRealEstate) {
       const price = Number(form.sale_price) || 0;
@@ -309,13 +313,13 @@ function WonDetailsDialog({
     return c;
   }, [form, isInsurance, isRealEstate]);
 
-  const primaryVal = isInsurance
+  const primaryVal = (isInsurance || isTrucking)
     ? Number(computed.annual_premium) || 0
     : isRealEstate
     ? Number(computed.sale_price) || 0
     : Number(computed.deal_value) || 0;
 
-  const commissionVal = isInsurance
+  const commissionVal = (isInsurance || isTrucking)
     ? Number(computed.est_commission) || 0
     : isRealEstate
     ? Number(computed.your_commission) || 0
@@ -342,8 +346,14 @@ function WonDetailsDialog({
         </div>
 
         <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-1">
-          {isInsurance && (
+          {(isInsurance || isTrucking) && (
             <>
+              {isTrucking && (
+                <div className="space-y-1">
+                  <Label className="text-xs">Number of Power Units (Trucks)</Label>
+                  <Input type="number" value={form.power_units || ""} onChange={e => handleChange("power_units", e.target.value)} className="h-9 text-xs" />
+                </div>
+              )}
               <div className="space-y-1">
                 <Label className="text-xs">Annual Premium</Label>
                 <Input type="number" value={form.annual_premium} onChange={e => handleChange("annual_premium", e.target.value)} className="h-9 text-xs" />
@@ -351,7 +361,7 @@ function WonDetailsDialog({
               <div className="space-y-1">
                 <Label className="text-xs">Commission %</Label>
                 <Input type="number" step="0.5" value={form.commission_pct} onChange={e => handleChange("commission_pct", e.target.value)} className="h-9 text-xs" />
-                <p className="text-[10px] text-muted-foreground">Typical P&C commission is 10–20%</p>
+                <p className="text-[10px] text-muted-foreground">{isTrucking ? "Trucking commission usually 10-15%" : "Typical P&C commission is 10–20%"}</p>
               </div>
               <div className="space-y-1">
                 <Label className="text-xs flex items-center gap-1.5">Est. Commission <span className="text-[9px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">auto</span></Label>
@@ -362,7 +372,10 @@ function WonDetailsDialog({
                 <Select value={form.line_of_business || ""} onValueChange={v => handleChange("line_of_business", v)}>
                   <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select line" /></SelectTrigger>
                   <SelectContent>
-                    {["Commercial P&C", "Benefits", "Personal Lines", "Life", "Workers Comp", "E&O"].map(o => (
+                    {(isTrucking 
+                      ? ["Primary Auto Liability", "Physical Damage", "Motor Truck Cargo", "General Liability", "Bobtail / Non-Trucking", "OccAcc", "Umbrella/Excess"]
+                      : ["Commercial P&C", "Benefits", "Personal Lines", "Life", "Workers Comp", "E&O"]
+                    ).map(o => (
                       <SelectItem key={o} value={o} className="text-xs">{o}</SelectItem>
                     ))}
                   </SelectContent>
@@ -392,7 +405,7 @@ function WonDetailsDialog({
               </div>
             </>
           )}
-          {!isInsurance && !isRealEstate && (
+          {!isInsurance && !isTrucking && !isRealEstate && (
             <div className="space-y-1">
               <Label className="text-xs">Deal Value</Label>
               <Input type="number" value={form.deal_value} onChange={e => handleChange("deal_value", e.target.value)} className="h-9 text-xs" />
@@ -410,11 +423,11 @@ function WonDetailsDialog({
 
         <div className="flex items-center justify-between pt-2 border-t">
           <div>
-            {(isInsurance || isRealEstate) ? (
+            {(isInsurance || isTrucking || isRealEstate) ? (
               <>
                 <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Commission</span>
                 <p className="text-lg font-bold text-emerald-500">${commissionVal.toLocaleString()}</p>
-                <p className="text-[10px] text-muted-foreground">{isInsurance ? "Premium" : "Sale Price"}: ${primaryVal.toLocaleString()}</p>
+                <p className="text-[10px] text-muted-foreground">{(isInsurance || isTrucking) ? "Premium" : "Sale Price"}: ${primaryVal.toLocaleString()}</p>
               </>
             ) : (
               <>
@@ -698,8 +711,8 @@ export default function ConnectPipelineTab() {
     // Show celebration with commission or value
     let celAmount = finalValue;
     let celLabel = "Added to production";
-    if (industry === "insurance") {
-      celAmount = Number(details.est_commission) || Math.round(finalValue * 0.15);
+    if (industry === "insurance" || industry === "trucking") {
+      celAmount = Number(details.est_commission) || Math.round(finalValue * (industry === "trucking" ? 0.12 : 0.15));
       celLabel = "Commission Earned";
     } else if (industry === "real_estate") {
       celAmount = Number(details.your_commission) || Math.round(finalValue * 0.0275);
