@@ -17,6 +17,7 @@ import { useUserVertical } from "@/hooks/useUserVertical";
 import { SPOTLIGHT_TEMPLATES } from "@/components/connect/spotlight-templates";
 import { formatDistanceToNow } from "date-fns";
 import ReactMarkdown from "react-markdown";
+import ConnectSocialAnalytics from "@/components/connect/ConnectSocialAnalytics";
 
 const DEFAULT_STAGE_PROB: Record<string, number> = {
   new_lead: 5, prospect: 10, signal_detected: 10, new_provider: 5,
@@ -573,6 +574,11 @@ export default function ConnectDashboard({ isSubscriber = false }: { isSubscribe
           </div>
         </CardContent>
       </Card>
+
+      {/* ═══ ZONE G — Social Analytics ═══ */}
+      <div className="pt-6 mt-6 border-t border-border/50">
+        <ConnectSocialAnalytics />
+      </div>
     </div>
   );
 }

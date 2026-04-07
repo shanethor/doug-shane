@@ -5,6 +5,8 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { AppLayout } from "@/components/AppLayout";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import ConnectSocialAnalytics from "@/components/connect/ConnectSocialAnalytics";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -310,12 +312,19 @@ export default function ProducerDashboard({ embedded }: { embedded?: boolean } =
   };
 
   const content = (
-    <>
+    <Tabs defaultValue="sales" className="w-full">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
-        <div>
+        <div className="flex items-center gap-4">
           <h1 className="text-2xl sm:text-4xl mb-1 hidden md:block">{dashboardTitle}</h1>
+          <TabsList className="h-9">
+            <TabsTrigger value="sales" className="text-xs">Sales & Pipeline</TabsTrigger>
+            <TabsTrigger value="social" className="text-xs">Social Marketing</TabsTrigger>
+          </TabsList>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
+      </div>
+
+      <TabsContent value="sales" className="mt-0">
+        <div className="flex items-center justify-end gap-2 flex-wrap mb-6">
           {canFilterAdvisors && (
             <>
               <Users className="h-4 w-4 text-muted-foreground" />
@@ -345,9 +354,8 @@ export default function ProducerDashboard({ embedded }: { embedded?: boolean } =
             </SelectContent>
           </Select>
         </div>
-      </div>
 
-      {/* Action Strip */}
+        {/* Action Strip */}
       {!loading && (
         <div className="flex flex-wrap gap-2 mb-4">
           {renewalsDue30 > 0 && (
@@ -660,7 +668,12 @@ export default function ProducerDashboard({ embedded }: { embedded?: boolean } =
       </div>
 
       <ProductionAnalytics policies={policies} leadNames={leadNames} leads={leadInfos} />
-    </>
+      </TabsContent>
+
+      <TabsContent value="social" className="mt-0">
+        <ConnectSocialAnalytics />
+      </TabsContent>
+    </Tabs>
   );
   return embedded ? content : <AppLayout>{content}</AppLayout>;
 }
