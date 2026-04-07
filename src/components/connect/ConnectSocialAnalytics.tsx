@@ -248,7 +248,7 @@ export default function ConnectSocialAnalytics() {
             </div>
           </div>
           <p className="text-[10px] text-muted-foreground text-center flex items-center justify-center gap-1 font-sans">
-            <Info className="h-3 w-3" /> Public post data is synced via Proxycurl. Views & demographics require the Pro extension.
+            <Info className="h-3 w-3" /> After connecting, install the AURA Chrome extension to sync your post analytics and performance data.
           </p>
         </CardContent>
       </Card>
@@ -313,31 +313,22 @@ export default function ConnectSocialAnalytics() {
         </div>
       </div>
 
-      {/* Pro Extension Upsell (only show if not installed and not subscribed) */}
+      {/* Extension Install CTA (show if extension not installed) */}
       {!profile?.extension_installed && (
         <Card className="border-primary/30 bg-primary/5">
           <CardContent className="p-4 flex flex-col sm:flex-row items-start sm:items-center gap-4">
             <div className="flex items-center gap-3 flex-1">
               <Chrome className="h-8 w-8 text-primary shrink-0" />
               <div>
-                <p className="font-semibold text-sm">Unlock Views, Impressions & Demographics</p>
+                <p className="font-semibold text-sm">Install the AURA Connect Extension</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  {isSubscribed
-                    ? "Install the AURA Connect Chrome extension to sync your private LinkedIn analytics."
-                    : "Upgrade to Pro to access the Chrome extension and unlock full analytics."
-                  }
+                  Sync your LinkedIn post analytics — likes, comments, views, impressions, and audience demographics — directly into your dashboard.
                 </p>
               </div>
             </div>
-            {isSubscribed ? (
-              <Button size="sm" className="gap-1.5" onClick={downloadExtension}>
-                <Download className="h-3.5 w-3.5" /> Download Extension
-              </Button>
-            ) : (
-              <Button size="sm" variant="outline" className="gap-1.5 border-primary/30">
-                <Lock className="h-3.5 w-3.5" /> Pro Only
-              </Button>
-            )}
+            <Button size="sm" className="gap-1.5" onClick={downloadExtension}>
+              <Download className="h-3.5 w-3.5" /> Download Extension
+            </Button>
           </CardContent>
         </Card>
       )}
@@ -506,7 +497,7 @@ export default function ConnectSocialAnalytics() {
                 </div>
                 <div className="pt-2 border-t border-border">
                   <p className="text-[10px] text-muted-foreground flex items-center gap-1">
-                    <Lock className="h-3 w-3" /> Demographics unlock with the Pro Chrome extension
+                    <Chrome className="h-3 w-3" /> Install the extension to unlock demographics
                   </p>
                 </div>
               </div>
