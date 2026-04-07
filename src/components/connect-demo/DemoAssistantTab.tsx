@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Send, Sparkles, FileUp, Users, Mail, BarChart3, Globe, Loader2, Paperclip, X, Network, PlusCircle, Calendar, Palette, Image, Megaphone, ArrowLeft } from "lucide-react";
@@ -8,6 +8,14 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { executeCalendarActions, extractCalendarActions } from "@/lib/calendar-action-utils";
 import PreviousChats from "@/components/PreviousChats";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
+
+const ConnectPipelineTab = lazy(() => import("@/components/connect/ConnectPipelineTab"));
+const SmartCalendar = lazy(() => import("@/components/connect/SmartCalendar"));
+const DemoEmailTab = lazy(() => import("@/components/connect-demo/DemoEmailTab"));
+const DemoSpotlightTab = lazy(() => import("@/components/connect-demo/DemoSpotlightTab"));
+const ConnectLeads = lazy(() => import("@/pages/ConnectLeads"));
+const ConnectIntelligencePage = lazy(() => import("@/pages/ConnectIntelligence"));
 
 type VisionBlock = { type: "text"; text: string } | { type: "image_url"; image_url: { url: string } };
 type MsgContent = string | VisionBlock[];
@@ -188,6 +196,7 @@ function incrementDailyPromptCount(): number {
 export default function DemoAssistantTab({ onNavigate, isSubscriber = false }: { onNavigate?: (tab: string) => void; isSubscriber?: boolean }) {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [activeWidget, setActiveWidget] = useState<string | null>(null);
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -310,31 +319,35 @@ export default function DemoAssistantTab({ onNavigate, isSubscriber = false }: {
     // Navigate actions
     const navMatches = content.matchAll(/\[NAVIGATE:([^\]]+)\]/g);
     for (const match of navMatches) {
-      navigate(match[1]);
+      const p = match[1].toLowerCase();
+      if (p.includes("pipeline")) setActiveWidget("pipeline");
+      else if (p.includes("calendar")) setActiveWidget("calendar");
+      else if (p.includes("email")) setActiveWidget("email");
+      else if (p.includes("create")) setActiveWidget("create");
+      else if (p.includes("leads") || p === "/connect") setActiveWidget("network");
+      else if (p.includes("intelligence")) setActiveWidget("intelligence");
+      else navigate(match[1]);
     }
   }, [user, navigate]);
 
   const handleAction = useCallback((action: string) => {
     const lower = action.toLowerCase();
     if (lower.includes("view pipeline") || lower.includes("manage pipeline") || lower.includes("pipeline")) {
-      navigate("/connect/pipeline");
+      setActiveWidget("pipeline");
     } else if (lower.includes("view calendar") || lower.includes("schedule")) {
-      navigate("/connect/calendar");
-    } else if (lower.includes("view email") || lower.includes("check email")) {
-      navigate("/connect/email");
-    } else if (lower.includes("draft") || lower.includes("send email")) {
-      navigate("/connect/email");
-    } else if (lower.includes("marketing") || lower.includes("flyer") || lower.includes("gentea") || lower.includes("create a")) {
-      navigate("/connect/create");
-      toast.success("Opening Marketing Center...");
-    } else if (lower.includes("view network") || lower.includes("find connection") || lower.includes("contact")) {
-      navigate("/connect");
+      setActiveWidget("calendar");
+    } else if (lower.includes("view email") || lower.includes("check email") || lower.includes("draft") || lower.includes("send email")) {
+      setActiveWidget("email");
+    } else if (lower.includes("marketing") || lower.includes("flyer") || lower.includes("gentea") || lower.includes("create")) {
+      setActiveWidget("create");
+    } else if (lower.includes("view network") || lower.includes("find connection") || lower.includes("contact") || lower.includes("lead")) {
+      setActiveWidget("network");
     } else if (lower.includes("intelligence")) {
-      navigate("/connect/intelligence");
+      setActiveWidget("intelligence");
     } else {
-      toast.info(`${action} — navigating...`);
+      toast.info(`Triggering: ${action}`);
     }
-  }, [navigate]);
+  }, []);
 
   const send = useCallback(async (text: string) => {
     if (!text.trim() || loading) return;
@@ -616,6 +629,21 @@ export default function DemoAssistantTab({ onNavigate, isSubscriber = false }: {
           </div>
         </>
       )}
+
+      <Sheet open={!!activeWidget} onOpenChange={(o) => (!o && setActiveWidget(null))}>
+        <SheetContent side="right" className="w-[95vw] sm:max-w-4xl lg:max-w-6xl p-0 flex flex-col bg-background/95 backdrop-blur-md border-l border-border/50">
+          <Suspense fallback={<div className="flex-1 flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>}>
+            <div className="flex-1 overflow-y-auto w-full h-full p-0 sm:p-4 md:p-6 bg-background rounded-l-xl">
+              {activeWidget === "pipeline" && <ConnectPipelineTab />}
+              {activeWidget === "calendar" && <SmartCalendar />}
+              {activeWidget === "email" && <DemoEmailTab />}
+              {activeWidget === "create" && <DemoSpotlightTab />}
+              {activeWidget === "network" && <ConnectLeads />}
+              {activeWidget === "intelligence" && <ConnectIntelligencePage />}
+            </div>
+          </Suspense>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
