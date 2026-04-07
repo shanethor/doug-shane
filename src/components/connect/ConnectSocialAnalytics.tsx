@@ -1,11 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
-import { Eye, ThumbsUp, MessageSquare, Share2, TrendingUp, Users, Info, ShieldCheck, Activity } from "lucide-react";
+import { Eye, ThumbsUp, MessageSquare, Share2, TrendingUp, Users, Info, ShieldCheck, Activity, Loader2, Link2 } from "lucide-react";
 
 // Robust Simulated Data
 const VIEW_TRENDS = [
@@ -34,6 +36,77 @@ const RECENT_POSTS = [
 
 export default function ConnectSocialAnalytics() {
   const [timeframe, setTimeframe] = useState("month");
+  
+  // Connection state
+  const [isConnected, setIsConnected] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [linkedInUrl, setLinkedInUrl] = useState("");
+
+  // Check localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem("shield_linkedin_connected");
+    if (saved === "true") setIsConnected(true);
+  }, []);
+
+  const handleConnect = () => {
+    if (!linkedInUrl.trim()) return;
+    setIsConnecting(true);
+    // Simulate API connection & historical sync delay
+    setTimeout(() => {
+      setIsConnecting(false);
+      setIsConnected(true);
+      localStorage.setItem("shield_linkedin_connected", "true");
+    }, 3000);
+  };
+
+  if (!isConnected) {
+    return (
+      <Card className="bg-card border-border max-w-2xl mx-auto mt-8 mb-12">
+        <CardHeader className="text-center pb-2">
+          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+            <ShieldCheck className="h-6 w-6 text-primary" />
+          </div>
+          <CardTitle className="text-2xl font-bold font-sans">Connect your LinkedIn</CardTitle>
+          <CardDescription className="text-sm mt-2 font-sans">
+            Paste your profile URL below to start syncing your organic marketing analytics and post performance.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4 pt-4">
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-muted-foreground font-sans">LinkedIn Profile URL</label>
+            <div className="flex flex-col sm:flex-row items-center gap-2">
+              <div className="relative flex-1 w-full">
+                <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input 
+                  placeholder="https://linkedin.com/in/your-profile" 
+                  className="pl-9 bg-muted/20 w-full font-sans text-sm"
+                  value={linkedInUrl}
+                  onChange={(e) => setLinkedInUrl(e.target.value)}
+                  disabled={isConnecting}
+                />
+              </div>
+              <Button 
+                onClick={handleConnect}
+                disabled={isConnecting || !linkedInUrl}
+                className="w-full sm:w-[150px] font-sans"
+              >
+                {isConnecting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Syncing...
+                  </>
+                ) : (
+                  "Connect Account"
+                )}
+              </Button>
+            </div>
+          </div>
+          <p className="text-[10px] text-muted-foreground text-center flex items-center justify-center gap-1 font-sans">
+            <Info className="h-3 w-3" /> Data is synced locally and never shared with third parties.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
