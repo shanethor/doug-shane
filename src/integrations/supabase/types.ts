@@ -4376,6 +4376,117 @@ export type Database = {
         }
         Relationships: []
       }
+      social_posts: {
+        Row: {
+          audience_demographics: Json | null
+          comments: number | null
+          created_at: string
+          engagement_rate: number | null
+          external_post_id: string | null
+          id: string
+          impressions: number | null
+          likes: number | null
+          linkedin_url: string | null
+          post_format: string | null
+          post_text: string | null
+          post_url: string | null
+          posted_at: string | null
+          reposts: number | null
+          source: string
+          updated_at: string
+          user_id: string
+          views: number | null
+        }
+        Insert: {
+          audience_demographics?: Json | null
+          comments?: number | null
+          created_at?: string
+          engagement_rate?: number | null
+          external_post_id?: string | null
+          id?: string
+          impressions?: number | null
+          likes?: number | null
+          linkedin_url?: string | null
+          post_format?: string | null
+          post_text?: string | null
+          post_url?: string | null
+          posted_at?: string | null
+          reposts?: number | null
+          source?: string
+          updated_at?: string
+          user_id: string
+          views?: number | null
+        }
+        Update: {
+          audience_demographics?: Json | null
+          comments?: number | null
+          created_at?: string
+          engagement_rate?: number | null
+          external_post_id?: string | null
+          id?: string
+          impressions?: number | null
+          likes?: number | null
+          linkedin_url?: string | null
+          post_format?: string | null
+          post_text?: string | null
+          post_url?: string | null
+          posted_at?: string | null
+          reposts?: number | null
+          source?: string
+          updated_at?: string
+          user_id?: string
+          views?: number | null
+        }
+        Relationships: []
+      }
+      social_profiles: {
+        Row: {
+          connection_count: number | null
+          created_at: string
+          extension_installed: boolean | null
+          follower_count: number | null
+          headline: string | null
+          id: string
+          last_synced_at: string | null
+          linkedin_url: string
+          profile_name: string | null
+          profile_photo_url: string | null
+          sync_source: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          connection_count?: number | null
+          created_at?: string
+          extension_installed?: boolean | null
+          follower_count?: number | null
+          headline?: string | null
+          id?: string
+          last_synced_at?: string | null
+          linkedin_url: string
+          profile_name?: string | null
+          profile_photo_url?: string | null
+          sync_source?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          connection_count?: number | null
+          created_at?: string
+          extension_installed?: boolean | null
+          follower_count?: number | null
+          headline?: string | null
+          id?: string
+          last_synced_at?: string | null
+          linkedin_url?: string
+          profile_name?: string | null
+          profile_photo_url?: string | null
+          sync_source?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       studio_requests: {
         Row: {
           admin_notes: string | null
