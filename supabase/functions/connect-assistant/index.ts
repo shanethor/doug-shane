@@ -27,8 +27,8 @@ async function isSubscriber(userId: string, supabase: any): Promise<boolean> {
   let customerId = profile?.stripe_customer_id;
   if (!customerId) {
     // Fallback: lookup by auth email
-    const { data: { user } } = await supabase.auth.admin.getUser(userId);
-    if (!user?.email) return false;
+    const { data: { user }, error } = await supabase.auth.admin.getUserById(userId);
+    if (!user?.email || error) return false;
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     if (customers.data.length === 0) return false;
     customerId = customers.data[0].id;
