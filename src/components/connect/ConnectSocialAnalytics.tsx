@@ -41,20 +41,43 @@ export default function ConnectSocialAnalytics() {
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [linkedInUrl, setLinkedInUrl] = useState("");
+  const [profileName, setProfileName] = useState("");
 
   // Check localStorage on mount
   useEffect(() => {
     const saved = localStorage.getItem("shield_linkedin_connected");
-    if (saved === "true") setIsConnected(true);
+    const savedName = localStorage.getItem("shield_linkedin_name");
+    if (saved === "true") {
+      setIsConnected(true);
+      if (savedName) setProfileName(savedName);
+    }
   }, []);
 
   const handleConnect = () => {
     if (!linkedInUrl.trim()) return;
     setIsConnecting(true);
+    
+    // Extract name from linkedin.com/in/john-doe-1234
+    let extractedName = "";
+    try {
+      const match = linkedInUrl.match(/in\/([^/]+)/);
+      if (match && match[1]) {
+        // Remove trailing numbers and dashes, then un-kebab case
+        let cleanName = match[1].replace(/-[0-9a-zA-Z]+$/, '').replace(/-/g, ' ');
+        // Title case
+        cleanName = cleanName.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        extractedName = cleanName;
+      }
+    } catch (e) {}
+
     // Simulate API connection & historical sync delay
     setTimeout(() => {
       setIsConnecting(false);
       setIsConnected(true);
+      if (extractedName) {
+        setProfileName(extractedName);
+        localStorage.setItem("shield_linkedin_name", extractedName);
+      }
       localStorage.setItem("shield_linkedin_connected", "true");
     }, 3000);
   };
@@ -114,7 +137,7 @@ export default function ConnectSocialAnalytics() {
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="text-2xl font-bold">Social Analytics</h2>
+            <h2 className="text-2xl font-bold">{profileName ? `${profileName}'s Social Analytics` : "Social Analytics"}</h2>
             <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 text-[10px] uppercase tracking-wider flex items-center gap-1">
               <ShieldCheck className="h-3 w-3" /> Shield Mode
             </Badge>
