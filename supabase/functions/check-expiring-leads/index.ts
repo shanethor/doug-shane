@@ -2,7 +2,7 @@ const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
-import { createClient } from "npm:@supabase/supabase-js@2.49.4";
+import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
