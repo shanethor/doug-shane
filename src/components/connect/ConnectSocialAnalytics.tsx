@@ -47,7 +47,7 @@ interface SocialProfile {
 
 export default function ConnectSocialAnalytics() {
   const [timeframe, setTimeframe] = useState("month");
-  const { isSubscribed } = useSubscription();
+  const { subscribed: isSubscribed } = useSubscription();
 
   // Connection state
   const [isConnected, setIsConnected] = useState(false);
