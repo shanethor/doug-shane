@@ -6,7 +6,6 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-/** Fields we expect for a typical commercial submission */
 const REQUIRED_FIELDS = [
   "applicant_name", "dba", "mailing_address", "city", "state", "zip",
   "business_phone", "fein", "sic_code", "naics_code", "business_type",
@@ -16,12 +15,13 @@ const REQUIRED_FIELDS = [
 ];
 
 /**
- * Call Claude with retry + back-off for 529 (overloaded) and 429 (rate-limit).
+ * Call Claude with retry + exponential back-off for 529/429.
  */
 async function callClaude(
   apiKey: string,
   messages: any[],
   system: string,
+  maxTokens = 8192,
   retries = 3,
 ): Promise<any> {
   for (let attempt = 0; attempt <= retries; attempt++) {
@@ -34,7 +34,7 @@ async function callClaude(
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-20250514",
-        max_tokens: 8192,
+        max_tokens: maxTokens,
         system,
         messages,
       }),
@@ -42,7 +42,6 @@ async function callClaude(
 
     if (resp.ok) return resp.json();
 
-    // Retry on overloaded / rate-limit
     if ((resp.status === 529 || resp.status === 429) && attempt < retries) {
       const wait = Math.min(2000 * Math.pow(2, attempt), 16000);
       console.log(`Claude ${resp.status}, retrying in ${wait}ms (attempt ${attempt + 1}/${retries})`);
@@ -55,6 +54,21 @@ async function callClaude(
     throw new Error(`Claude API error ${resp.status}: ${errText.slice(0, 200)}`);
   }
   throw new Error("Claude API: max retries exceeded");
+}
+
+/** Parse JSON from Claude response, handling markdown fences and partial matches */
+function parseClaudeJson(raw: string): Record<string, any> {
+  const cleaned = raw.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+  try {
+    return JSON.parse(cleaned);
+  } catch {
+    const match = cleaned.match(/\{[\s\S]*\}/);
+    if (match) {
+      try { return JSON.parse(match[0]); } catch { /* fall through */ }
+    }
+    console.error("Failed to parse Claude JSON:", cleaned.slice(0, 500));
+    throw new Error("Claude returned invalid JSON");
+  }
 }
 
 serve(async (req) => {
@@ -80,101 +94,188 @@ serve(async (req) => {
     const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
     if (!ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY not configured");
 
-    const systemPrompt = `You are Clark, an expert insurance data extraction AI. Your job is to look at uploaded insurance documents (dec pages, ACORD applications, loss runs, certificates of insurance) and extract ALL available data into a single flat JSON object.
+    // ═══════════════════════════════════════════════════════════════
+    // STEP 1: Exhaustive Dec Page Extraction
+    // "Chronological wall" — this MUST complete before Step 2
+    // ═══════════════════════════════════════════════════════════════
+    console.log("STEP 1: Exhaustive document extraction...");
+
+    const step1System = `You are Clark, an expert insurance data extraction AI specializing in Declaration pages, ACORD applications, loss runs, and certificates of insurance.
+
+Your task is STEP 1 of a strict workflow: EXHAUSTIVE EXTRACTION.
 
 Rules:
+- Conduct a FULL, EXHAUSTIVE extraction of ALL pertinent insurance data from the provided documents
+- Capture EVERY detail related to: coverages, limits, deductibles, sub-limits, property schedules, named insureds, additional insureds, specific endorsements, classification codes, experience mods, payroll data, vehicle schedules, driver lists, loss history, prior carriers, policy numbers, premium breakdowns
+- This applies to BOTH personal and commercial lines
+- FILTER OUT: standard legal boilerplate, privacy notices, signature blocks, general terms & conditions — these waste context and add no underwriting value
 - Return ONLY valid JSON — no markdown fences, no explanation, no preamble
 - Use snake_case keys matching ACORD field conventions
-- For fields you cannot find, omit them entirely — never guess or hallucinate
-- Extract everything: applicant info, business details, coverage details, limits, deductibles, prior insurance, loss history, property details, vehicle schedules, employee counts, classification codes
-- If multiple documents are provided, merge intelligently — latest/most-specific values win
-- Dates should be MM/DD/YYYY format
-- Currency values as plain numbers (no $ signs)
-- Be thorough — insurance underwriters depend on this data being complete and accurate`;
+- NEVER guess or hallucinate — if a field is not present, omit it entirely
+- Dates in MM/DD/YYYY format
+- Currency as plain numbers (no $ signs)
+- If multiple documents provided, merge intelligently — most specific/recent values win
+- Be extraordinarily thorough — insurance underwriters depend on this data`;
 
-    // Build Claude-compatible content blocks with vision
-    const contentParts: any[] = [];
+    // Build vision content blocks for all files
+    const docBlocks: any[] = [];
+    for (const file of pdf_files) {
+      const mediaType = file.mimeType === "application/pdf"
+        ? "application/pdf"
+        : file.mimeType || "image/jpeg";
 
-    // Process files in staggered batches to avoid token limits
-    // Claude supports multiple images per message, but we chunk large batches
-    const BATCH_SIZE = 3;
-    const batches: any[][] = [];
-    for (let i = 0; i < pdf_files.length; i += BATCH_SIZE) {
-      batches.push(pdf_files.slice(i, i + BATCH_SIZE));
+      docBlocks.push({
+        type: mediaType === "application/pdf" ? "document" : "image",
+        source: {
+          type: "base64",
+          media_type: mediaType,
+          data: file.base64,
+        },
+        ...(mediaType === "application/pdf" ? { title: file.name } : {}),
+      });
     }
 
-    let mergedExtraction: Record<string, any> = {};
+    // If many files, batch them. Otherwise send all at once.
+    let step1Data: Record<string, any> = {};
+    const BATCH_SIZE = 3;
 
-    for (let batchIdx = 0; batchIdx < batches.length; batchIdx++) {
-      const batch = batches[batchIdx];
-      const batchContent: any[] = [];
-
-      // Add each file as a Claude vision block
-      for (const file of batch) {
-        const mediaType = file.mimeType === "application/pdf"
-          ? "application/pdf"
-          : file.mimeType || "image/jpeg";
-
-        batchContent.push({
-          type: mediaType === "application/pdf" ? "document" : "image",
-          source: {
-            type: "base64",
-            media_type: mediaType,
-            data: file.base64,
-          },
-          ...(mediaType === "application/pdf" ? { title: file.name } : {}),
-        });
-      }
-
-      // Add the extraction prompt
-      const isMultiBatch = batches.length > 1;
-      let promptText = "";
-      if (isMultiBatch && batchIdx > 0) {
-        promptText = `Here are more documents (batch ${batchIdx + 1} of ${batches.length}). Extract all data and merge with what you've already found. Previously extracted: ${JSON.stringify(mergedExtraction)}\n\nReturn the COMPLETE merged JSON with all fields from all documents.`;
-      } else {
-        promptText = `Extract all insurance data from these document(s) into a single flat JSON object.${user_prompt ? `\n\nAdditional context: ${user_prompt}` : ""}`;
-      }
-
-      batchContent.push({ type: "text", text: promptText });
-
-      // Call Claude with stagger delay between batches
-      if (batchIdx > 0) {
-        await new Promise((r) => setTimeout(r, 1500)); // 1.5s stagger
-      }
-
+    if (pdf_files.length <= BATCH_SIZE) {
+      // Single call for small batches
       const result = await callClaude(
         ANTHROPIC_API_KEY,
-        [{ role: "user", content: batchContent }],
-        systemPrompt,
+        [{
+          role: "user",
+          content: [
+            ...docBlocks,
+            {
+              type: "text",
+              text: `Perform a full, exhaustive extraction of all pertinent insurance data from these documents. Capture every coverage, limit, deductible, schedule, insured, endorsement, and classification. Filter out legal boilerplate and privacy notices. Return a single flat JSON object.${user_prompt ? `\n\nAdditional context from the agent: ${user_prompt}` : ""}`,
+            },
+          ],
+        }],
+        step1System,
       );
+      step1Data = parseClaudeJson(result.content?.[0]?.text || "{}");
+    } else {
+      // Staggered batches for large uploads
+      for (let i = 0; i < pdf_files.length; i += BATCH_SIZE) {
+        const batchBlocks = docBlocks.slice(i, i + BATCH_SIZE);
+        const batchNum = Math.floor(i / BATCH_SIZE) + 1;
+        const totalBatches = Math.ceil(pdf_files.length / BATCH_SIZE);
 
-      const rawContent = result.content?.[0]?.text || "{}";
+        if (i > 0) await new Promise((r) => setTimeout(r, 2000)); // stagger
 
-      // Parse JSON from response
-      let batchExtracted: Record<string, any> = {};
-      try {
-        const jsonStr = rawContent.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-        batchExtracted = JSON.parse(jsonStr);
-      } catch {
-        console.error("Failed to parse Claude output:", rawContent.slice(0, 500));
-        // Try to find JSON in the output
-        const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          try {
-            batchExtracted = JSON.parse(jsonMatch[0]);
-          } catch {
-            throw new Error("Claude returned invalid JSON");
-          }
-        } else {
-          throw new Error("Claude returned invalid JSON");
-        }
+        const promptText = i === 0
+          ? `Perform a full, exhaustive extraction of all pertinent insurance data from these documents (batch ${batchNum}/${totalBatches}). Filter out legal boilerplate. Return a single flat JSON object.${user_prompt ? `\n\nAdditional context: ${user_prompt}` : ""}`
+          : `Here are more documents (batch ${batchNum}/${totalBatches}). Extract all data and MERGE with previous extraction:\n${JSON.stringify(step1Data)}\n\nReturn the COMPLETE merged JSON.`;
+
+        const result = await callClaude(
+          ANTHROPIC_API_KEY,
+          [{ role: "user", content: [...batchBlocks, { type: "text", text: promptText }] }],
+          step1System,
+        );
+        const batchData = parseClaudeJson(result.content?.[0]?.text || "{}");
+        step1Data = { ...step1Data, ...batchData };
       }
-
-      // Merge batch results (later batches override earlier for conflicts)
-      mergedExtraction = { ...mergedExtraction, ...batchExtracted };
     }
 
-    const extracted = mergedExtraction;
+    console.log(`STEP 1 complete: ${Object.keys(step1Data).length} fields extracted`);
+
+    // ═══════════════════════════════════════════════════════════════
+    // STEP 2: Web Cross-Reference & Enrichment
+    // Using extracted business names + addresses to verify/enrich
+    // ═══════════════════════════════════════════════════════════════
+    console.log("STEP 2: Web enrichment...");
+    await new Promise((r) => setTimeout(r, 1500)); // stagger between steps
+
+    const businessName = step1Data.applicant_name || step1Data.insured_name || step1Data.dba || "";
+    const address = [step1Data.mailing_address, step1Data.city, step1Data.state, step1Data.zip].filter(Boolean).join(", ");
+
+    let step2Data: Record<string, any> = {};
+
+    if (businessName) {
+      const step2System = `You are a business intelligence researcher. Given a business name and address extracted from insurance documents, search your knowledge to cross-reference and verify their current details.
+
+Return ONLY valid JSON with these fields (omit any you cannot determine with confidence):
+- naics_code: the 6-digit NAICS code
+- sic_code: the 4-digit SIC code  
+- business_type: brief description of operations
+- entity_type: LLC, Corp, Sole Prop, Partnership, etc.
+- year_established: year the business was founded
+- num_employees_estimate: estimated employee count
+- annual_revenue_estimate: estimated annual revenue
+- construction_type: building construction type if physical location
+- square_footage: building square footage if available
+- website: company website URL if known
+
+Do NOT override data that was already extracted from the documents — only SUPPLEMENT missing fields.`;
+
+      try {
+        const result = await callClaude(
+          ANTHROPIC_API_KEY,
+          [{
+            role: "user",
+            content: `Business: ${businessName}\nAddress: ${address}\n\nCross-reference this business and return supplementary data as JSON. Only provide fields you are confident about.`,
+          }],
+          step2System,
+          4096,
+        );
+        step2Data = parseClaudeJson(result.content?.[0]?.text || "{}");
+        console.log(`STEP 2 complete: ${Object.keys(step2Data).length} enrichment fields`);
+      } catch (e) {
+        console.warn("Step 2 enrichment failed (non-fatal):", e);
+        // Non-fatal — we continue with Step 1 data only
+      }
+    } else {
+      console.log("STEP 2 skipped: no business name to research");
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // STEP 3: Merge & Map to ACORD Field Names
+    // Step 1 data takes priority; Step 2 only fills gaps
+    // ═══════════════════════════════════════════════════════════════
+    console.log("STEP 3: Merging & mapping...");
+
+    // Step 2 fills gaps only — Step 1 (document data) always wins
+    const merged: Record<string, any> = { ...step2Data, ...step1Data };
+
+    // Normalize common aliases
+    const ALIASES: Record<string, string> = {
+      insured_name: "applicant_name",
+      named_insured: "applicant_name",
+      business_name: "dba",
+      doing_business_as: "dba",
+      federal_ein: "fein",
+      employer_id: "fein",
+      phone: "business_phone",
+      telephone: "business_phone",
+      policy_effective_date: "effective_date",
+      policy_expiration_date: "expiration_date",
+      naic_code: "naics_code",
+      naic_number: "naics_code",
+      number_of_employees: "num_employees",
+      employee_count: "num_employees",
+      revenue: "annual_revenue",
+      gross_revenue: "annual_revenue",
+    };
+
+    for (const [alias, canonical] of Object.entries(ALIASES)) {
+      if (merged[alias] && !merged[canonical]) {
+        merged[canonical] = merged[alias];
+      }
+    }
+
+    // Use enrichment estimates if doc didn't have exact values
+    if (!merged.naics_code && step2Data.naics_code) merged.naics_code = step2Data.naics_code;
+    if (!merged.sic_code && step2Data.sic_code) merged.sic_code = step2Data.sic_code;
+    if (!merged.num_employees && step2Data.num_employees_estimate) merged.num_employees = step2Data.num_employees_estimate;
+    if (!merged.annual_revenue && step2Data.annual_revenue_estimate) merged.annual_revenue = step2Data.annual_revenue_estimate;
+    if (!merged.entity_type && step2Data.entity_type) merged.entity_type = step2Data.entity_type;
+    if (!merged.years_in_business && step2Data.year_established) {
+      merged.years_in_business = new Date().getFullYear() - parseInt(step2Data.year_established);
+    }
+
+    const extracted = merged;
 
     // Identify missing required fields
     const missingFields = REQUIRED_FIELDS.filter(f => !extracted[f] || extracted[f] === "");
@@ -182,16 +283,22 @@ Rules:
     // Generate questionnaire token
     const qToken = crypto.randomUUID();
 
-    // Determine which ACORD forms are needed based on extracted data
-    const acordForms: string[] = ["125"]; // Always need 125
-    const coverageStr = (extracted.coverage_requested || "").toLowerCase();
-    if (coverageStr.includes("general liability") || extracted.gl_each_occurrence) {
+    // Determine which ACORD forms are needed
+    const acordForms: string[] = ["125"];
+    const coverageStr = String(extracted.coverage_requested || "").toLowerCase();
+    const allValues = JSON.stringify(extracted).toLowerCase();
+
+    if (coverageStr.includes("general liability") || coverageStr.includes("gl") ||
+        extracted.gl_each_occurrence || allValues.includes("general liability")) {
       acordForms.push("126");
     }
-    if (coverageStr.includes("auto") || extracted.vehicle_count) {
+    if (coverageStr.includes("auto") || extracted.vehicle_count ||
+        allValues.includes("auto liability") || allValues.includes("commercial auto")) {
       acordForms.push("127");
     }
-    if (coverageStr.includes("workers") || extracted.workers_comp_requested) {
+    if (coverageStr.includes("workers") || coverageStr.includes("wc") ||
+        extracted.workers_comp_requested || allValues.includes("workers comp") ||
+        allValues.includes("workers' comp")) {
       acordForms.push("130");
     }
 
@@ -199,7 +306,7 @@ Rules:
     const subData = {
       user_id: user.id,
       status: missingFields.length > 0 ? "needs_info" : "extracted",
-      client_name: extracted.applicant_name || extracted.insured_name || null,
+      client_name: extracted.applicant_name || null,
       business_name: extracted.dba || extracted.applicant_name || null,
       extracted_data: extracted,
       missing_fields: missingFields,
@@ -220,12 +327,19 @@ Rules:
       finalSubmissionId = newSub.id;
     }
 
+    console.log(`Clark extract complete: ${Object.keys(extracted).length} total fields, ${missingFields.length} missing, forms: ${acordForms.join(",")}`);
+
     return new Response(JSON.stringify({
       submission_id: finalSubmissionId,
       extracted_data: extracted,
       missing_fields: missingFields,
       acord_forms: acordForms,
       questionnaire_token: missingFields.length > 0 ? qToken : null,
+      steps_completed: {
+        step1_fields: Object.keys(step1Data).length,
+        step2_enrichment: Object.keys(step2Data).length,
+        step3_final: Object.keys(extracted).length,
+      },
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (err) {
     console.error("clark-extract error:", err);
