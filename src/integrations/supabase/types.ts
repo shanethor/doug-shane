@@ -657,6 +657,96 @@ export type Database = {
         }
         Relationships: []
       }
+      clark_profiles: {
+        Row: {
+          contact_email: string | null
+          contact_phone: string | null
+          created_at: string
+          firm_address: string | null
+          firm_name: string | null
+          id: string
+          license_number: string | null
+          producer_name: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          firm_address?: string | null
+          firm_name?: string | null
+          id?: string
+          license_number?: string | null
+          producer_name?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          firm_address?: string | null
+          firm_name?: string | null
+          id?: string
+          license_number?: string | null
+          producer_name?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      clark_submissions: {
+        Row: {
+          acord_forms: string[] | null
+          business_name: string | null
+          carriers: string[] | null
+          client_name: string | null
+          created_at: string
+          extracted_data: Json | null
+          final_zip_url: string | null
+          id: string
+          missing_fields: Json | null
+          questionnaire_completed: boolean | null
+          questionnaire_token: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          acord_forms?: string[] | null
+          business_name?: string | null
+          carriers?: string[] | null
+          client_name?: string | null
+          created_at?: string
+          extracted_data?: Json | null
+          final_zip_url?: string | null
+          id?: string
+          missing_fields?: Json | null
+          questionnaire_completed?: boolean | null
+          questionnaire_token?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          acord_forms?: string[] | null
+          business_name?: string | null
+          carriers?: string[] | null
+          client_name?: string | null
+          created_at?: string
+          extracted_data?: Json | null
+          final_zip_url?: string | null
+          id?: string
+          missing_fields?: Json | null
+          questionnaire_completed?: boolean | null
+          questionnaire_token?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       client_documents: {
         Row: {
           created_at: string
@@ -3908,6 +3998,8 @@ export type Database = {
           ai_provider: string
           approval_status: string
           branch: string | null
+          clark_submission_count: number | null
+          clark_tier: string | null
           connect_vertical: string | null
           created_at: string
           dark_mode: boolean
@@ -3937,6 +4029,8 @@ export type Database = {
           ai_provider?: string
           approval_status?: string
           branch?: string | null
+          clark_submission_count?: number | null
+          clark_tier?: string | null
           connect_vertical?: string | null
           created_at?: string
           dark_mode?: boolean
@@ -3966,6 +4060,8 @@ export type Database = {
           ai_provider?: string
           approval_status?: string
           branch?: string | null
+          clark_submission_count?: number | null
+          clark_tier?: string | null
           connect_vertical?: string | null
           created_at?: string
           dark_mode?: boolean
