@@ -283,8 +283,13 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
     }
   };
 
-  // Expose loadSubmission for parent to call
-  (ClarkChat as any)._loadSubmission = loadSubmission;
+  // Auto-load submission if ID provided on mount
+  useEffect(() => {
+    if (initialSubId && !didLoad.current) {
+      didLoad.current = true;
+      loadSubmission(initialSubId);
+    }
+  }, [initialSubId]);
 
   const renderWidget = (msg: Message) => {
     if (msg.widget === "carrier_select") {
