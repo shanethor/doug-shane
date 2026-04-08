@@ -180,6 +180,9 @@ const App = () => (
             <Route path="/loss-runs/:id/sign" element={<LossRunSign />} />
             <Route path="/reset-password" element={<ResetPassword />} />
 
+            <Route path="/clark/questionnaire/:token" element={<ClarkQuestionnaire />} />
+            <Route path="/clark" element={<ProductProtectedRoute><Clark /></ProductProtectedRoute>} />
+
             <Route path="/leads/:industry" element={<LeadLanding />} />
 
             <Route path="/connectdemo" element={<ConnectDemo />} />
