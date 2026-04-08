@@ -29,19 +29,47 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isExtracting, setIsExtracting] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [currentSubId, setCurrentSubId] = useState<string | undefined>(initialSubId);
   const [lastExtractionData, setLastExtractionData] = useState<any>(null);
+  const [pendingFiles, setPendingFiles] = useState<File[] | null>(null);
+  const [pendingPrompt, setPendingPrompt] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const didLoad = useRef(false);
 
-  // loadSubmission effect is below, after the function definition
+  // Auto-scroll on new messages
+  useEffect(() => {
+    scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, isLoading, isExtracting]);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
     setUploadedFiles(prev => [...prev, ...files]);
     const names = files.map(f => f.name).join(", ");
+    
+    // Show file upload message
     setMessages(prev => [...prev, { role: "user", content: `📎 Uploaded: ${names}` }]);
+
+    // Immediately show carrier/form selector while we'll extract in parallel
+    setMessages(prev => [...prev, 
+      { 
+        role: "assistant", 
+        content: "📋 **Great!** While I analyze these documents, please select which ACORD forms you need and which carrier(s) you're submitting to:" 
+      },
+      {
+        role: "assistant",
+        content: "",
+        widget: "carrier_select",
+        widgetData: { suggestedForms: ["125"] },
+      }
+    ]);
+
+    // Store files for extraction (will start after carrier/form confirm)
+    setPendingFiles(prev => prev ? [...prev, ...files] : files);
   };
 
   const fileToBase64 = (file: File): Promise<string> =>
@@ -52,30 +80,142 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
       reader.readAsDataURL(file);
     });
 
-  const handleCarrierFormConfirm = async (selectedForms: string[], carriers: string[]) => {
-    if (!currentSubId) return;
-    setIsLoading(true);
+  /** Run the extraction in the background */
+  const runExtraction = async (files: File[], userPrompt: string, subId?: string) => {
+    setIsExtracting(true);
     try {
-      await supabase
-        .from("clark_submissions")
-        .update({ acord_forms: selectedForms, carriers })
-        .eq("id", currentSubId);
+      const pdfFiles = await Promise.all(
+        files.map(async (f) => ({
+          base64: await fileToBase64(f),
+          mimeType: f.type || "application/pdf",
+          name: f.name,
+        }))
+      );
 
       setMessages(prev => [...prev, {
         role: "assistant",
-        content: `✅ **Selection confirmed!**\n\n- ACORD Forms: ${selectedForms.join(", ")}\n- Carriers: ${carriers.join(", ")}\n\nYou can now fill any missing fields below or generate the forms.`,
-        actions: lastExtractionData?.missing_fields?.length > 0
-          ? [{ label: "Generate ACORD Forms & ZIP", action: "finalize", icon: "download" }]
-          : [{ label: "Generate ACORD Forms & ZIP", action: "finalize", icon: "download" }],
+        content: "🔍 **Step 1/3:** Extracting all insurance data from your documents with Claude AI..."
       }]);
 
+      const { data, error } = await supabase.functions.invoke("clark-extract", {
+        body: { pdf_files: pdfFiles, user_prompt: userPrompt, submission_id: subId },
+      });
+      if (error) throw error;
+
+      const newSubId = data?.submission_id;
+      if (newSubId) {
+        setCurrentSubId(newSubId);
+        if (onSubmissionCreated) onSubmissionCreated(newSubId);
+      }
+      setLastExtractionData(data);
+
+      const missingCount = data?.missing_fields?.length || 0;
+      const extractedKeys = Object.keys(data?.extracted_data || {}).length;
+      const steps = data?.steps_completed;
+
+      let response = `✅ **Extraction complete!**\n\n`;
+      if (steps) {
+        response += `- **Step 1:** ${steps.step1_fields} fields extracted from documents\n`;
+        response += `- **Step 2:** ${steps.step2_enrichment} fields enriched from web research\n`;
+        response += `- **Step 3:** ${steps.step3_final} total fields after merge\n\n`;
+      } else {
+        response += `- **${extractedKeys}** fields extracted from ${files.length} document(s)\n\n`;
+      }
+      
+      if (missingCount > 0) {
+        response += `⚠️ **${missingCount}** fields still missing:\n${(data?.missing_fields || []).slice(0, 8).map((f: string) => `  • ${f.replace(/_/g, " ")}`).join("\n")}${missingCount > 8 ? "\n  • ..." : ""}`;
+      } else {
+        response += `🎉 All required fields captured!`;
+      }
+
+      setMessages(prev => [...prev, { role: "assistant", content: response }]);
+
       // Show inline questionnaire if there are missing fields
-      if (lastExtractionData?.missing_fields?.length > 0) {
+      if (missingCount > 0 && newSubId) {
+        setMessages(prev => [...prev, {
+          role: "assistant",
+          content: "Fill in the missing fields below, or skip and generate forms with what we have:",
+          widget: "inline_questionnaire",
+          widgetData: { submissionId: newSubId, missingFields: data.missing_fields },
+        }]);
+      }
+
+      // Always show finalize button
+      setMessages(prev => [...prev, {
+        role: "assistant",
+        content: "",
+        actions: [
+          ...(missingCount > 0 ? [{ label: "Email Questionnaire to Client", action: "send_questionnaire", icon: "mail" }] : []),
+          { label: "Generate ACORD Forms & ZIP", action: "finalize", icon: "download" },
+        ],
+      }]);
+
+      setUploadedFiles([]);
+    } catch (err: any) {
+      console.error("Extraction error:", err);
+      toast.error(err.message || "Extraction failed");
+      setMessages(prev => [...prev, {
+        role: "assistant",
+        content: `❌ Extraction failed: ${err.message || "Unknown error"}. Please try again.`,
+      }]);
+    } finally {
+      setIsExtracting(false);
+    }
+  };
+
+  const handleCarrierFormConfirm = async (selectedForms: string[], carriers: string[]) => {
+    setIsLoading(true);
+    try {
+      // If we already have a submission, update it
+      if (currentSubId) {
+        await supabase
+          .from("clark_submissions")
+          .update({ acord_forms: selectedForms, carriers })
+          .eq("id", currentSubId);
+      }
+
+      setMessages(prev => [...prev, {
+        role: "assistant",
+        content: `✅ **Selection saved!**\n\n- ACORD Forms: ${selectedForms.join(", ")}\n- Carriers: ${carriers.join(", ")}`,
+      }]);
+
+      // Now kick off extraction if we have pending files
+      if (pendingFiles && pendingFiles.length > 0) {
+        const files = pendingFiles;
+        const prompt = pendingPrompt;
+        setPendingFiles(null);
+        setPendingPrompt("");
+        setIsLoading(false);
+        
+        // Run extraction — it will create a submission and update with carrier/form info
+        await runExtraction(files, prompt, currentSubId);
+        
+        // After extraction, update the submission with the selected forms/carriers
+        if (currentSubId || lastExtractionData?.submission_id) {
+          const subId = currentSubId || lastExtractionData?.submission_id;
+          await supabase
+            .from("clark_submissions")
+            .update({ acord_forms: selectedForms, carriers })
+            .eq("id", subId);
+        }
+      } else if (lastExtractionData?.missing_fields?.length > 0) {
+        // Already extracted — show questionnaire
         setMessages(prev => [...prev, {
           role: "assistant",
           content: "",
           widget: "inline_questionnaire",
           widgetData: { submissionId: currentSubId, missingFields: lastExtractionData.missing_fields },
+        }]);
+        setMessages(prev => [...prev, {
+          role: "assistant",
+          content: "",
+          actions: [{ label: "Generate ACORD Forms & ZIP", action: "finalize", icon: "download" }],
+        }]);
+      } else {
+        setMessages(prev => [...prev, {
+          role: "assistant",
+          content: "",
+          actions: [{ label: "Generate ACORD Forms & ZIP", action: "finalize", icon: "download" }],
         }]);
       }
     } catch (err: any) {
@@ -118,7 +258,7 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
       }
 
       if (action === "finalize") {
-        setMessages(prev => [...prev, { role: "assistant", content: "⏳ Generating ACORD forms and bundling into ZIP..." }]);
+        setMessages(prev => [...prev, { role: "assistant", content: "⏳ Generating filled ACORD forms and bundling into ZIP..." }]);
 
         const { data, error } = await supabase.functions.invoke("clark-finalize", {
           body: { submission_id: currentSubId },
@@ -127,14 +267,15 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
 
         setMessages(prev => [...prev, {
           role: "assistant",
-          content: `✅ **Submission finalized!**\n\n- ${data.forms_generated} ACORD form(s) generated\n- Carriers: ${data.carriers.join(", ")}\n\nYour ZIP is ready for download.`,
-          actions: [{ label: "Download ZIP", action: "download", icon: "download" }],
+          content: `✅ **Submission finalized!**\n\n- ${data.forms_generated} ACORD form(s) filled with extracted data\n- Carriers: ${data.carriers.join(", ")}\n\nYour ZIP is ready for download.`,
+          actions: [{ label: "Download ZIP", action: "download_zip", icon: "download" }],
         }]);
 
+        setLastExtractionData((prev: any) => ({ ...prev, zip_url: data.zip_url }));
         if (data.zip_url) window.open(data.zip_url, "_blank");
       }
 
-      if (action === "download" && lastExtractionData?.zip_url) {
+      if (action === "download_zip" && lastExtractionData?.zip_url) {
         window.open(lastExtractionData.zip_url, "_blank");
       }
     } catch (err: any) {
@@ -156,51 +297,30 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
 
     try {
       if (uploadedFiles.length > 0) {
-        const pdfFiles = await Promise.all(
-          uploadedFiles.map(async (f) => ({
-            base64: await fileToBase64(f),
-            mimeType: f.type || "application/pdf",
-            name: f.name,
-          }))
-        );
+        // Files are in uploadedFiles — if carrier wasn't selected yet, prompt it
+        if (!pendingFiles) {
+          setPendingFiles(uploadedFiles);
+          setPendingPrompt(trimmed);
 
-        const { data, error } = await supabase.functions.invoke("clark-extract", {
-          body: { pdf_files: pdfFiles, user_prompt: trimmed, submission_id: currentSubId },
-        });
-        if (error) throw error;
-
-        const subId = data?.submission_id;
-        if (subId) {
-          setCurrentSubId(subId);
-          if (onSubmissionCreated) onSubmissionCreated(subId);
-        }
-        setLastExtractionData(data);
-
-        const missingCount = data?.missing_fields?.length || 0;
-        const extractedKeys = Object.keys(data?.extracted_data || {}).length;
-
-        let response = `✅ **Extraction complete!**\n\n`;
-        response += `- **${extractedKeys}** fields extracted from ${uploadedFiles.length} document(s)\n`;
-        if (missingCount > 0) {
-          response += `- **${missingCount}** fields still missing\n\n`;
-          response += `Missing: ${(data?.missing_fields || []).slice(0, 8).join(", ")}${missingCount > 8 ? "..." : ""}`;
+          setMessages(prev => [...prev,
+            {
+              role: "assistant",
+              content: "📋 Before I extract, please select which ACORD forms you need and which carrier(s):"
+            },
+            {
+              role: "assistant",
+              content: "",
+              widget: "carrier_select",
+              widgetData: { suggestedForms: ["125"] },
+            }
+          ]);
         } else {
-          response += `\n🎉 All required fields captured!`;
+          // Already have pending, just add more context
+          setPendingPrompt(prev => prev ? `${prev}\n${trimmed}` : trimmed);
         }
-        response += `\n\nNow select which ACORD forms to generate and which carriers to submit to:`;
-
-        setMessages(prev => [...prev, { role: "assistant", content: response }]);
-
-        // Show carrier/form selection widget
-        setMessages(prev => [...prev, {
-          role: "assistant",
-          content: "",
-          widget: "carrier_select",
-          widgetData: { suggestedForms: data?.acord_forms || ["125"] },
-        }]);
-
-        setUploadedFiles([]);
+        setIsLoading(false);
       } else {
+        // Text-only message — send to assistant
         const allMessages = [...messages, userMsg].map(m => ({ role: m.role, content: m.content }));
         const { data, error } = await supabase.functions.invoke("connect-assistant", {
           body: { messages: allMessages, context: { mode: "clark" } },
@@ -212,15 +332,15 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
         } else {
           setMessages(prev => [...prev, { role: "assistant", content: data?.text || data?.choices?.[0]?.message?.content || "I'm not sure how to help with that." }]);
         }
+        setIsLoading(false);
       }
     } catch (err: any) {
       console.error("Clark chat error:", err);
       toast.error(err.message || "Something went wrong");
       setMessages(prev => [...prev, { role: "assistant", content: "Sorry, something went wrong. Please try again." }]);
-    } finally {
       setIsLoading(false);
     }
-  }, [input, uploadedFiles, messages, currentSubId, onSubmissionCreated]);
+  }, [input, uploadedFiles, messages, currentSubId, onSubmissionCreated, pendingFiles]);
 
   // Load an existing submission into the chat
   const loadSubmission = async (subId: string) => {
@@ -253,7 +373,7 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
         });
         loadedMessages.push({
           role: "assistant",
-          content: "Fill the missing fields above, or send an email questionnaire to your client:",
+          content: "Fill the missing fields above, or proceed with what we have:",
           actions: [
             { label: "Email Questionnaire to Client", action: "send_questionnaire", icon: "mail" },
             { label: "Generate ACORD Forms & ZIP", action: "finalize", icon: "download" },
@@ -274,7 +394,7 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
         });
       }
 
-      setLastExtractionData({ missing_fields: missing, acord_forms: acordForms });
+      setLastExtractionData({ missing_fields: missing, acord_forms: acordForms, zip_url: sub.final_zip_url });
       setMessages(loadedMessages);
     } catch (err: any) {
       toast.error(err.message || "Failed to load submission");
@@ -283,7 +403,6 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
     }
   };
 
-  // Auto-load submission if ID provided on mount
   useEffect(() => {
     if (initialSubId && !didLoad.current) {
       didLoad.current = true;
@@ -319,6 +438,12 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
           <Bot className="h-5 w-5 text-primary" />
           Clark AI
           <Badge variant="secondary" className="text-xs">Insurance Tool</Badge>
+          {isExtracting && (
+            <Badge variant="outline" className="text-xs gap-1 animate-pulse">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              Extracting…
+            </Badge>
+          )}
         </CardTitle>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col gap-3 overflow-hidden p-4 pt-0">
@@ -355,7 +480,7 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
                         variant={a.action === "finalize" ? "default" : "outline"}
                         className="gap-1.5"
                         onClick={() => handleAction(a.action)}
-                        disabled={isLoading}
+                        disabled={isLoading || isExtracting}
                       >
                         {a.icon === "mail" && <Mail className="h-3.5 w-3.5" />}
                         {a.icon === "download" && <Download className="h-3.5 w-3.5" />}
@@ -366,7 +491,7 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
                 )}
               </div>
             ))}
-            {isLoading && (
+            {(isLoading || isExtracting) && (
               <div className="flex gap-2">
                 <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10">
                   <Bot className="h-4 w-4 text-primary" />
@@ -376,6 +501,7 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
                 </div>
               </div>
             )}
+            <div ref={scrollRef} />
           </div>
         </ScrollArea>
 
@@ -399,7 +525,7 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
             className="hidden"
             onChange={handleFileUpload}
           />
-          <Button variant="outline" size="icon" onClick={() => fileInputRef.current?.click()} disabled={isLoading}>
+          <Button variant="outline" size="icon" onClick={() => fileInputRef.current?.click()} disabled={isLoading || isExtracting}>
             <Upload className="h-4 w-4" />
           </Button>
           <Input
@@ -407,9 +533,9 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
             placeholder="Ask Clark or upload documents…"
-            disabled={isLoading}
+            disabled={isLoading || isExtracting}
           />
-          <Button onClick={handleSend} disabled={isLoading} size="icon">
+          <Button onClick={handleSend} disabled={isLoading || isExtracting} size="icon">
             <Send className="h-4 w-4" />
           </Button>
         </div>
