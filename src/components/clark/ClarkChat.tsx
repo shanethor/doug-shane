@@ -33,6 +33,16 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
   const [currentSubId, setCurrentSubId] = useState<string | undefined>(initialSubId);
   const [lastExtractionData, setLastExtractionData] = useState<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const didLoad = useRef(false);
+
+  // Auto-load submission if ID provided on mount
+  useState(() => {
+    if (initialSubId && !didLoad.current) {
+      didLoad.current = true;
+      // defer to after render
+      setTimeout(() => loadSubmission(initialSubId), 0);
+    }
+  });
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
