@@ -6,11 +6,12 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Send, Upload, FileText, Loader2, Bot, User } from "lucide-react";
+import { Send, Upload, FileText, Loader2, Bot, User, Mail, Download } from "lucide-react";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
+  actions?: Array<{ label: string; action: string; icon?: string }>;
 }
 
 interface ClarkChatProps {
@@ -18,13 +19,15 @@ interface ClarkChatProps {
   onSubmissionCreated?: (id: string) => void;
 }
 
-export default function ClarkChat({ submissionId, onSubmissionCreated }: ClarkChatProps) {
+export default function ClarkChat({ submissionId: initialSubId, onSubmissionCreated }: ClarkChatProps) {
   const [messages, setMessages] = useState<Message[]>([
-    { role: "assistant", content: "Hi! I'm Clark. Upload your client documents (dec pages, ACORD apps, loss runs) and I'll extract the data, map it to ACORD forms, and identify any missing information. Drop files below or describe what you need." },
+    { role: "assistant", content: "Hi! I'm Clark. Upload your client documents (dec pages, ACORD apps, loss runs) and I'll extract the data, map it to ACORD forms, and identify any missing information.\n\nDrop files below or describe what you need." },
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [currentSubId, setCurrentSubId] = useState<string | undefined>(initialSubId);
+  const [lastExtractionData, setLastExtractionData] = useState<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -42,6 +45,60 @@ export default function ClarkChat({ submissionId, onSubmissionCreated }: ClarkCh
       reader.readAsDataURL(file);
     });
 
+  const handleAction = async (action: string) => {
+    setIsLoading(true);
+    try {
+      if (action === "send_questionnaire") {
+        const clientEmail = prompt("Enter the client's email address:");
+        const clientName = prompt("Enter the client's name (optional):");
+        if (!clientEmail) { setIsLoading(false); return; }
+
+        const { error } = await supabase.functions.invoke("clark-notify", {
+          body: {
+            submission_id: currentSubId,
+            client_email: clientEmail,
+            client_name: clientName || undefined,
+            action: "send_questionnaire",
+          },
+        });
+        if (error) throw error;
+        setMessages(prev => [...prev, {
+          role: "assistant",
+          content: `📧 Questionnaire sent to **${clientEmail}**! I'll notify you when they complete it.`,
+        }]);
+        toast.success("Questionnaire email sent!");
+      }
+
+      if (action === "finalize") {
+        setMessages(prev => [...prev, { role: "assistant", content: "⏳ Generating ACORD forms and bundling into ZIP..." }]);
+
+        const { data, error } = await supabase.functions.invoke("clark-finalize", {
+          body: { submission_id: currentSubId },
+        });
+        if (error) throw error;
+
+        setMessages(prev => [...prev, {
+          role: "assistant",
+          content: `✅ **Submission finalized!**\n\n- ${data.forms_generated} ACORD form(s) generated\n- Carriers: ${data.carriers.join(", ")}\n\nYour ZIP is ready for download.`,
+          actions: [{ label: "Download ZIP", action: "download", icon: "download" }],
+        }]);
+
+        if (data.zip_url) {
+          window.open(data.zip_url, "_blank");
+        }
+      }
+
+      if (action === "download" && lastExtractionData?.zip_url) {
+        window.open(lastExtractionData.zip_url, "_blank");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Action failed");
+      setMessages(prev => [...prev, { role: "assistant", content: `❌ ${err.message || "Something went wrong."}` }]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleSend = useCallback(async () => {
     const trimmed = input.trim();
     if (!trimmed && uploadedFiles.length === 0) return;
@@ -52,7 +109,6 @@ export default function ClarkChat({ submissionId, onSubmissionCreated }: ClarkCh
     setIsLoading(true);
 
     try {
-      // If files are present, send to extraction
       if (uploadedFiles.length > 0) {
         const pdfFiles = await Promise.all(
           uploadedFiles.map(async (f) => ({
@@ -66,43 +122,47 @@ export default function ClarkChat({ submissionId, onSubmissionCreated }: ClarkCh
           body: {
             pdf_files: pdfFiles,
             user_prompt: trimmed,
-            submission_id: submissionId,
+            submission_id: currentSubId,
           },
         });
 
         if (error) throw error;
 
         const subId = data?.submission_id;
-        if (subId && onSubmissionCreated) onSubmissionCreated(subId);
+        if (subId) {
+          setCurrentSubId(subId);
+          if (onSubmissionCreated) onSubmissionCreated(subId);
+        }
+        setLastExtractionData(data);
 
         const missingCount = data?.missing_fields?.length || 0;
         const extractedKeys = Object.keys(data?.extracted_data || {}).length;
+        const actions: Message["actions"] = [];
 
         let response = `✅ **Extraction complete!**\n\n`;
         response += `- **${extractedKeys}** fields extracted from ${uploadedFiles.length} document(s)\n`;
-        if (missingCount > 0) {
-          response += `- **${missingCount}** fields still missing — I can generate a client questionnaire to collect them\n`;
-          response += `\nMissing fields: ${(data?.missing_fields || []).join(", ")}`;
-        } else {
-          response += `- All required fields captured! Ready to generate ACORD forms.`;
-        }
+        response += `- ACORD forms needed: ${(data?.acord_forms || []).join(", ")}\n`;
 
-        setMessages(prev => [...prev, { role: "assistant", content: response }]);
+        if (missingCount > 0) {
+          response += `- **${missingCount}** fields still missing\n\n`;
+          response += `Missing: ${(data?.missing_fields || []).slice(0, 8).join(", ")}${missingCount > 8 ? "..." : ""}`;
+          actions.push({ label: "Send Questionnaire to Client", action: "send_questionnaire", icon: "mail" });
+        } else {
+          response += `\n🎉 All required fields captured!`;
+        }
+        actions.push({ label: "Generate ACORD Forms & ZIP", action: "finalize", icon: "download" });
+
+        setMessages(prev => [...prev, { role: "assistant", content: response, actions }]);
         setUploadedFiles([]);
       } else {
-        // Regular chat message — route to connect-assistant for general guidance
         const allMessages = [...messages, userMsg].map(m => ({ role: m.role, content: m.content }));
-        
+
         const { data, error } = await supabase.functions.invoke("connect-assistant", {
-          body: {
-            messages: allMessages,
-            context: { mode: "clark" },
-          },
+          body: { messages: allMessages, context: { mode: "clark" } },
         });
 
         if (error) throw error;
 
-        // Handle streaming response
         if (typeof data === "string") {
           setMessages(prev => [...prev, { role: "assistant", content: data }]);
         } else {
@@ -116,7 +176,7 @@ export default function ClarkChat({ submissionId, onSubmissionCreated }: ClarkCh
     } finally {
       setIsLoading(false);
     }
-  }, [input, uploadedFiles, messages, submissionId, onSubmissionCreated]);
+  }, [input, uploadedFiles, messages, currentSubId, onSubmissionCreated]);
 
   return (
     <Card className="flex flex-col h-[calc(100vh-12rem)]">
@@ -131,20 +191,40 @@ export default function ClarkChat({ submissionId, onSubmissionCreated }: ClarkCh
         <ScrollArea className="flex-1 pr-3">
           <div className="space-y-4">
             {messages.map((msg, i) => (
-              <div key={i} className={`flex gap-2 ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                {msg.role === "assistant" && (
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10">
-                    <Bot className="h-4 w-4 text-primary" />
+              <div key={i}>
+                <div className={`flex gap-2 ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                  {msg.role === "assistant" && (
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                      <Bot className="h-4 w-4 text-primary" />
+                    </div>
+                  )}
+                  <div className={`max-w-[80%] rounded-lg px-3 py-2 text-sm whitespace-pre-wrap ${
+                    msg.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted"
+                  }`}>
+                    {msg.content}
                   </div>
-                )}
-                <div className={`max-w-[80%] rounded-lg px-3 py-2 text-sm whitespace-pre-wrap ${
-                  msg.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted"
-                }`}>
-                  {msg.content}
+                  {msg.role === "user" && (
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted">
+                      <User className="h-4 w-4" />
+                    </div>
+                  )}
                 </div>
-                {msg.role === "user" && (
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted">
-                    <User className="h-4 w-4" />
+                {msg.actions && msg.actions.length > 0 && (
+                  <div className="flex gap-2 mt-2 ml-9 flex-wrap">
+                    {msg.actions.map((a, j) => (
+                      <Button
+                        key={j}
+                        size="sm"
+                        variant={a.action === "finalize" ? "default" : "outline"}
+                        className="gap-1.5"
+                        onClick={() => handleAction(a.action)}
+                        disabled={isLoading}
+                      >
+                        {a.icon === "mail" && <Mail className="h-3.5 w-3.5" />}
+                        {a.icon === "download" && <Download className="h-3.5 w-3.5" />}
+                        {a.label}
+                      </Button>
+                    ))}
                   </div>
                 )}
               </div>
