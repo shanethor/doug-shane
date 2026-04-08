@@ -10,14 +10,18 @@ const corsHeaders = {
 const ADMIN_EMAIL = "dwenz@aurarisk.net";
 
 const PRODUCT_TO_TIER: Record<string, string> = {
+  prod_UIL4LdZKBoNI3Y: "starter",
+  prod_UIL4fc1vH7hi7J: "pro",
+  prod_UIL7wOFaZIvNcS: "elite",
+  // Legacy product IDs
   prod_UIKhDnujwDeOYb: "starter",
   prod_UIKiOGZubz4ZBN: "pro",
   prod_UIKigWLViBnKOc: "elite",
 };
 
 const TIER_LIMITS: Record<string, number> = {
-  starter: 5,
-  pro: 25,
+  starter: 3,
+  pro: 10,
   elite: Infinity,
 };
 
