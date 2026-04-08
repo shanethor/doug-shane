@@ -71,6 +71,8 @@ const ConnectOnboarding = lazy(() => import("./pages/ConnectOnboarding"));
 const StudioProduct = lazy(() => import("./pages/StudioProduct"));
 const ProductSettings = lazy(() => import("./pages/ProductSettings"));
 const PostCheckoutOnboard = lazy(() => import("./pages/PostCheckoutOnboard"));
+const Clark = lazy(() => import("./pages/Clark"));
+const ClarkQuestionnaire = lazy(() => import("./pages/ClarkQuestionnaire"));
 
 const queryClient = new QueryClient();
 
@@ -177,6 +179,9 @@ const App = () => (
             <Route path="/bor-sign/:token" element={<BorSign />} />
             <Route path="/loss-runs/:id/sign" element={<LossRunSign />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+
+            <Route path="/clark/questionnaire/:token" element={<ClarkQuestionnaire />} />
+            <Route path="/clark" element={<ProductProtectedRoute><Clark /></ProductProtectedRoute>} />
 
             <Route path="/leads/:industry" element={<LeadLanding />} />
 
