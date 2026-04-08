@@ -71,6 +71,8 @@ const ConnectOnboarding = lazy(() => import("./pages/ConnectOnboarding"));
 const StudioProduct = lazy(() => import("./pages/StudioProduct"));
 const ProductSettings = lazy(() => import("./pages/ProductSettings"));
 const PostCheckoutOnboard = lazy(() => import("./pages/PostCheckoutOnboard"));
+const Clark = lazy(() => import("./pages/Clark"));
+const ClarkQuestionnaire = lazy(() => import("./pages/ClarkQuestionnaire"));
 
 const queryClient = new QueryClient();
 
