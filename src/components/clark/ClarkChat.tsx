@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -36,13 +36,12 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
   const didLoad = useRef(false);
 
   // Auto-load submission if ID provided on mount
-  useState(() => {
+  useEffect(() => {
     if (initialSubId && !didLoad.current) {
       didLoad.current = true;
-      // defer to after render
-      setTimeout(() => loadSubmission(initialSubId), 0);
+      loadSubmission(initialSubId);
     }
-  });
+  }, [initialSubId]);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
