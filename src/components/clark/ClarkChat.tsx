@@ -35,13 +35,7 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
   const fileInputRef = useRef<HTMLInputElement>(null);
   const didLoad = useRef(false);
 
-  // Auto-load submission if ID provided on mount
-  useEffect(() => {
-    if (initialSubId && !didLoad.current) {
-      didLoad.current = true;
-      loadSubmission(initialSubId);
-    }
-  }, [initialSubId]);
+  // loadSubmission effect is below, after the function definition
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
