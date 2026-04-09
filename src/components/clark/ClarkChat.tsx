@@ -401,6 +401,34 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
     }
   }, [initialSubId]);
 
+  const handleSendQuestionnaire = async (email: string, name: string) => {
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.functions.invoke("clark-notify", {
+        body: {
+          submission_id: currentSubId,
+          client_email: email,
+          client_name: name || undefined,
+          action: "send_questionnaire",
+        },
+      });
+      if (error) throw error;
+      setMessages(prev => [...prev, {
+        role: "assistant",
+        content: `📧 Questionnaire sent to **${email}**! I'll notify you when they complete it.`,
+      }]);
+      toast.success("Questionnaire email sent!");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to send questionnaire");
+      setMessages(prev => [...prev, {
+        role: "assistant",
+        content: `❌ Failed to send questionnaire: ${err.message || "Unknown error"}`,
+      }]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const renderWidget = (msg: Message) => {
     if (msg.widget === "carrier_select") {
       return (
@@ -418,6 +446,9 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
           onComplete={handleInlineQuestionnaireComplete}
         />
       );
+    }
+    if (msg.widget === "email_questionnaire") {
+      return <InlineEmailInput onSend={handleSendQuestionnaire} />;
     }
     return null;
   };
