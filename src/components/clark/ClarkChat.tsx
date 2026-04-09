@@ -14,7 +14,7 @@ interface Message {
   role: "user" | "assistant";
   content: string;
   actions?: Array<{ label: string; action: string; icon?: string }>;
-  widget?: "carrier_select" | "inline_questionnaire";
+  widget?: "carrier_select" | "inline_questionnaire" | "email_questionnaire";
   widgetData?: any;
 }
 
