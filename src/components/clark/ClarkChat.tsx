@@ -9,6 +9,61 @@ import { toast } from "sonner";
 import { Send, Upload, FileText, Loader2, Bot, User, Mail, Download } from "lucide-react";
 import ClarkCarrierFormSelect from "./ClarkCarrierFormSelect";
 import ClarkInlineQuestionnaire from "./ClarkInlineQuestionnaire";
+import { Label } from "@/components/ui/label";
+
+function InlineEmailInput({ onSend }: { onSend: (email: string, name: string) => void }) {
+  const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
+  const [sent, setSent] = useState(false);
+
+  if (sent) {
+    return (
+      <Card className="border-green-500/30 bg-green-500/5">
+        <CardContent className="py-3 flex items-center gap-2 text-sm">
+          <Mail className="h-4 w-4 text-green-500" />
+          Questionnaire email sent to {email}
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardContent className="pt-4 pb-3 space-y-3">
+        <div className="space-y-1">
+          <Label htmlFor="q-email" className="text-xs">Client Email *</Label>
+          <Input
+            id="q-email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="client@example.com"
+            className="h-8 text-sm"
+          />
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="q-name" className="text-xs">Client Name (optional)</Label>
+          <Input
+            id="q-name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="John Smith"
+            className="h-8 text-sm"
+          />
+        </div>
+        <Button
+          size="sm"
+          className="w-full gap-1.5"
+          disabled={!email.includes("@")}
+          onClick={() => { setSent(true); onSend(email, name); }}
+        >
+          <Mail className="h-3.5 w-3.5" />
+          Send Questionnaire
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
 
 interface Message {
   role: "user" | "assistant";
