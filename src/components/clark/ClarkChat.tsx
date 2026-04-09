@@ -237,24 +237,15 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
     setIsLoading(true);
     try {
       if (action === "send_questionnaire") {
-        const clientEmail = prompt("Enter the client's email address:");
-        const clientName = prompt("Enter the client's name (optional):");
-        if (!clientEmail) { setIsLoading(false); return; }
-
-        const { error } = await supabase.functions.invoke("clark-notify", {
-          body: {
-            submission_id: currentSubId,
-            client_email: clientEmail,
-            client_name: clientName || undefined,
-            action: "send_questionnaire",
-          },
-        });
-        if (error) throw error;
+        // Show inline email input widget instead of prompt()
         setMessages(prev => [...prev, {
           role: "assistant",
-          content: `📧 Questionnaire sent to **${clientEmail}**! I'll notify you when they complete it.`,
+          content: "📧 Enter the client's email address to send the questionnaire:",
+          widget: "email_questionnaire",
+          widgetData: { submissionId: currentSubId },
         }]);
-        toast.success("Questionnaire email sent!");
+        setIsLoading(false);
+        return;
       }
 
       if (action === "finalize") {
