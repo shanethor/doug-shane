@@ -4,12 +4,36 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Send, Upload, FileText, Loader2, Bot, User, Mail, Download } from "lucide-react";
+import { Send, Upload, FileText, Loader2, Bot, User, Mail, Download, Code2 } from "lucide-react";
 import ClarkCarrierFormSelect from "./ClarkCarrierFormSelect";
 import ClarkInlineQuestionnaire from "./ClarkInlineQuestionnaire";
 import { Label } from "@/components/ui/label";
+import { isMasterEmail } from "@/lib/master-accounts";
+
+interface ExtractionDebugPayload {
+  provider?: string;
+  model?: string;
+  error?: string | null;
+  step2_response?: string | null;
+  step1_batches?: Array<{
+    batch: number;
+    response: string;
+    extracted_fields: number;
+  }>;
+}
+
+const EXTRACTION_PROGRESS_STEPS = [
+  { value: 8, label: "Clark AI is preparing your files…" },
+  { value: 22, label: "Clark AI is reading policy pages…" },
+  { value: 38, label: "Clark AI is stitching batch results together…" },
+  { value: 56, label: "Clark AI is mapping fields to the submission…" },
+  { value: 74, label: "Clark AI is checking for missing underwriting details…" },
+  { value: 90, label: "Clark AI is finalizing your extraction…" },
+];
 
 function InlineEmailInput({ onSend }: { onSend: (email: string, name: string) => Promise<boolean> }) {
   const [email, setEmail] = useState("");
@@ -101,14 +125,66 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
   const [lastExtractionData, setLastExtractionData] = useState<any>(null);
   const [pendingFiles, setPendingFiles] = useState<File[] | null>(null);
   const [pendingPrompt, setPendingPrompt] = useState("");
+  const [extractionProgress, setExtractionProgress] = useState(0);
+  const [extractionStep, setExtractionStep] = useState("");
+  const [debugPayload, setDebugPayload] = useState<ExtractionDebugPayload | null>(null);
+  const [debugOpen, setDebugOpen] = useState(false);
+  const [isDebugUser, setIsDebugUser] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const didLoad = useRef(false);
+  const progressTimerRef = useRef<number | null>(null);
 
   // Auto-scroll on new messages
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading, isExtracting]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    void supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!mounted) return;
+      setIsDebugUser(isMasterEmail(user?.email));
+    });
+
+    return () => {
+      mounted = false;
+      if (progressTimerRef.current) {
+        window.clearInterval(progressTimerRef.current);
+        progressTimerRef.current = null;
+      }
+    };
+  }, []);
+
+  const stopExtractionProgress = useCallback((reset = true) => {
+    if (progressTimerRef.current) {
+      window.clearInterval(progressTimerRef.current);
+      progressTimerRef.current = null;
+    }
+
+    if (reset) {
+      setExtractionProgress(0);
+      setExtractionStep("");
+    }
+  }, []);
+
+  const startExtractionProgress = useCallback(() => {
+    stopExtractionProgress();
+    setExtractionProgress(EXTRACTION_PROGRESS_STEPS[0].value);
+    setExtractionStep(EXTRACTION_PROGRESS_STEPS[0].label);
+
+    let stepIndex = 0;
+    progressTimerRef.current = window.setInterval(() => {
+      stepIndex = Math.min(stepIndex + 1, EXTRACTION_PROGRESS_STEPS.length - 1);
+      setExtractionProgress((prev) => Math.max(prev, EXTRACTION_PROGRESS_STEPS[stepIndex].value));
+      setExtractionStep(EXTRACTION_PROGRESS_STEPS[stepIndex].label);
+
+      if (stepIndex === EXTRACTION_PROGRESS_STEPS.length - 1) {
+        stopExtractionProgress(false);
+      }
+    }, 1500);
+  }, [stopExtractionProgress]);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -149,6 +225,8 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
   /** Run the extraction in the background */
   const runExtraction = async (files: File[], userPrompt: string, subId?: string) => {
     setIsExtracting(true);
+    setDebugPayload(null);
+    startExtractionProgress();
     try {
       const pdfFiles = await Promise.all(
         files.map(async (f) => ({
@@ -160,13 +238,22 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
 
       setMessages(prev => [...prev, {
         role: "assistant",
-        content: "🔍 **Step 1/3:** Extracting all insurance data from your documents with Claude AI..."
+        content: "🔍 **Clark AI** is extracting all insurance data from your documents..."
       }]);
 
       const { data, error } = await supabase.functions.invoke("clark-extract", {
         body: { pdf_files: pdfFiles, user_prompt: userPrompt, submission_id: subId },
       });
       if (error) throw error;
+      if (data?.debug) setDebugPayload(data.debug);
+      if (data?.ok === false) {
+        const extractionError = new Error(data.error || "Extraction failed");
+        (extractionError as Error & { debug?: ExtractionDebugPayload }).debug = data.debug;
+        throw extractionError;
+      }
+
+      setExtractionProgress(100);
+      setExtractionStep("Clark AI finished the extraction.");
 
       const newSubId = data?.submission_id;
       if (newSubId) {
@@ -221,14 +308,22 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
       return data;
     } catch (err: any) {
       console.error("Extraction error:", err);
-      toast.error(err.message || "Extraction failed");
+      if (err?.debug) setDebugPayload(err.debug);
+
+      const rawMessage = err?.message || "Unknown error";
+      const friendlyMessage = /rate limit|429/i.test(rawMessage)
+        ? "Clark AI is currently rate limited on this document. Please retry in a minute."
+        : rawMessage;
+
+      toast.error(friendlyMessage);
       setMessages(prev => [...prev, {
         role: "assistant",
-        content: `❌ Extraction failed: ${err.message || "Unknown error"}. Please try again.`,
+        content: `❌ Extraction failed: ${friendlyMessage}. Please try again.`,
       }]);
       onSubmissionsChanged?.();
       return null;
     } finally {
+      stopExtractionProgress();
       setIsExtracting(false);
     }
   };
@@ -533,17 +628,36 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
   return (
     <Card className="flex flex-col h-[calc(100vh-12rem)]">
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Bot className="h-5 w-5 text-primary" />
-          Clark AI
-          <Badge variant="secondary" className="text-xs">Insurance Tool</Badge>
-          {isExtracting && (
-            <Badge variant="outline" className="text-xs gap-1 animate-pulse">
-              <Loader2 className="h-3 w-3 animate-spin" />
-              Extracting…
-            </Badge>
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Bot className="h-5 w-5 text-primary" />
+            Clark AI
+            <Badge variant="secondary" className="text-xs">Insurance Tool</Badge>
+            {isExtracting && (
+              <Badge variant="outline" className="text-xs gap-1 animate-pulse">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                Extracting…
+              </Badge>
+            )}
+          </CardTitle>
+
+          {isDebugUser && debugPayload && (
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setDebugOpen(true)}>
+              <Code2 className="h-3.5 w-3.5" />
+              AI Response
+            </Button>
           )}
-        </CardTitle>
+        </div>
+
+        {isExtracting && (
+          <div className="space-y-2 pt-2">
+            <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
+              <span>{extractionStep || "Clark AI is reviewing your submission…"}</span>
+              <span>{Math.max(1, extractionProgress)}%</span>
+            </div>
+            <Progress value={extractionProgress} className="h-2" />
+          </div>
+        )}
       </CardHeader>
       <CardContent className="flex-1 flex flex-col gap-3 overflow-hidden p-4 pt-0">
         <ScrollArea className="flex-1 pr-3">
@@ -639,6 +753,48 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
           </Button>
         </div>
       </CardContent>
+
+      <Dialog open={debugOpen} onOpenChange={setDebugOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Exact Clark AI response</DialogTitle>
+            <DialogDescription>
+              Raw extraction output shown for approved debug accounts only.
+            </DialogDescription>
+          </DialogHeader>
+
+          <ScrollArea className="max-h-[70vh] pr-4">
+            <div className="space-y-4 text-sm">
+              <div className="rounded-lg border bg-muted/40 p-3">
+                <div><strong>Provider:</strong> {debugPayload?.provider || "Clark AI"}</div>
+                {debugPayload?.model && <div><strong>Model:</strong> {debugPayload.model}</div>}
+                {debugPayload?.error && <div><strong>Error:</strong> {debugPayload.error}</div>}
+              </div>
+
+              {(debugPayload?.step1_batches || []).map((batch) => (
+                <div key={batch.batch} className="space-y-2 rounded-lg border p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <h3 className="font-medium">Batch {batch.batch}</h3>
+                    <Badge variant="outline" className="text-xs">{batch.extracted_fields} fields</Badge>
+                  </div>
+                  <pre className="overflow-x-auto rounded-md bg-muted p-3 text-xs whitespace-pre-wrap break-words">
+                    {batch.response || "No response captured."}
+                  </pre>
+                </div>
+              ))}
+
+              {debugPayload?.step2_response && (
+                <div className="space-y-2 rounded-lg border p-3">
+                  <h3 className="font-medium">Enrichment response</h3>
+                  <pre className="overflow-x-auto rounded-md bg-muted p-3 text-xs whitespace-pre-wrap break-words">
+                    {debugPayload.step2_response}
+                  </pre>
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
