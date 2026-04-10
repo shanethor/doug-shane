@@ -120,19 +120,49 @@ Rules:
 - If multiple documents provided, merge intelligently — most specific/recent values win
 - Be extraordinarily thorough — insurance underwriters depend on this data`;
 
-    // Build vision content blocks for all files
+    // Build vision content blocks — truncate PDFs over MAX_PDF_PAGES
     const docBlocks: any[] = [];
     for (const file of pdf_files) {
       const mediaType = file.mimeType === "application/pdf"
         ? "application/pdf"
         : file.mimeType || "image/jpeg";
 
+      let base64Data = file.base64;
+
+      // Truncate large PDFs to first MAX_PDF_PAGES pages
+      if (mediaType === "application/pdf") {
+        try {
+          const pdfBytes = Uint8Array.from(atob(file.base64), (c) => c.charCodeAt(0));
+          const srcDoc = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
+          const pageCount = srcDoc.getPageCount();
+          if (pageCount > MAX_PDF_PAGES) {
+            console.log(`PDF "${file.name}" has ${pageCount} pages — truncating to first ${MAX_PDF_PAGES}`);
+            const trimDoc = await PDFDocument.create();
+            const indices = Array.from({ length: MAX_PDF_PAGES }, (_, i) => i);
+            const copiedPages = await trimDoc.copyPages(srcDoc, indices);
+            for (const p of copiedPages) trimDoc.addPage(p);
+            const trimBytes = await trimDoc.save();
+            // Convert back to base64
+            let binary = "";
+            const bytes = new Uint8Array(trimBytes);
+            const chunkSize = 8192;
+            for (let i = 0; i < bytes.length; i += chunkSize) {
+              binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+            }
+            base64Data = btoa(binary);
+          }
+        } catch (truncErr) {
+          console.warn(`Could not truncate PDF "${file.name}":`, truncErr);
+          // Send original — Claude will error if still too large
+        }
+      }
+
       docBlocks.push({
         type: mediaType === "application/pdf" ? "document" : "image",
         source: {
           type: "base64",
           media_type: mediaType,
-          data: file.base64,
+          data: base64Data,
         },
         ...(mediaType === "application/pdf" ? { title: file.name } : {}),
       });
