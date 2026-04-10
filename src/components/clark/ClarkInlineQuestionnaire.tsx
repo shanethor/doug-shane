@@ -35,21 +35,34 @@ export default function ClarkInlineQuestionnaire({ submissionId, missingFields, 
         .eq("id", submissionId)
         .single();
 
-      const merged = { ...((sub?.extracted_data as Record<string, any>) || {}), ...answers };
+      // Only merge non-empty answers
+      const filledAnswers: Record<string, string> = {};
+      for (const [key, val] of Object.entries(answers)) {
+        if (val && val.trim() !== "") filledAnswers[key] = val.trim();
+      }
+
+      const merged = { ...((sub?.extracted_data as Record<string, any>) || {}), ...filledAnswers };
+
+      // Recompute which required fields are still missing after merge
+      const stillMissing = missingFields.filter(f => !merged[f] || String(merged[f]).trim() === "");
+
       const { error } = await supabase
         .from("clark_submissions")
         .update({
           extracted_data: merged,
-          questionnaire_completed: true,
-          status: "questionnaire_complete",
-          missing_fields: [],
+          questionnaire_completed: stillMissing.length === 0,
+          status: stillMissing.length === 0 ? "questionnaire_complete" : "needs_info",
+          missing_fields: stillMissing,
         })
         .eq("id", submissionId);
 
       if (error) throw error;
       setDone(true);
-      onComplete(answers);
-      toast.success("Missing fields filled!");
+      onComplete(filledAnswers);
+      toast.success(stillMissing.length === 0
+        ? "All missing fields filled!"
+        : `Saved! ${stillMissing.length} field(s) still empty.`
+      );
     } catch (err: any) {
       toast.error(err.message || "Failed to save");
     } finally {
