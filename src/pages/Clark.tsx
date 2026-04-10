@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { CLARK_TIERS, CLARK_ADMIN_EMAIL, type ClarkTierKey } from "@/lib/clark-tiers";
 import { toast } from "sonner";
 import { CreditCard, Zap, PanelLeftClose, PanelLeft } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function Clark() {
   const [loading, setLoading] = useState(true);
@@ -15,9 +16,12 @@ export default function Clark() {
   const [tier, setTier] = useState<ClarkTierKey | "free">("free");
   const [submissionCount, setSubmissionCount] = useState(0);
   const [activeSubId, setActiveSubId] = useState<string | undefined>();
-  const [showPanel, setShowPanel] = useState(true);
-  const [chatKey, setChatKey] = useState(0); // force remount on submission change
+  const isMobile = useIsMobile();
+  const [showPanel, setShowPanel] = useState(!isMobile);
+  const [chatKey, setChatKey] = useState(0);
   const chatRef = useRef<any>(null);
+
+  useEffect(() => { setShowPanel(!isMobile); }, [isMobile]);
 
   const checkProfile = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -67,11 +71,13 @@ export default function Clark() {
   const handleSelectSubmission = (id: string) => {
     setActiveSubId(id);
     setChatKey(prev => prev + 1);
+    if (isMobile) setShowPanel(false);
   };
 
   const handleNewSubmission = () => {
     setActiveSubId(undefined);
     setChatKey(prev => prev + 1);
+    if (isMobile) setShowPanel(false);
   };
 
   if (loading) {
@@ -93,29 +99,29 @@ export default function Clark() {
   return (
     <div className="min-h-screen bg-background">
       <div className="border-b bg-card">
-        <div className="mx-auto max-w-7xl flex items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-3">
+        <div className="mx-auto max-w-7xl flex items-center justify-between px-3 sm:px-4 py-2 sm:py-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setShowPanel(p => !p)}>
               {showPanel ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeft className="h-4 w-4" />}
             </Button>
-            <h1 className="text-xl font-bold">Clark</h1>
-            <Badge variant={tier === "free" ? "secondary" : "default"}>
+            <h1 className="text-lg sm:text-xl font-bold">Clark</h1>
+            <Badge variant={tier === "free" ? "secondary" : "default"} className="text-xs">
               {tier === "free" ? "Free" : currentTier?.name}
             </Badge>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             {tier !== "elite" && (
-              <span className="text-sm text-muted-foreground">
+              <span className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
                 {submissionCount}/{limit || "—"} this month
               </span>
             )}
             {tier === "free" && (
-              <Button size="sm" onClick={() => handleUpgrade("starter")} className="gap-1.5">
+              <Button size="sm" onClick={() => handleUpgrade("starter")} className="gap-1.5 text-xs sm:text-sm">
                 <Zap className="h-3.5 w-3.5" /> Upgrade
               </Button>
             )}
             {tier !== "free" && (
-              <Button size="sm" variant="outline" className="gap-1.5" onClick={async () => {
+              <Button size="sm" variant="outline" className="gap-1.5 text-xs sm:text-sm" onClick={async () => {
                 const { data } = await supabase.functions.invoke("customer-portal");
                 if (data?.url) window.open(data.url, "_blank");
               }}>
@@ -126,9 +132,9 @@ export default function Clark() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-7xl flex" style={{ height: "calc(100vh - 57px)" }}>
+      <div className="mx-auto max-w-7xl flex relative" style={{ height: "calc(100vh - 53px)" }}>
         {showPanel && (
-          <div className="w-72 border-r shrink-0">
+          <div className={`${isMobile ? "absolute inset-0 z-30 bg-background" : "w-72 border-r shrink-0"}`}>
             <ClarkSubmissionsPanel
               activeSubmissionId={activeSubId}
               onSelect={handleSelectSubmission}
@@ -136,14 +142,14 @@ export default function Clark() {
             />
           </div>
         )}
-        <div className="flex-1 p-4 overflow-hidden">
+        <div className={`flex-1 p-2 sm:p-4 overflow-hidden ${isMobile && showPanel ? "hidden" : ""}`}>
           {atLimit ? (
-            <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-6 text-center space-y-3">
+            <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 sm:p-6 text-center space-y-3">
               <h2 className="text-lg font-semibold">Submission limit reached</h2>
               <p className="text-sm text-muted-foreground">
                 You've used all {limit} submissions for this month. Upgrade to increase your limit.
               </p>
-              <div className="flex gap-2 justify-center">
+              <div className="flex gap-2 justify-center flex-wrap">
                 {tier === "starter" && <Button onClick={() => handleUpgrade("pro")}>Upgrade to Pro ($99/mo)</Button>}
                 {(tier === "starter" || tier === "pro") && <Button variant="outline" onClick={() => handleUpgrade("elite")}>Go Elite ($249/mo)</Button>}
               </div>

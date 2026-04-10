@@ -6,8 +6,6 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const GATEWAY_URL = "https://connector-gateway.lovable.dev/resend";
-
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -18,9 +16,8 @@ serve(async (req) => {
   );
 
   try {
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-    if (!LOVABLE_API_KEY || !RESEND_API_KEY) throw new Error("Email API keys not configured");
+    if (!RESEND_API_KEY) throw new Error("RESEND_API_KEY not configured");
 
     const authHeader = req.headers.get("authorization");
     if (!authHeader) throw new Error("Not authenticated");
@@ -32,7 +29,6 @@ serve(async (req) => {
     const { submission_id, client_email, client_name, action } = await req.json();
     if (!submission_id) throw new Error("submission_id is required");
 
-    // Fetch the submission
     const { data: submission, error: subErr } = await supabase
       .from("clark_submissions")
       .select("*")
@@ -42,7 +38,6 @@ serve(async (req) => {
 
     if (subErr || !submission) throw new Error("Submission not found");
 
-    // Fetch agent's clark profile for branding
     const { data: clarkProfile } = await supabase
       .from("clark_profiles")
       .select("producer_name, firm_name, contact_email")
@@ -53,8 +48,24 @@ serve(async (req) => {
     const firmName = clarkProfile?.firm_name || "AURA";
     const origin = req.headers.get("origin") || "https://aura-risk-group.lovable.app";
 
+    const sendEmail = async (payload: { from: string; to: string[]; subject: string; html: string }) => {
+      const resp = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${RESEND_API_KEY}`,
+        },
+        body: JSON.stringify(payload),
+      });
+      if (!resp.ok) {
+        const errText = await resp.text();
+        console.error("Resend error:", errText);
+        throw new Error("Failed to send email via Resend");
+      }
+      return resp.json();
+    };
+
     if (action === "send_questionnaire") {
-      // Send questionnaire link to client
       if (!client_email) throw new Error("client_email is required");
 
       const questionnaireUrl = `${origin}/clark/questionnaire/${submission.questionnaire_token}`;
@@ -81,28 +92,13 @@ serve(async (req) => {
         </div>
       `;
 
-      const emailResp = await fetch(`${GATEWAY_URL}/emails`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "X-Connection-Api-Key": RESEND_API_KEY,
-        },
-        body: JSON.stringify({
-          from: `${firmName} <onboarding@resend.dev>`,
-          to: [client_email],
-          subject: `Action Required: Complete Your Insurance Application — ${firmName}`,
-          html,
-        }),
+      await sendEmail({
+        from: `${firmName} <onboarding@resend.dev>`,
+        to: [client_email],
+        subject: `Action Required: Complete Your Insurance Application — ${firmName}`,
+        html,
       });
 
-      if (!emailResp.ok) {
-        const errText = await emailResp.text();
-        console.error("Resend error:", errText);
-        throw new Error("Failed to send questionnaire email");
-      }
-
-      // Update submission status
       await supabase
         .from("clark_submissions")
         .update({ status: "questionnaire_sent" })
@@ -114,7 +110,6 @@ serve(async (req) => {
     }
 
     if (action === "notify_agent_complete") {
-      // Notify agent that questionnaire is complete
       const agentEmail = clarkProfile?.contact_email || user.email;
       if (!agentEmail) throw new Error("No agent email found");
 
@@ -134,19 +129,11 @@ serve(async (req) => {
         </div>
       `;
 
-      await fetch(`${GATEWAY_URL}/emails`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "X-Connection-Api-Key": RESEND_API_KEY,
-        },
-        body: JSON.stringify({
-          from: `Clark AI <onboarding@resend.dev>`,
-          to: [agentEmail],
-          subject: `✅ Questionnaire Complete — ${submission.business_name || submission.client_name || "Submission"}`,
-          html,
-        }),
+      await sendEmail({
+        from: `Clark AI <onboarding@resend.dev>`,
+        to: [agentEmail],
+        subject: `✅ Questionnaire Complete — ${submission.business_name || submission.client_name || "Submission"}`,
+        html,
       });
 
       return new Response(JSON.stringify({ success: true, message: "Agent notified" }), {
