@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
+import { PDFDocument } from "npm:pdf-lib@1.17.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -91,11 +92,7 @@ serve(async (req) => {
     const { pdf_files, user_prompt, submission_id } = await req.json();
     if (!pdf_files || pdf_files.length === 0) throw new Error("No files provided");
 
-    // Claude supports max 100 PDF pages total. For large PDFs we need to
-    // convert them to images client-side or warn. For now, if a single PDF
-    // is too large, we'll attempt sending it and gracefully handle the error
-    // by asking Claude to process it as chunked text instead.
-    const MAX_PDF_PAGES = 100; // Claude's hard limit
+    const MAX_PDF_PAGES = 95; // Claude limit is 100; leave headroom
 
     const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
     if (!ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY not configured");
@@ -123,19 +120,49 @@ Rules:
 - If multiple documents provided, merge intelligently — most specific/recent values win
 - Be extraordinarily thorough — insurance underwriters depend on this data`;
 
-    // Build vision content blocks for all files
+    // Build vision content blocks — truncate PDFs over MAX_PDF_PAGES
     const docBlocks: any[] = [];
     for (const file of pdf_files) {
       const mediaType = file.mimeType === "application/pdf"
         ? "application/pdf"
         : file.mimeType || "image/jpeg";
 
+      let base64Data = file.base64;
+
+      // Truncate large PDFs to first MAX_PDF_PAGES pages
+      if (mediaType === "application/pdf") {
+        try {
+          const pdfBytes = Uint8Array.from(atob(file.base64), (c) => c.charCodeAt(0));
+          const srcDoc = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
+          const pageCount = srcDoc.getPageCount();
+          if (pageCount > MAX_PDF_PAGES) {
+            console.log(`PDF "${file.name}" has ${pageCount} pages — truncating to first ${MAX_PDF_PAGES}`);
+            const trimDoc = await PDFDocument.create();
+            const indices = Array.from({ length: MAX_PDF_PAGES }, (_, i) => i);
+            const copiedPages = await trimDoc.copyPages(srcDoc, indices);
+            for (const p of copiedPages) trimDoc.addPage(p);
+            const trimBytes = await trimDoc.save();
+            // Convert back to base64
+            let binary = "";
+            const bytes = new Uint8Array(trimBytes);
+            const chunkSize = 8192;
+            for (let i = 0; i < bytes.length; i += chunkSize) {
+              binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+            }
+            base64Data = btoa(binary);
+          }
+        } catch (truncErr) {
+          console.warn(`Could not truncate PDF "${file.name}":`, truncErr);
+          // Send original — Claude will error if still too large
+        }
+      }
+
       docBlocks.push({
         type: mediaType === "application/pdf" ? "document" : "image",
         source: {
           type: "base64",
           media_type: mediaType,
-          data: file.base64,
+          data: base64Data,
         },
         ...(mediaType === "application/pdf" ? { title: file.name } : {}),
       });
@@ -145,42 +172,14 @@ Rules:
     let step1Data: Record<string, any> = {};
     const BATCH_SIZE = 3;
 
-    // Helper: attempt a Claude call, and if it fails due to page limit,
-    // retry by stripping PDF documents and sending only metadata/text prompt
-    async function callClaudeWithPageFallback(
-      blocks: any[],
-      promptText: string,
-      systemPrompt: string,
-    ): Promise<Record<string, any>> {
-      try {
-        const result = await callClaude(
-          ANTHROPIC_API_KEY,
-          [{ role: "user", content: [...blocks, { type: "text", text: promptText }] }],
-          systemPrompt,
-        );
-        return parseClaudeJson(result.content?.[0]?.text || "{}");
-      } catch (err: any) {
-        const msg = err?.message || "";
-        if (msg.includes("100 PDF pages") || msg.includes("maximum")) {
-          console.warn("PDF too large for vision — falling back to text-only extraction prompt");
-          // Retry without the document blocks; ask Claude to extract from file names/context
-          const fileNames = pdf_files.map((f: any) => f.name).join(", ");
-          const fallbackPrompt = `The uploaded PDF documents (${fileNames}) exceed the 100-page limit for direct analysis. Based on the file names and any context provided, generate a JSON template with all standard ACORD insurance fields set to empty strings so the agent can fill them manually. Include common fields: applicant_name, dba, mailing_address, city, state, zip, business_phone, fein, sic_code, naics_code, business_type, entity_type, years_in_business, annual_revenue, num_employees, effective_date, expiration_date, coverage_requested, prior_carrier, prior_policy_number, prior_premium.${user_prompt ? `\n\nAgent context: ${user_prompt}` : ""}`;
-          const result = await callClaude(
-            ANTHROPIC_API_KEY,
-            [{ role: "user", content: fallbackPrompt }],
-            systemPrompt,
-            4096,
-          );
-          return parseClaudeJson(result.content?.[0]?.text || "{}");
-        }
-        throw err;
-      }
-    }
-
     if (pdf_files.length <= BATCH_SIZE) {
       const promptText = `Perform a full, exhaustive extraction of all pertinent insurance data from these documents. Capture every coverage, limit, deductible, schedule, insured, endorsement, and classification. Filter out legal boilerplate and privacy notices. Return a single flat JSON object.${user_prompt ? `\n\nAdditional context from the agent: ${user_prompt}` : ""}`;
-      step1Data = await callClaudeWithPageFallback(docBlocks, promptText, step1System);
+      const result = await callClaude(
+        ANTHROPIC_API_KEY,
+        [{ role: "user", content: [...docBlocks, { type: "text", text: promptText }] }],
+        step1System,
+      );
+      step1Data = parseClaudeJson(result.content?.[0]?.text || "{}");
     } else {
       // Staggered batches for large uploads
       for (let i = 0; i < pdf_files.length; i += BATCH_SIZE) {
@@ -194,7 +193,12 @@ Rules:
           ? `Perform a full, exhaustive extraction of all pertinent insurance data from these documents (batch ${batchNum}/${totalBatches}). Filter out legal boilerplate. Return a single flat JSON object.${user_prompt ? `\n\nAdditional context: ${user_prompt}` : ""}`
           : `Here are more documents (batch ${batchNum}/${totalBatches}). Extract all data and MERGE with previous extraction:\n${JSON.stringify(step1Data)}\n\nReturn the COMPLETE merged JSON.`;
 
-        const batchData = await callClaudeWithPageFallback(batchBlocks, promptText, step1System);
+        const result = await callClaude(
+          ANTHROPIC_API_KEY,
+          [{ role: "user", content: [...batchBlocks, { type: "text", text: promptText }] }],
+          step1System,
+        );
+        const batchData = parseClaudeJson(result.content?.[0]?.text || "{}");
         step1Data = { ...step1Data, ...batchData };
       }
     }
