@@ -91,6 +91,12 @@ serve(async (req) => {
     const { pdf_files, user_prompt, submission_id } = await req.json();
     if (!pdf_files || pdf_files.length === 0) throw new Error("No files provided");
 
+    // Claude supports max 100 PDF pages total. For large PDFs we need to
+    // convert them to images client-side or warn. For now, if a single PDF
+    // is too large, we'll attempt sending it and gracefully handle the error
+    // by asking Claude to process it as chunked text instead.
+    const MAX_PDF_PAGES = 100; // Claude's hard limit
+
     const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
     if (!ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY not configured");
 
