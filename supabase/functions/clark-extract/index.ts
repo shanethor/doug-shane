@@ -22,7 +22,7 @@ async function callClaude(
   apiKey: string,
   messages: any[],
   system: string,
-  maxTokens = 8192,
+  maxTokens = 16384,
   retries = 3,
 ): Promise<any> {
   for (let attempt = 0; attempt <= retries; attempt++) {
