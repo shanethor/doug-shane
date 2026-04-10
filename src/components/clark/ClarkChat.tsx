@@ -39,6 +39,17 @@ function InlineEmailInput({ onSend }: { onSend: (email: string, name: string) =>
     <Card>
       <CardContent className="pt-4 pb-3 space-y-3">
         <div className="space-y-1">
+          <Label htmlFor="q-name" className="text-xs">Client Name *</Label>
+          <Input
+            id="q-name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="John Smith"
+            className="h-8 text-sm"
+            disabled={submitting}
+          />
+        </div>
+        <div className="space-y-1">
           <Label htmlFor="q-email" className="text-xs">Client Email *</Label>
           <Input
             id="q-email"
@@ -50,21 +61,10 @@ function InlineEmailInput({ onSend }: { onSend: (email: string, name: string) =>
             disabled={submitting}
           />
         </div>
-        <div className="space-y-1">
-          <Label htmlFor="q-name" className="text-xs">Client Name (optional)</Label>
-          <Input
-            id="q-name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="John Smith"
-            className="h-8 text-sm"
-            disabled={submitting}
-          />
-        </div>
         <Button
           size="sm"
           className="w-full gap-1.5"
-          disabled={!email.includes("@") || submitting}
+          disabled={!email.includes("@") || !name.trim() || submitting}
           onClick={handleSubmit}
         >
           {submitting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Mail className="h-3.5 w-3.5" />}
@@ -305,7 +305,7 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
         // Show inline email input widget instead of prompt()
         setMessages(prev => [...prev, {
           role: "assistant",
-          content: "📧 Enter the client's email address to send the questionnaire:",
+          content: "📧 Enter the client's name and email to send the questionnaire:",
           widget: "email_questionnaire",
           widgetData: { submissionId: currentSubId },
         }]);
