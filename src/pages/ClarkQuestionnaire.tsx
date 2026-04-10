@@ -44,15 +44,23 @@ export default function ClarkQuestionnaire() {
     if (!submission) return;
     setSubmitting(true);
     try {
-      // Merge answers into extracted_data
-      const merged = { ...(submission.extracted_data || {}), ...answers };
+      // Only merge non-empty answers
+      const filledAnswers: Record<string, string> = {};
+      for (const [key, val] of Object.entries(answers)) {
+        if (val && val.trim() !== "") filledAnswers[key] = val.trim();
+      }
+
+      const merged = { ...(submission.extracted_data || {}), ...filledAnswers };
+      const missingFields = (submission.missing_fields as string[]) || [];
+      const stillMissing = missingFields.filter(f => !merged[f] || String(merged[f]).trim() === "");
+
       const { error } = await supabase
         .from("clark_submissions")
         .update({
           extracted_data: merged,
-          questionnaire_completed: true,
-          status: "questionnaire_complete",
-          missing_fields: [],
+          questionnaire_completed: stillMissing.length === 0,
+          status: stillMissing.length === 0 ? "questionnaire_complete" : "needs_info",
+          missing_fields: stillMissing,
         })
         .eq("id", submission.id);
 
