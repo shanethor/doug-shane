@@ -6,6 +6,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const FROM_ADDRESS = "AURA <noreply@buildingaura.site>";
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -48,37 +50,43 @@ serve(async (req) => {
     const firmName = clarkProfile?.firm_name || "AURA";
     const origin = req.headers.get("origin") || "https://aura-risk-group.lovable.app";
 
-    const sendEmail = async (payload: { from: string; to: string[]; subject: string; html: string }) => {
+    const sendEmail = async (payload: { to: string[]; subject: string; html: string }) => {
       const resp = await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${RESEND_API_KEY}`,
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          from: FROM_ADDRESS,
+          ...payload,
+        }),
       });
+
+      const result = await resp.text();
       if (!resp.ok) {
-        const errText = await resp.text();
-        console.error("Resend error:", errText);
+        console.error("Resend error:", result);
         throw new Error("Failed to send email via Resend");
       }
-      return resp.json();
+
+      return result;
     };
 
     if (action === "send_questionnaire") {
       if (!client_email) throw new Error("client_email is required");
+      if (!submission.questionnaire_token) throw new Error("Questionnaire token missing for submission");
 
       const questionnaireUrl = `${origin}/clark/questionnaire/${submission.questionnaire_token}`;
-      const missingFields = (submission.missing_fields as string[]) || [];
+      const missingFields = Array.isArray(submission.missing_fields) ? submission.missing_fields : [];
 
       const html = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
           <h2 style="color: #1a1a2e;">Complete Your Insurance Application</h2>
-          <p>Hi ${client_name || "there"},</p>
+          <p>Hi ${client_name || submission.client_name || "there"},</p>
           <p>${agentName} from <strong>${firmName}</strong> needs a few more details to finalize your insurance application.</p>
           <p>We're missing the following information:</p>
           <ul>
-            ${missingFields.slice(0, 10).map(f => `<li>${f.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}</li>`).join("")}
+            ${missingFields.slice(0, 10).map((f) => `<li>${String(f).replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}</li>`).join("")}
             ${missingFields.length > 10 ? `<li>...and ${missingFields.length - 10} more</li>` : ""}
           </ul>
           <p style="margin: 25px 0;">
@@ -93,7 +101,6 @@ serve(async (req) => {
       `;
 
       await sendEmail({
-        from: `${firmName} <onboarding@resend.dev>`,
         to: [client_email],
         subject: `Action Required: Complete Your Insurance Application — ${firmName}`,
         html,
@@ -130,7 +137,6 @@ serve(async (req) => {
       `;
 
       await sendEmail({
-        from: `Clark AI <onboarding@resend.dev>`,
         to: [agentEmail],
         subject: `✅ Questionnaire Complete — ${submission.business_name || submission.client_name || "Submission"}`,
         html,
