@@ -120,9 +120,13 @@ Rules:
       const batchNum = i + 1;
       if (i > 0) await new Promise((r) => setTimeout(r, 1200));
 
-      const promptText = `Perform a full, exhaustive extraction of all pertinent insurance data from these documents (batch ${batchNum}/${totalBatches}). Capture every coverage, limit, deductible, schedule, insured, endorsement, and classification. Filter out legal boilerplate and privacy notices. Return a single flat JSON object.${batchNum === 1 && user_prompt ? `
+      // Build context-aware prompt: tell Claude what we already have so it supplements, not duplicates
+      const alreadyExtractedKeys = Object.keys(step1Data);
+      const contextHint = alreadyExtractedKeys.length > 0
+        ? `\n\nFields already extracted from previous pages: ${alreadyExtractedKeys.join(", ")}.\nFocus on NEW data not yet captured (new coverages, schedules, endorsements, limits, vehicles, drivers, locations, etc). Also correct any previously extracted values if this page has more accurate/complete information.`
+        : "";
 
-Additional context from the agent: ${user_prompt}` : ""}`;
+      const promptText = `Perform a full, exhaustive extraction of all pertinent insurance data from these document pages (batch ${batchNum}/${totalBatches}). Capture every coverage, limit, deductible, schedule, insured, endorsement, and classification. Filter out legal boilerplate and privacy notices. Return a single flat JSON object.${contextHint}${batchNum === 1 && user_prompt ? `\n\nAdditional context from the agent: ${user_prompt}` : ""}`;
 
       const result = await callClaude(
         ANTHROPIC_API_KEY,
@@ -130,6 +134,7 @@ Additional context from the agent: ${user_prompt}` : ""}`;
         step1System,
       );
       const batchData = parseClaudeJson(result.content?.[0]?.text || "{}");
+      console.log(`Batch ${batchNum}/${totalBatches}: extracted ${Object.keys(batchData).length} fields`);
       step1Data = mergeExtractionData(step1Data, batchData);
     }
 
