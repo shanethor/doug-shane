@@ -141,6 +141,7 @@ serve(async (req) => {
 
     if (action === "send_questionnaire") {
       if (!client_email) throw new Error("client_email is required");
+      if (!client_name) throw new Error("client_name is required");
       if (!submission.questionnaire_token) throw new Error("Questionnaire token missing for submission");
 
       const questionnaireUrl = `${origin}/clark/questionnaire/${submission.questionnaire_token}`;
@@ -149,7 +150,7 @@ serve(async (req) => {
       const html = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
           <h2 style="color: #1a1a2e;">Complete Your Insurance Application</h2>
-          <p>Hi ${client_name || submission.client_name || "there"},</p>
+          <p>Hi ${client_name},</p>
           <p>${agentName} from <strong>${firmName}</strong> needs a few more details to finalize your insurance application.</p>
           <p>We're missing the following information:</p>
           <ul>
@@ -173,9 +174,10 @@ serve(async (req) => {
         html,
       });
 
+      // Save client_name to the submission so notifications reference it
       await supabase
         .from("clark_submissions")
-        .update({ status: "questionnaire_sent" })
+        .update({ status: "questionnaire_sent", client_name: client_name })
         .eq("id", submission_id);
 
       return new Response(JSON.stringify({ success: true, message: "Questionnaire sent" }), {
