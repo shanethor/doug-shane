@@ -86,9 +86,10 @@ interface Message {
 interface ClarkChatProps {
   submissionId?: string;
   onSubmissionCreated?: (id: string) => void;
+  onSubmissionsChanged?: () => void;
 }
 
-export default function ClarkChat({ submissionId: initialSubId, onSubmissionCreated }: ClarkChatProps) {
+export default function ClarkChat({ submissionId: initialSubId, onSubmissionCreated, onSubmissionsChanged }: ClarkChatProps) {
   const [messages, setMessages] = useState<Message[]>([
     { role: "assistant", content: "Hi! I'm Clark. Upload your client documents (dec pages, ACORD apps, loss runs) and I'll extract the data, map it to ACORD forms, and identify any missing information.\n\nDrop files below or describe what you need." },
   ]);
@@ -173,6 +174,7 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
         if (onSubmissionCreated) onSubmissionCreated(newSubId);
       }
       setLastExtractionData(data);
+      onSubmissionsChanged?.();
 
       const missingCount = data?.missing_fields?.length || 0;
       const extractedKeys = Object.keys(data?.extracted_data || {}).length;
@@ -216,6 +218,7 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
       }]);
 
       setUploadedFiles([]);
+      return data;
     } catch (err: any) {
       console.error("Extraction error:", err);
       toast.error(err.message || "Extraction failed");
@@ -223,6 +226,8 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
         role: "assistant",
         content: `❌ Extraction failed: ${err.message || "Unknown error"}. Please try again.`,
       }]);
+      onSubmissionsChanged?.();
+      return null;
     } finally {
       setIsExtracting(false);
     }
@@ -237,6 +242,7 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
           .from("clark_submissions")
           .update({ acord_forms: selectedForms, carriers })
           .eq("id", currentSubId);
+        onSubmissionsChanged?.();
       }
 
       setMessages(prev => [...prev, {
@@ -253,15 +259,16 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
         setIsLoading(false);
         
         // Run extraction — it will create a submission and update with carrier/form info
-        await runExtraction(files, prompt, currentSubId);
+        const extractionData = await runExtraction(files, prompt, currentSubId);
         
         // After extraction, update the submission with the selected forms/carriers
-        if (currentSubId || lastExtractionData?.submission_id) {
-          const subId = currentSubId || lastExtractionData?.submission_id;
+        const resolvedSubmissionId = extractionData?.submission_id || currentSubId || lastExtractionData?.submission_id;
+        if (resolvedSubmissionId) {
           await supabase
             .from("clark_submissions")
             .update({ acord_forms: selectedForms, carriers })
-            .eq("id", subId);
+            .eq("id", resolvedSubmissionId);
+          onSubmissionsChanged?.();
         }
       } else if (lastExtractionData?.missing_fields?.length > 0) {
         // Already extracted — show questionnaire
@@ -291,6 +298,7 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
   };
 
   const handleInlineQuestionnaireComplete = (filledData: Record<string, string>) => {
+    onSubmissionsChanged?.();
     setMessages(prev => [...prev, {
       role: "assistant",
       content: "🎉 All fields captured! You're ready to generate the ACORD forms.",
@@ -328,6 +336,7 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
         }]);
 
         setLastExtractionData((prev: any) => ({ ...prev, zip_url: data.zip_url }));
+        onSubmissionsChanged?.();
         if (data.zip_url) window.open(data.zip_url, "_blank");
       }
 
@@ -482,6 +491,7 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
         role: "assistant",
         content: `📧 Questionnaire sent to **${email}**! I'll notify you when they complete it.`,
       }]);
+      onSubmissionsChanged?.();
       toast.success("Questionnaire email sent!");
       return true;
     } catch (err: any) {

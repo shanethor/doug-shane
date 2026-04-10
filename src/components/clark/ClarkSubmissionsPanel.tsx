@@ -3,7 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { FileText, Clock, CheckCircle, AlertCircle, Plus, Download } from "lucide-react";
+import { FileText, Plus, Download } from "lucide-react";
+import { CLARK_SUBMISSION_STATUS_CONFIG } from "@/lib/clark-submission-statuses";
 
 interface Submission {
   id: string;
@@ -21,23 +22,22 @@ interface ClarkSubmissionsPanelProps {
   activeSubmissionId?: string;
   onSelect: (id: string) => void;
   onNewSubmission: () => void;
+  refreshKey?: number;
 }
 
-const STATUS_CONFIG: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline"; icon: any }> = {
-  needs_info: { label: "Needs Info", variant: "destructive", icon: AlertCircle },
-  extracted: { label: "Ready", variant: "default", icon: CheckCircle },
-  questionnaire_sent: { label: "Awaiting Client", variant: "outline", icon: Clock },
-  questionnaire_complete: { label: "Client Done", variant: "default", icon: CheckCircle },
-  finalized: { label: "Finalized", variant: "secondary", icon: FileText },
-};
-
-export default function ClarkSubmissionsPanel({ activeSubmissionId, onSelect, onNewSubmission }: ClarkSubmissionsPanelProps) {
+export default function ClarkSubmissionsPanel({ activeSubmissionId, onSelect, onNewSubmission, refreshKey = 0 }: ClarkSubmissionsPanelProps) {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
 
   const loadSubmissions = async () => {
+    setLoading(true);
+
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) {
+      setSubmissions([]);
+      setLoading(false);
+      return;
+    }
 
     const { data } = await supabase
       .from("clark_submissions")
@@ -50,9 +50,15 @@ export default function ClarkSubmissionsPanel({ activeSubmissionId, onSelect, on
     setLoading(false);
   };
 
-  useEffect(() => { loadSubmissions(); }, []);
+  useEffect(() => {
+    loadSubmissions();
+  }, [refreshKey]);
 
-  const getStatus = (s: string) => STATUS_CONFIG[s] || { label: s, variant: "outline" as const, icon: FileText };
+  const getStatus = (status: string) => CLARK_SUBMISSION_STATUS_CONFIG[status] || {
+    label: status,
+    variant: "outline" as const,
+    icon: FileText,
+  };
 
   return (
     <div className="flex flex-col h-full">
@@ -73,6 +79,7 @@ export default function ClarkSubmissionsPanel({ activeSubmissionId, onSelect, on
               const st = getStatus(sub.status);
               const Icon = st.icon;
               const isActive = sub.id === activeSubmissionId;
+
               return (
                 <button
                   key={sub.id}
@@ -85,8 +92,8 @@ export default function ClarkSubmissionsPanel({ activeSubmissionId, onSelect, on
                     <span className="font-medium truncate">
                       {sub.business_name || sub.client_name || "Untitled"}
                     </span>
-                    <Badge variant={st.variant} className="text-[10px] h-5 shrink-0">
-                      <Icon className="h-2.5 w-2.5 mr-1" />
+                    <Badge variant={st.variant} className="text-[10px] h-5 shrink-0 gap-1">
+                      <Icon className={`h-2.5 w-2.5 ${sub.status === "processing" ? "animate-spin" : ""}`} />
                       {st.label}
                     </Badge>
                   </div>
@@ -97,7 +104,10 @@ export default function ClarkSubmissionsPanel({ activeSubmissionId, onSelect, on
                     {sub.final_zip_url && (
                       <Download
                         className="h-3 w-3 text-muted-foreground hover:text-primary cursor-pointer"
-                        onClick={(e) => { e.stopPropagation(); window.open(sub.final_zip_url!, "_blank"); }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          window.open(sub.final_zip_url!, "_blank");
+                        }}
                       />
                     )}
                   </div>
