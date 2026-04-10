@@ -2,8 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 import {
   buildDocumentBlocks,
-  callClarkAI,
-  extractAiText,
+  callClaude,
   mergeExtractionData,
   parseClaudeJson,
 } from "../_shared/clark-extract-utils.ts";
@@ -48,14 +47,14 @@ serve(async (req) => {
     const { pdf_files, user_prompt, submission_id } = await req.json();
     if (!Array.isArray(pdf_files) || pdf_files.length === 0) throw new Error("No files provided");
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
+    const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
+    if (!ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY not configured");
 
     const isDebugUser = DEBUG_EMAILS.has(user.email?.toLowerCase() ?? "");
     const debugPayload = isDebugUser
       ? {
           provider: "Clark AI",
-          model: "google/gemini-2.5-flash",
+          model: "claude-sonnet-4-20250514",
           step1_batches: [] as Array<{ batch: number; response: string; extracted_fields: number }>,
           step2_response: null as null | string,
           error: null as null | string,
@@ -145,13 +144,12 @@ Rules:
 
       const promptText = `Perform a full, exhaustive extraction of all pertinent insurance data from these document pages (batch ${batchNum}/${totalBatches}). Capture every coverage, limit, deductible, schedule, insured, endorsement, and classification. Filter out legal boilerplate and privacy notices. Return a single flat JSON object.${contextHint}${batchNum === 1 && user_prompt ? `\n\nAdditional context from the agent: ${user_prompt}` : ""}`;
 
-      const result = await callClarkAI(
-        LOVABLE_API_KEY,
-        [docBlocks[i]],
+      const result = await callClaude(
+        ANTHROPIC_API_KEY,
+        [{ role: "user", content: [docBlocks[i], { type: "text", text: promptText }] }],
         step1System,
-        promptText,
       );
-      const rawBatchResponse = extractAiText(result);
+      const rawBatchResponse = result.content?.[0]?.text || "{}";
       const batchData = parseClaudeJson(rawBatchResponse || "{}");
 
       if (debugPayload) {
@@ -194,17 +192,19 @@ Return ONLY valid JSON with these fields (omit any you cannot determine with con
 Do NOT override data that was already extracted from the documents — only SUPPLEMENT missing fields.`;
 
       try {
-        const result = await callClarkAI(
-          LOVABLE_API_KEY,
-          [],
-          step2System,
-          `Business: ${businessName}
+        const result = await callClaude(
+          ANTHROPIC_API_KEY,
+          [{
+            role: "user",
+            content: `Business: ${businessName}
 Address: ${address}
 
 Cross-reference this business and return supplementary data as JSON. Only provide fields you are confident about.`,
-          { maxTokens: 4096 },
+          }],
+          step2System,
+          4096,
         );
-        const rawStep2Response = extractAiText(result);
+        const rawStep2Response = result.content?.[0]?.text || "{}";
         step2Data = parseClaudeJson(rawStep2Response || "{}");
         if (debugPayload) debugPayload.step2_response = rawStep2Response;
         console.log(`STEP 2 complete: ${Object.keys(step2Data).length} enrichment fields`);
