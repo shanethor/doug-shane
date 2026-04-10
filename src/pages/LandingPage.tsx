@@ -662,6 +662,87 @@ export default function LandingPage() {
           </div>
         </section>
 
+        {/* ═══ CLARK — AI Insurance Assistant ═══ */}
+        <section className="lp-reveal pt-[120px] max-sm:pt-20 pb-[60px] relative" id="clark" ref={addRevealRef}>
+          <div className="max-w-[1200px] mx-auto px-12 max-md:px-8 max-sm:px-5">
+            <div className="border-t border-white/[0.06] pt-14">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 max-lg:gap-10 items-center">
+                <div>
+                  <div className="text-[11px] font-semibold tracking-[0.12em] uppercase mb-4" style={{ color: "hsl(140 12% 58%)" }}>AI Insurance Assistant</div>
+                  <h2 className="text-[clamp(28px,3.5vw,44px)] font-bold tracking-[-0.035em] leading-[1.1] text-white mb-5">
+                    Meet Clark.
+                  </h2>
+                  <p className="text-[15px] text-[#A1A1AA] leading-[1.7] mb-6 max-w-[480px]">
+                    Clark is your AI-powered insurance submission builder. Upload dec pages, loss runs, or any insurance document — Clark extracts every data point, cross-references business intel, and auto-fills ACORD forms in minutes, not hours.
+                  </p>
+
+                  <div className="space-y-4 mb-8">
+                    {[
+                      { icon: "📄", title: "Document Extraction", desc: "Upload PDFs up to 95 pages. Clark reads dec pages, COIs, loss runs, and applications using multimodal AI." },
+                      { icon: "🔍", title: "Smart Enrichment", desc: "Automatically cross-references business data — NAICS codes, SIC codes, entity type, revenue — to fill gaps." },
+                      { icon: "📝", title: "ACORD Auto-Fill", desc: "Generates filled ACORD 125, 126, 127, and 130 forms mapped to the exact PDF field IDs. Download-ready ZIPs." },
+                      { icon: "📧", title: "Client Questionnaire", desc: "Missing data? Send a secure questionnaire link to your client. Their answers flow back and update the forms automatically." },
+                    ].map((f) => (
+                      <div key={f.title} className="flex gap-3 items-start">
+                        <span className="text-lg mt-0.5">{f.icon}</span>
+                        <div>
+                          <div className="text-[13px] font-semibold text-white mb-0.5">{f.title}</div>
+                          <div className="text-[12px] text-[#71717A] leading-[1.55]">{f.desc}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <Link
+                    to="/clark"
+                    className="inline-flex items-center gap-2 text-sm font-medium text-[#08080A] px-7 py-3 rounded-[10px] transition-colors no-underline"
+                    style={{ background: "hsl(140 12% 42%)" }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = "hsl(140 12% 52%)")}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = "hsl(140 12% 42%)")}
+                  >
+                    Try Clark
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                      <path d="M5 12h14" /><path d="M12 5l7 7-7 7" />
+                    </svg>
+                  </Link>
+                </div>
+
+                {/* Visual preview */}
+                <div className="rounded-[20px] overflow-hidden border border-[hsl(140_12%_42%/0.12)] relative" style={{ background: "linear-gradient(135deg, hsl(140 12% 42% / 0.08), hsl(140 12% 20% / 0.04))" }}>
+                  <div className="p-8 max-sm:p-5 space-y-4">
+                    {/* Mock chat bubbles */}
+                    <div className="flex gap-3 items-start">
+                      <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm shrink-0" style={{ background: "hsl(140 12% 42% / 0.2)" }}>🏛</div>
+                      <div className="rounded-xl px-4 py-3 text-[13px] leading-[1.6] max-w-[85%]" style={{ background: "hsl(140 12% 42% / 0.1)", color: "#D4D4D8" }}>
+                        <span className="font-semibold text-white">Clark AI</span> <span className="text-[11px] font-medium ml-1.5 px-2 py-0.5 rounded-full" style={{ background: "hsl(140 12% 42% / 0.15)", color: "hsl(140 12% 72%)" }}>Insurance Tool</span>
+                      </div>
+                    </div>
+                    <div className="flex gap-3 items-start">
+                      <div className="w-8 h-8 shrink-0" />
+                      <div className="rounded-xl px-4 py-3 text-[13px] leading-[1.6]" style={{ background: "hsl(140 12% 42% / 0.08)", color: "#A1A1AA" }}>
+                        ✅ <span className="font-semibold text-white">87 fields</span> extracted from 3 documents
+                      </div>
+                    </div>
+                    <div className="flex gap-3 items-start">
+                      <div className="w-8 h-8 shrink-0" />
+                      <div className="rounded-xl px-4 py-3 text-[13px] leading-[1.6]" style={{ background: "hsl(140 12% 42% / 0.08)", color: "#A1A1AA" }}>
+                        📋 ACORD Forms: <span className="text-white">125, 126, 130</span><br/>
+                        🏢 Carriers: <span className="text-white">Hartford, Travelers</span>
+                      </div>
+                    </div>
+                    <div className="flex gap-3 items-start">
+                      <div className="w-8 h-8 shrink-0" />
+                      <div className="rounded-xl px-4 py-3 text-[13px] leading-[1.6]" style={{ background: "hsl(140 12% 42% / 0.15)", borderLeft: "3px solid hsl(140 12% 42%)", color: "#D4D4D8" }}>
+                        📦 <span className="font-semibold text-white">ZIP ready</span> — 3 filled ACORD forms bundled for download
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* ═══ AURA STUDIO — hidden for now ═══ */}
 
         {/* ═══ WHY AI-NATIVE MATTERS — Research Section ═══ */}
