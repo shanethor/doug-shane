@@ -145,23 +145,42 @@ Rules:
     let step1Data: Record<string, any> = {};
     const BATCH_SIZE = 3;
 
+    // Helper: attempt a Claude call, and if it fails due to page limit,
+    // retry by stripping PDF documents and sending only metadata/text prompt
+    async function callClaudeWithPageFallback(
+      blocks: any[],
+      promptText: string,
+      systemPrompt: string,
+    ): Promise<Record<string, any>> {
+      try {
+        const result = await callClaude(
+          ANTHROPIC_API_KEY,
+          [{ role: "user", content: [...blocks, { type: "text", text: promptText }] }],
+          systemPrompt,
+        );
+        return parseClaudeJson(result.content?.[0]?.text || "{}");
+      } catch (err: any) {
+        const msg = err?.message || "";
+        if (msg.includes("100 PDF pages") || msg.includes("maximum")) {
+          console.warn("PDF too large for vision — falling back to text-only extraction prompt");
+          // Retry without the document blocks; ask Claude to extract from file names/context
+          const fileNames = pdf_files.map((f: any) => f.name).join(", ");
+          const fallbackPrompt = `The uploaded PDF documents (${fileNames}) exceed the 100-page limit for direct analysis. Based on the file names and any context provided, generate a JSON template with all standard ACORD insurance fields set to empty strings so the agent can fill them manually. Include common fields: applicant_name, dba, mailing_address, city, state, zip, business_phone, fein, sic_code, naics_code, business_type, entity_type, years_in_business, annual_revenue, num_employees, effective_date, expiration_date, coverage_requested, prior_carrier, prior_policy_number, prior_premium.${user_prompt ? `\n\nAgent context: ${user_prompt}` : ""}`;
+          const result = await callClaude(
+            ANTHROPIC_API_KEY,
+            [{ role: "user", content: fallbackPrompt }],
+            systemPrompt,
+            4096,
+          );
+          return parseClaudeJson(result.content?.[0]?.text || "{}");
+        }
+        throw err;
+      }
+    }
+
     if (pdf_files.length <= BATCH_SIZE) {
-      // Single call for small batches
-      const result = await callClaude(
-        ANTHROPIC_API_KEY,
-        [{
-          role: "user",
-          content: [
-            ...docBlocks,
-            {
-              type: "text",
-              text: `Perform a full, exhaustive extraction of all pertinent insurance data from these documents. Capture every coverage, limit, deductible, schedule, insured, endorsement, and classification. Filter out legal boilerplate and privacy notices. Return a single flat JSON object.${user_prompt ? `\n\nAdditional context from the agent: ${user_prompt}` : ""}`,
-            },
-          ],
-        }],
-        step1System,
-      );
-      step1Data = parseClaudeJson(result.content?.[0]?.text || "{}");
+      const promptText = `Perform a full, exhaustive extraction of all pertinent insurance data from these documents. Capture every coverage, limit, deductible, schedule, insured, endorsement, and classification. Filter out legal boilerplate and privacy notices. Return a single flat JSON object.${user_prompt ? `\n\nAdditional context from the agent: ${user_prompt}` : ""}`;
+      step1Data = await callClaudeWithPageFallback(docBlocks, promptText, step1System);
     } else {
       // Staggered batches for large uploads
       for (let i = 0; i < pdf_files.length; i += BATCH_SIZE) {
