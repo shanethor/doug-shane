@@ -2,7 +2,8 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 import {
   buildDocumentBlocks,
-  callClaude,
+  callClarkAI,
+  extractAiText,
   mergeExtractionData,
   parseClaudeJson,
 } from "../_shared/clark-extract-utils.ts";
@@ -19,6 +20,11 @@ const REQUIRED_FIELDS = [
   "effective_date", "expiration_date", "coverage_requested",
   "prior_carrier", "prior_policy_number", "prior_premium",
 ];
+
+const DEBUG_EMAILS = new Set([
+  "dwenz17@gmail.com",
+  "shane@houseofthor.com",
+]);
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -42,8 +48,19 @@ serve(async (req) => {
     const { pdf_files, user_prompt, submission_id } = await req.json();
     if (!Array.isArray(pdf_files) || pdf_files.length === 0) throw new Error("No files provided");
 
-    const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
-    if (!ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY not configured");
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
+
+    const isDebugUser = DEBUG_EMAILS.has(user.email?.toLowerCase() ?? "");
+    const debugPayload = isDebugUser
+      ? {
+          provider: "Clark AI",
+          model: "google/gemini-2.5-flash",
+          step1_batches: [] as Array<{ batch: number; response: string; extracted_fields: number }>,
+          step2_response: null as null | string,
+          error: null as null | string,
+        }
+      : null;
 
     let questionnaireToken: string | null = null;
 
@@ -128,12 +145,23 @@ Rules:
 
       const promptText = `Perform a full, exhaustive extraction of all pertinent insurance data from these document pages (batch ${batchNum}/${totalBatches}). Capture every coverage, limit, deductible, schedule, insured, endorsement, and classification. Filter out legal boilerplate and privacy notices. Return a single flat JSON object.${contextHint}${batchNum === 1 && user_prompt ? `\n\nAdditional context from the agent: ${user_prompt}` : ""}`;
 
-      const result = await callClaude(
-        ANTHROPIC_API_KEY,
-        [{ role: "user", content: [docBlocks[i], { type: "text", text: promptText }] }],
+      const result = await callClarkAI(
+        LOVABLE_API_KEY,
+        [docBlocks[i]],
         step1System,
+        promptText,
       );
-      const batchData = parseClaudeJson(result.content?.[0]?.text || "{}");
+      const rawBatchResponse = extractAiText(result);
+      const batchData = parseClaudeJson(rawBatchResponse || "{}");
+
+      if (debugPayload) {
+        debugPayload.step1_batches.push({
+          batch: batchNum,
+          response: rawBatchResponse,
+          extracted_fields: Object.keys(batchData).length,
+        });
+      }
+
       console.log(`Batch ${batchNum}/${totalBatches}: extracted ${Object.keys(batchData).length} fields`);
       step1Data = mergeExtractionData(step1Data, batchData);
     }
@@ -166,19 +194,19 @@ Return ONLY valid JSON with these fields (omit any you cannot determine with con
 Do NOT override data that was already extracted from the documents — only SUPPLEMENT missing fields.`;
 
       try {
-        const result = await callClaude(
-          ANTHROPIC_API_KEY,
-          [{
-            role: "user",
-            content: `Business: ${businessName}
+        const result = await callClarkAI(
+          LOVABLE_API_KEY,
+          [],
+          step2System,
+          `Business: ${businessName}
 Address: ${address}
 
 Cross-reference this business and return supplementary data as JSON. Only provide fields you are confident about.`,
-          }],
-          step2System,
-          4096,
+          { maxTokens: 4096 },
         );
-        step2Data = parseClaudeJson(result.content?.[0]?.text || "{}");
+        const rawStep2Response = extractAiText(result);
+        step2Data = parseClaudeJson(rawStep2Response || "{}");
+        if (debugPayload) debugPayload.step2_response = rawStep2Response;
         console.log(`STEP 2 complete: ${Object.keys(step2Data).length} enrichment fields`);
       } catch (e) {
         console.warn("Step 2 enrichment failed (non-fatal):", e);
@@ -267,7 +295,9 @@ Cross-reference this business and return supplementary data as JSON. Only provid
     console.log(`Clark extract complete: ${Object.keys(extracted).length} total fields, ${missingFields.length} missing, forms: ${acordForms.join(",")}`);
 
     return new Response(JSON.stringify({
+      ok: true,
       submission_id: activeSubmissionId,
+      ai_provider: "Clark AI",
       extracted_data: extracted,
       missing_fields: missingFields,
       acord_forms: acordForms,
@@ -277,6 +307,7 @@ Cross-reference this business and return supplementary data as JSON. Only provid
         step2_enrichment: Object.keys(step2Data).length,
         step3_final: Object.keys(extracted).length,
       },
+      debug: debugPayload,
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (err) {
     if (activeSubmissionId) {
@@ -287,8 +318,14 @@ Cross-reference this business and return supplementary data as JSON. Only provid
     }
 
     console.error("clark-extract error:", err);
-    return new Response(JSON.stringify({ error: err instanceof Error ? err.message : "Unknown error" }), {
-      status: 500,
+    const errorMessage = err instanceof Error ? err.message : "Unknown error";
+    return new Response(JSON.stringify({
+      ok: false,
+      error: errorMessage,
+      ai_provider: "Clark AI",
+      debug: debugPayload ? { ...debugPayload, error: errorMessage } : null,
+    }), {
+      status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
