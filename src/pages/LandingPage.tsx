@@ -792,6 +792,7 @@ export default function LandingPage() {
               <div className="text-[13px] font-semibold text-white mb-4">Platform</div>
               <a href="#leads" className="block text-[13px] text-[#71717A] py-1 hover:text-white transition-colors no-underline">AURA Leads</a>
               <a href="#connect" className="block text-[13px] text-[#71717A] py-1 hover:text-white transition-colors no-underline">AURA Connect</a>
+              <Link to="/clark" className="block text-[13px] text-[#71717A] py-1 hover:text-white transition-colors no-underline">Clark AI</Link>
               <a href="#research" className="block text-[13px] text-[#71717A] py-1 hover:text-white transition-colors no-underline">Why AI</a>
             </div>
             <div>
