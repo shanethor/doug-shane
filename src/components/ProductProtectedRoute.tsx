@@ -61,7 +61,8 @@ export function ProductProtectedRoute({ children }: { children: React.ReactNode 
   }
 
   if (!user) {
-    return <Navigate to="/get-started" replace />;
+    const redirectParam = location.pathname !== "/get-started" ? `?redirect=${encodeURIComponent(location.pathname)}` : "";
+    return <Navigate to={`/get-started${redirectParam}`} replace />;
   }
 
   // Master accounts skip onboarding
