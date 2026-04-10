@@ -193,7 +193,12 @@ Rules:
           ? `Perform a full, exhaustive extraction of all pertinent insurance data from these documents (batch ${batchNum}/${totalBatches}). Filter out legal boilerplate. Return a single flat JSON object.${user_prompt ? `\n\nAdditional context: ${user_prompt}` : ""}`
           : `Here are more documents (batch ${batchNum}/${totalBatches}). Extract all data and MERGE with previous extraction:\n${JSON.stringify(step1Data)}\n\nReturn the COMPLETE merged JSON.`;
 
-        const batchData = await callClaudeWithPageFallback(batchBlocks, promptText, step1System);
+        const result = await callClaude(
+          ANTHROPIC_API_KEY,
+          [{ role: "user", content: [...batchBlocks, { type: "text", text: promptText }] }],
+          step1System,
+        );
+        const batchData = parseClaudeJson(result.content?.[0]?.text || "{}");
         step1Data = { ...step1Data, ...batchData };
       }
     }
