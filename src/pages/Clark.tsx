@@ -16,10 +16,16 @@ export default function Clark() {
   const [tier, setTier] = useState<ClarkTierKey | "free">("free");
   const [submissionCount, setSubmissionCount] = useState(0);
   const [activeSubId, setActiveSubId] = useState<string | undefined>();
+  const [submissionsRefreshKey, setSubmissionsRefreshKey] = useState(0);
   const isMobile = useIsMobile();
   const [showPanel, setShowPanel] = useState(!isMobile);
   const [chatKey, setChatKey] = useState(0);
   const chatRef = useRef<any>(null);
+
+  const refreshSubmissions = () => {
+    setSubmissionsRefreshKey((prev) => prev + 1);
+    void checkProfile();
+  };
 
   useEffect(() => { setShowPanel(!isMobile); }, [isMobile]);
 
@@ -48,6 +54,7 @@ export default function Clark() {
       .from("clark_submissions")
       .select("id", { count: "exact", head: true })
       .eq("user_id", user.id)
+      .in("status", ["extracted", "needs_info", "questionnaire_sent", "questionnaire_complete", "finalized"])
       .gte("created_at", startOfMonth.toISOString());
     setSubmissionCount(count || 0);
     setLoading(false);
@@ -139,6 +146,7 @@ export default function Clark() {
               activeSubmissionId={activeSubId}
               onSelect={handleSelectSubmission}
               onNewSubmission={handleNewSubmission}
+              refreshKey={submissionsRefreshKey}
             />
           </div>
         )}
@@ -158,7 +166,11 @@ export default function Clark() {
             <ClarkChat
               key={chatKey}
               submissionId={activeSubId}
-              onSubmissionCreated={(id) => setActiveSubId(id)}
+              onSubmissionCreated={(id) => {
+                setActiveSubId(id);
+                refreshSubmissions();
+              }}
+              onSubmissionsChanged={refreshSubmissions}
             />
           )}
         </div>

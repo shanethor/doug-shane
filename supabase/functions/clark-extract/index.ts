@@ -1,6 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
-import { PDFDocument } from "npm:pdf-lib@1.17.1";
+import {
+  buildDocumentBlocks,
+  callClaude,
+  mergeExtractionData,
+  parseClaudeJson,
+} from "../_shared/clark-extract-utils.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -15,79 +20,6 @@ const REQUIRED_FIELDS = [
   "prior_carrier", "prior_policy_number", "prior_premium",
 ];
 
-/**
- * Call Claude with retry + exponential back-off for 529/429.
- */
-async function callClaude(
-  apiKey: string,
-  messages: any[],
-  system: string,
-  maxTokens = 16384,
-  retries = 3,
-): Promise<any> {
-  for (let attempt = 0; attempt <= retries; attempt++) {
-    const resp = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: maxTokens,
-        system,
-        messages,
-      }),
-    });
-
-    if (resp.ok) return resp.json();
-
-    if ((resp.status === 529 || resp.status === 429) && attempt < retries) {
-      const wait = Math.min(2000 * Math.pow(2, attempt), 16000);
-      console.log(`Claude ${resp.status}, retrying in ${wait}ms (attempt ${attempt + 1}/${retries})`);
-      await new Promise((r) => setTimeout(r, wait));
-      continue;
-    }
-
-    const errText = await resp.text();
-    console.error("Claude API error:", resp.status, errText);
-    throw new Error(`Claude API error ${resp.status}: ${errText.slice(0, 200)}`);
-  }
-  throw new Error("Claude API: max retries exceeded");
-}
-
-/** Parse JSON from Claude response, handling markdown fences and partial matches */
-function parseClaudeJson(raw: string): Record<string, any> {
-  const cleaned = raw.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-  try {
-    return JSON.parse(cleaned);
-  } catch {
-    const match = cleaned.match(/\{[\s\S]*\}/);
-    if (match) {
-      try { return JSON.parse(match[0]); } catch { /* fall through */ }
-    }
-    // Attempt to repair truncated JSON by closing open braces/brackets
-    const openBraces = (cleaned.match(/\{/g) || []).length;
-    const closeBraces = (cleaned.match(/\}/g) || []).length;
-    const openBrackets = (cleaned.match(/\[/g) || []).length;
-    const closeBrackets = (cleaned.match(/\]/g) || []).length;
-    let repaired = cleaned.replace(/,\s*$/, ""); // remove trailing comma
-    // Remove any trailing incomplete key-value pair
-    repaired = repaired.replace(/,\s*"[^"]*":\s*$/, "");
-    repaired = repaired.replace(/,\s*"[^"]*":\s*"[^"]*$/, '');
-    for (let i = 0; i < openBrackets - closeBrackets; i++) repaired += "]";
-    for (let i = 0; i < openBraces - closeBraces; i++) repaired += "}";
-    try {
-      const obj = JSON.parse(repaired);
-      console.warn("Repaired truncated Claude JSON successfully");
-      return obj;
-    } catch { /* fall through */ }
-    console.error("Failed to parse Claude JSON:", cleaned.slice(0, 500));
-    throw new Error("Claude returned invalid JSON");
-  }
-}
-
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -96,6 +28,8 @@ serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
     { auth: { persistSession: false } },
   );
+
+  let activeSubmissionId: string | null = null;
 
   try {
     const authHeader = req.headers.get("authorization");
@@ -106,17 +40,52 @@ serve(async (req) => {
     if (authErr || !user) throw new Error("Authentication failed");
 
     const { pdf_files, user_prompt, submission_id } = await req.json();
-    if (!pdf_files || pdf_files.length === 0) throw new Error("No files provided");
-
-    const MAX_PDF_PAGES = 95; // Claude limit is 100; leave headroom
+    if (!Array.isArray(pdf_files) || pdf_files.length === 0) throw new Error("No files provided");
 
     const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
     if (!ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY not configured");
 
-    // ═══════════════════════════════════════════════════════════════
-    // STEP 1: Exhaustive Dec Page Extraction
-    // "Chronological wall" — this MUST complete before Step 2
-    // ═══════════════════════════════════════════════════════════════
+    let questionnaireToken: string | null = null;
+
+    if (submission_id) {
+      const { data: existingSubmission, error: existingErr } = await supabase
+        .from("clark_submissions")
+        .select("id, questionnaire_token")
+        .eq("id", submission_id)
+        .eq("user_id", user.id)
+        .single();
+
+      if (existingErr || !existingSubmission) throw new Error("Submission not found");
+
+      activeSubmissionId = existingSubmission.id;
+      questionnaireToken = existingSubmission.questionnaire_token || crypto.randomUUID();
+
+      const { error: processingErr } = await supabase
+        .from("clark_submissions")
+        .update({ status: "processing" })
+        .eq("id", activeSubmissionId)
+        .eq("user_id", user.id);
+
+      if (processingErr) throw processingErr;
+    } else {
+      questionnaireToken = crypto.randomUUID();
+
+      const { data: draftSubmission, error: draftErr } = await supabase
+        .from("clark_submissions")
+        .insert({
+          user_id: user.id,
+          status: "processing",
+          questionnaire_token: questionnaireToken,
+          extracted_data: {},
+          missing_fields: REQUIRED_FIELDS,
+        })
+        .select("id")
+        .single();
+
+      if (draftErr || !draftSubmission) throw draftErr || new Error("Failed to create submission");
+      activeSubmissionId = draftSubmission.id;
+    }
+
     console.log("STEP 1: Exhaustive document extraction...");
 
     const step1System = `You are Clark, an expert insurance data extraction AI specializing in Declaration pages, ACORD applications, loss runs, and certificates of insurance.
@@ -136,97 +105,38 @@ Rules:
 - If multiple documents provided, merge intelligently — most specific/recent values win
 - Be extraordinarily thorough — insurance underwriters depend on this data`;
 
-    // Build vision content blocks — truncate PDFs over MAX_PDF_PAGES
-    const docBlocks: any[] = [];
-    for (const file of pdf_files) {
-      const mediaType = file.mimeType === "application/pdf"
-        ? "application/pdf"
-        : file.mimeType || "image/jpeg";
+    const docBlocks = await buildDocumentBlocks(pdf_files, {
+      maxTotalPdfPages: 100,
+      maxPdfChunkPages: 10,
+    });
+    if (docBlocks.length === 0) throw new Error("No supported files provided");
 
-      let base64Data = file.base64;
+    console.log(`Prepared ${docBlocks.length} chunk(s) for extraction`);
 
-      // Truncate large PDFs to first MAX_PDF_PAGES pages
-      if (mediaType === "application/pdf") {
-        try {
-          const pdfBytes = Uint8Array.from(atob(file.base64), (c) => c.charCodeAt(0));
-          const srcDoc = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
-          const pageCount = srcDoc.getPageCount();
-          if (pageCount > MAX_PDF_PAGES) {
-            console.log(`PDF "${file.name}" has ${pageCount} pages — truncating to first ${MAX_PDF_PAGES}`);
-            const trimDoc = await PDFDocument.create();
-            const indices = Array.from({ length: MAX_PDF_PAGES }, (_, i) => i);
-            const copiedPages = await trimDoc.copyPages(srcDoc, indices);
-            for (const p of copiedPages) trimDoc.addPage(p);
-            const trimBytes = await trimDoc.save();
-            // Convert back to base64
-            let binary = "";
-            const bytes = new Uint8Array(trimBytes);
-            const chunkSize = 8192;
-            for (let i = 0; i < bytes.length; i += chunkSize) {
-              binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
-            }
-            base64Data = btoa(binary);
-          }
-        } catch (truncErr) {
-          console.warn(`Could not truncate PDF "${file.name}":`, truncErr);
-          // Send original — Claude will error if still too large
-        }
-      }
-
-      docBlocks.push({
-        type: mediaType === "application/pdf" ? "document" : "image",
-        source: {
-          type: "base64",
-          media_type: mediaType,
-          data: base64Data,
-        },
-        ...(mediaType === "application/pdf" ? { title: file.name } : {}),
-      });
-    }
-
-    // If many files, batch them. Otherwise send all at once.
     let step1Data: Record<string, any> = {};
-    const BATCH_SIZE = 3;
+    const totalBatches = docBlocks.length;
 
-    if (pdf_files.length <= BATCH_SIZE) {
-      const promptText = `Perform a full, exhaustive extraction of all pertinent insurance data from these documents. Capture every coverage, limit, deductible, schedule, insured, endorsement, and classification. Filter out legal boilerplate and privacy notices. Return a single flat JSON object.${user_prompt ? `\n\nAdditional context from the agent: ${user_prompt}` : ""}`;
+    for (let i = 0; i < docBlocks.length; i++) {
+      const batchNum = i + 1;
+      if (i > 0) await new Promise((r) => setTimeout(r, 1200));
+
+      const promptText = `Perform a full, exhaustive extraction of all pertinent insurance data from these documents (batch ${batchNum}/${totalBatches}). Capture every coverage, limit, deductible, schedule, insured, endorsement, and classification. Filter out legal boilerplate and privacy notices. Return a single flat JSON object.${batchNum === 1 && user_prompt ? `
+
+Additional context from the agent: ${user_prompt}` : ""}`;
+
       const result = await callClaude(
         ANTHROPIC_API_KEY,
-        [{ role: "user", content: [...docBlocks, { type: "text", text: promptText }] }],
+        [{ role: "user", content: [docBlocks[i], { type: "text", text: promptText }] }],
         step1System,
       );
-      step1Data = parseClaudeJson(result.content?.[0]?.text || "{}");
-    } else {
-      // Staggered batches for large uploads
-      for (let i = 0; i < pdf_files.length; i += BATCH_SIZE) {
-        const batchBlocks = docBlocks.slice(i, i + BATCH_SIZE);
-        const batchNum = Math.floor(i / BATCH_SIZE) + 1;
-        const totalBatches = Math.ceil(pdf_files.length / BATCH_SIZE);
-
-        if (i > 0) await new Promise((r) => setTimeout(r, 2000)); // stagger
-
-        const promptText = i === 0
-          ? `Perform a full, exhaustive extraction of all pertinent insurance data from these documents (batch ${batchNum}/${totalBatches}). Filter out legal boilerplate. Return a single flat JSON object.${user_prompt ? `\n\nAdditional context: ${user_prompt}` : ""}`
-          : `Here are more documents (batch ${batchNum}/${totalBatches}). Extract all data and MERGE with previous extraction:\n${JSON.stringify(step1Data)}\n\nReturn the COMPLETE merged JSON.`;
-
-        const result = await callClaude(
-          ANTHROPIC_API_KEY,
-          [{ role: "user", content: [...batchBlocks, { type: "text", text: promptText }] }],
-          step1System,
-        );
-        const batchData = parseClaudeJson(result.content?.[0]?.text || "{}");
-        step1Data = { ...step1Data, ...batchData };
-      }
+      const batchData = parseClaudeJson(result.content?.[0]?.text || "{}");
+      step1Data = mergeExtractionData(step1Data, batchData);
     }
 
     console.log(`STEP 1 complete: ${Object.keys(step1Data).length} fields extracted`);
 
-    // ═══════════════════════════════════════════════════════════════
-    // STEP 2: Web Cross-Reference & Enrichment
-    // Using extracted business names + addresses to verify/enrich
-    // ═══════════════════════════════════════════════════════════════
     console.log("STEP 2: Web enrichment...");
-    await new Promise((r) => setTimeout(r, 1500)); // stagger between steps
+    await new Promise((r) => setTimeout(r, 1000));
 
     const businessName = step1Data.applicant_name || step1Data.insured_name || step1Data.dba || "";
     const address = [step1Data.mailing_address, step1Data.city, step1Data.state, step1Data.zip].filter(Boolean).join(", ");
@@ -238,7 +148,7 @@ Rules:
 
 Return ONLY valid JSON with these fields (omit any you cannot determine with confidence):
 - naics_code: the 6-digit NAICS code
-- sic_code: the 4-digit SIC code  
+- sic_code: the 4-digit SIC code
 - business_type: brief description of operations
 - entity_type: LLC, Corp, Sole Prop, Partnership, etc.
 - year_established: year the business was founded
@@ -255,7 +165,10 @@ Do NOT override data that was already extracted from the documents — only SUPP
           ANTHROPIC_API_KEY,
           [{
             role: "user",
-            content: `Business: ${businessName}\nAddress: ${address}\n\nCross-reference this business and return supplementary data as JSON. Only provide fields you are confident about.`,
+            content: `Business: ${businessName}
+Address: ${address}
+
+Cross-reference this business and return supplementary data as JSON. Only provide fields you are confident about.`,
           }],
           step2System,
           4096,
@@ -264,22 +177,15 @@ Do NOT override data that was already extracted from the documents — only SUPP
         console.log(`STEP 2 complete: ${Object.keys(step2Data).length} enrichment fields`);
       } catch (e) {
         console.warn("Step 2 enrichment failed (non-fatal):", e);
-        // Non-fatal — we continue with Step 1 data only
       }
     } else {
       console.log("STEP 2 skipped: no business name to research");
     }
 
-    // ═══════════════════════════════════════════════════════════════
-    // STEP 3: Merge & Map to ACORD Field Names
-    // Step 1 data takes priority; Step 2 only fills gaps
-    // ═══════════════════════════════════════════════════════════════
     console.log("STEP 3: Merging & mapping...");
 
-    // Step 2 fills gaps only — Step 1 (document data) always wins
     const merged: Record<string, any> = { ...step2Data, ...step1Data };
 
-    // Normalize common aliases
     const ALIASES: Record<string, string> = {
       insured_name: "applicant_name",
       named_insured: "applicant_name",
@@ -305,7 +211,6 @@ Do NOT override data that was already extracted from the documents — only SUPP
       }
     }
 
-    // Use enrichment estimates if doc didn't have exact values
     if (!merged.naics_code && step2Data.naics_code) merged.naics_code = step2Data.naics_code;
     if (!merged.sic_code && step2Data.sic_code) merged.sic_code = step2Data.sic_code;
     if (!merged.num_employees && step2Data.num_employees_estimate) merged.num_employees = step2Data.num_employees_estimate;
@@ -316,33 +221,23 @@ Do NOT override data that was already extracted from the documents — only SUPP
     }
 
     const extracted = merged;
+    const missingFields = REQUIRED_FIELDS.filter((field) => !extracted[field] || extracted[field] === "");
+    const qToken = questionnaireToken || crypto.randomUUID();
 
-    // Identify missing required fields
-    const missingFields = REQUIRED_FIELDS.filter(f => !extracted[f] || extracted[f] === "");
-
-    // Generate questionnaire token
-    const qToken = crypto.randomUUID();
-
-    // Determine which ACORD forms are needed
     const acordForms: string[] = ["125"];
     const coverageStr = String(extracted.coverage_requested || "").toLowerCase();
     const allValues = JSON.stringify(extracted).toLowerCase();
 
-    if (coverageStr.includes("general liability") || coverageStr.includes("gl") ||
-        extracted.gl_each_occurrence || allValues.includes("general liability")) {
+    if (coverageStr.includes("general liability") || coverageStr.includes("gl") || extracted.gl_each_occurrence || allValues.includes("general liability")) {
       acordForms.push("126");
     }
-    if (coverageStr.includes("auto") || extracted.vehicle_count ||
-        allValues.includes("auto liability") || allValues.includes("commercial auto")) {
+    if (coverageStr.includes("auto") || extracted.vehicle_count || allValues.includes("auto liability") || allValues.includes("commercial auto")) {
       acordForms.push("127");
     }
-    if (coverageStr.includes("workers") || coverageStr.includes("wc") ||
-        extracted.workers_comp_requested || allValues.includes("workers comp") ||
-        allValues.includes("workers' comp")) {
+    if (coverageStr.includes("workers") || coverageStr.includes("wc") || extracted.workers_comp_requested || allValues.includes("workers comp") || allValues.includes("workers' comp")) {
       acordForms.push("130");
     }
 
-    // Create or update submission
     const subData = {
       user_id: user.id,
       status: missingFields.length > 0 ? "needs_info" : "extracted",
@@ -354,23 +249,20 @@ Do NOT override data that was already extracted from the documents — only SUPP
       acord_forms: acordForms,
     };
 
-    let finalSubmissionId = submission_id;
-    if (submission_id) {
-      await supabase.from("clark_submissions").update(subData).eq("id", submission_id);
-    } else {
-      const { data: newSub, error: insertErr } = await supabase
-        .from("clark_submissions")
-        .insert(subData)
-        .select("id")
-        .single();
-      if (insertErr) throw insertErr;
-      finalSubmissionId = newSub.id;
-    }
+    if (!activeSubmissionId) throw new Error("Submission could not be created");
+
+    const { error: saveErr } = await supabase
+      .from("clark_submissions")
+      .update(subData)
+      .eq("id", activeSubmissionId)
+      .eq("user_id", user.id);
+
+    if (saveErr) throw saveErr;
 
     console.log(`Clark extract complete: ${Object.keys(extracted).length} total fields, ${missingFields.length} missing, forms: ${acordForms.join(",")}`);
 
     return new Response(JSON.stringify({
-      submission_id: finalSubmissionId,
+      submission_id: activeSubmissionId,
       extracted_data: extracted,
       missing_fields: missingFields,
       acord_forms: acordForms,
@@ -382,6 +274,13 @@ Do NOT override data that was already extracted from the documents — only SUPP
       },
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (err) {
+    if (activeSubmissionId) {
+      await supabase
+        .from("clark_submissions")
+        .update({ status: "failed" })
+        .eq("id", activeSubmissionId);
+    }
+
     console.error("clark-extract error:", err);
     return new Response(JSON.stringify({ error: err instanceof Error ? err.message : "Unknown error" }), {
       status: 500,
