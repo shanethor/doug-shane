@@ -11,16 +11,24 @@ import ClarkCarrierFormSelect from "./ClarkCarrierFormSelect";
 import ClarkInlineQuestionnaire from "./ClarkInlineQuestionnaire";
 import { Label } from "@/components/ui/label";
 
-function InlineEmailInput({ onSend }: { onSend: (email: string, name: string) => void }) {
+function InlineEmailInput({ onSend }: { onSend: (email: string, name: string) => Promise<boolean> }) {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [sent, setSent] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async () => {
+    setSubmitting(true);
+    const ok = await onSend(email, name);
+    setSubmitting(false);
+    if (ok) setSent(true);
+  };
 
   if (sent) {
     return (
-      <Card className="border-green-500/30 bg-green-500/5">
+      <Card className="border-primary/30 bg-primary/5">
         <CardContent className="py-3 flex items-center gap-2 text-sm">
-          <Mail className="h-4 w-4 text-green-500" />
+          <Mail className="h-4 w-4 text-primary" />
           Questionnaire email sent to {email}
         </CardContent>
       </Card>
@@ -39,6 +47,7 @@ function InlineEmailInput({ onSend }: { onSend: (email: string, name: string) =>
             onChange={(e) => setEmail(e.target.value)}
             placeholder="client@example.com"
             className="h-8 text-sm"
+            disabled={submitting}
           />
         </div>
         <div className="space-y-1">
@@ -49,16 +58,17 @@ function InlineEmailInput({ onSend }: { onSend: (email: string, name: string) =>
             onChange={(e) => setName(e.target.value)}
             placeholder="John Smith"
             className="h-8 text-sm"
+            disabled={submitting}
           />
         </div>
         <Button
           size="sm"
           className="w-full gap-1.5"
-          disabled={!email.includes("@")}
-          onClick={() => { setSent(true); onSend(email, name); }}
+          disabled={!email.includes("@") || submitting}
+          onClick={handleSubmit}
         >
-          <Mail className="h-3.5 w-3.5" />
-          Send Questionnaire
+          {submitting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Mail className="h-3.5 w-3.5" />}
+          {submitting ? "Sending..." : "Send Questionnaire"}
         </Button>
       </CardContent>
     </Card>
@@ -473,12 +483,14 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
         content: `📧 Questionnaire sent to **${email}**! I'll notify you when they complete it.`,
       }]);
       toast.success("Questionnaire email sent!");
+      return true;
     } catch (err: any) {
       toast.error(err.message || "Failed to send questionnaire");
       setMessages(prev => [...prev, {
         role: "assistant",
         content: `❌ Failed to send questionnaire: ${err.message || "Unknown error"}`,
       }]);
+      return false;
     } finally {
       setIsLoading(false);
     }
