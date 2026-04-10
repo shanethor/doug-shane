@@ -65,6 +65,31 @@ export default function ClarkQuestionnaire() {
         .eq("id", submission.id);
 
       if (error) throw error;
+
+      // Notify the agent that their client responded
+      try {
+        const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+        await fetch(
+          `https://${projectId}.supabase.co/functions/v1/clark-notify`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            },
+            body: JSON.stringify({
+              action: "notify_agent_questionnaire_response",
+              submission_id: submission.id,
+              questionnaire_token: token,
+              fields_filled: Object.keys(filledAnswers).length,
+              still_missing: stillMissing.length,
+            }),
+          }
+        );
+      } catch {
+        // Notification is best-effort; don't block the client
+      }
+
       setSubmitted(true);
       toast.success("Thank you! Your responses have been submitted.");
     } catch (err: any) {
