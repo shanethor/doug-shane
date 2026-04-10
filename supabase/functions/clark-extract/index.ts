@@ -22,7 +22,7 @@ async function callClaude(
   apiKey: string,
   messages: any[],
   system: string,
-  maxTokens = 8192,
+  maxTokens = 16384,
   retries = 3,
 ): Promise<any> {
   for (let attempt = 0; attempt <= retries; attempt++) {
@@ -67,6 +67,22 @@ function parseClaudeJson(raw: string): Record<string, any> {
     if (match) {
       try { return JSON.parse(match[0]); } catch { /* fall through */ }
     }
+    // Attempt to repair truncated JSON by closing open braces/brackets
+    const openBraces = (cleaned.match(/\{/g) || []).length;
+    const closeBraces = (cleaned.match(/\}/g) || []).length;
+    const openBrackets = (cleaned.match(/\[/g) || []).length;
+    const closeBrackets = (cleaned.match(/\]/g) || []).length;
+    let repaired = cleaned.replace(/,\s*$/, ""); // remove trailing comma
+    // Remove any trailing incomplete key-value pair
+    repaired = repaired.replace(/,\s*"[^"]*":\s*$/, "");
+    repaired = repaired.replace(/,\s*"[^"]*":\s*"[^"]*$/, '');
+    for (let i = 0; i < openBrackets - closeBrackets; i++) repaired += "]";
+    for (let i = 0; i < openBraces - closeBraces; i++) repaired += "}";
+    try {
+      const obj = JSON.parse(repaired);
+      console.warn("Repaired truncated Claude JSON successfully");
+      return obj;
+    } catch { /* fall through */ }
     console.error("Failed to parse Claude JSON:", cleaned.slice(0, 500));
     throw new Error("Claude returned invalid JSON");
   }
