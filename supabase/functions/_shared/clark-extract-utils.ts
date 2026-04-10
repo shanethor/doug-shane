@@ -160,7 +160,15 @@ export function mergeExtractionData(
       continue;
     }
 
-    merged[key] = incomingValue;
+    // For scalars: prefer the longer / more detailed value to avoid overwriting good data with partial
+    if (!isBlankValue(currentValue) && typeof currentValue === "string" && typeof incomingValue === "string") {
+      merged[key] = incomingValue.length >= currentValue.length ? incomingValue : currentValue;
+    } else if (isBlankValue(currentValue)) {
+      merged[key] = incomingValue;
+    } else {
+      // Incoming is non-blank and current is non-blank non-string — incoming wins
+      merged[key] = incomingValue;
+    }
   }
 
   return merged;
