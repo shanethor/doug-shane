@@ -11,7 +11,7 @@ type UploadFile = {
   name?: string;
 };
 
-type ClaudeDocumentBlock = {
+export type ClaudeDocumentBlock = {
   type: "document" | "image";
   source: {
     type: "base64";
@@ -100,6 +100,66 @@ export async function callClaude(
   }
 
   throw new Error("Claude API: max retries exceeded");
+}
+
+export async function callClarkAI(
+  apiKey: string,
+  blocks: ClaudeDocumentBlock[],
+  system: string,
+  promptText: string,
+  options: { model?: string; maxTokens?: number } = {},
+): Promise<any> {
+  const { model = "google/gemini-2.5-flash", maxTokens = 8192 } = options;
+
+  const content = [
+    { type: "text", text: promptText },
+    ...blocks.map((block) => ({
+      type: "image_url",
+      image_url: {
+        url: `data:${block.source.media_type};base64,${block.source.data}`,
+      },
+    })),
+  ];
+
+  const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model,
+      max_tokens: maxTokens,
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content },
+      ],
+    }),
+  });
+
+  if (resp.ok) return resp.json();
+
+  const errText = await resp.text();
+  console.error("Clark AI gateway error:", resp.status, errText);
+  throw new Error(`Clark AI error ${resp.status}: ${errText.slice(0, 200)}`);
+}
+
+export function extractAiText(response: any): string {
+  const openAiText = response?.choices?.[0]?.message?.content;
+  if (typeof openAiText === "string") return openAiText;
+
+  const anthropicText = response?.content?.find?.((part: any) => part?.type === "text")?.text;
+  if (typeof anthropicText === "string") return anthropicText;
+
+  if (Array.isArray(openAiText)) {
+    const joined = openAiText
+      .map((part: any) => part?.text)
+      .filter((value: unknown): value is string => typeof value === "string")
+      .join("\n");
+    if (joined) return joined;
+  }
+
+  return "{}";
 }
 
 export function parseClaudeJson(raw: string): Record<string, any> {
