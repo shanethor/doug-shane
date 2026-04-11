@@ -45,7 +45,117 @@ serve(async (req) => {
     const { data: { user }, error: authErr } = await supabase.auth.getUser(token);
     if (authErr || !user) throw new Error("Authentication failed");
 
-    const { pdf_files, storage_files, user_prompt, submission_id } = await req.json();
+    const { pdf_files, storage_files, user_prompt, submission_id, action } = await req.json();
+
+    const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
+    if (!ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY not configured");
+
+    const isDebugUser = DEBUG_EMAILS.has(user.email?.toLowerCase() ?? "");
+
+    // ── Enrichment-only action: runs step 2+3 on an already-extracted submission ──
+    if (action === "enrich") {
+      if (!submission_id) throw new Error("submission_id required for enrich action");
+
+      const { data: existingSubmission, error: existingErr } = await supabase
+        .from("clark_submissions")
+        .select("*")
+        .eq("id", submission_id)
+        .eq("user_id", user.id)
+        .single();
+
+      if (existingErr || !existingSubmission) throw new Error("Submission not found");
+      activeSubmissionId = existingSubmission.id;
+
+      const step1Data: Record<string, any> = (existingSubmission.extracted_data as Record<string, any>) || {};
+      const businessName = step1Data.applicant_name || step1Data.insured_name || step1Data.dba || "";
+      const address = [step1Data.mailing_address, step1Data.city, step1Data.state, step1Data.zip].filter(Boolean).join(", ");
+
+      let step2Data: Record<string, any> = {};
+
+      if (businessName) {
+        const step2System = `You are a business intelligence researcher. Given a business name and address extracted from insurance documents, search your knowledge to cross-reference and verify their current details.
+
+Return ONLY valid JSON with these fields (omit any you cannot determine with confidence):
+- naics_code: the 6-digit NAICS code
+- sic_code: the 4-digit SIC code
+- business_type: brief description of operations
+- entity_type: LLC, Corp, Sole Prop, Partnership, etc.
+- year_established: year the business was founded
+- num_employees_estimate: estimated employee count
+- annual_revenue_estimate: estimated annual revenue
+- construction_type: building construction type if physical location
+- square_footage: building square footage if available
+- website: company website URL if known
+
+Do NOT override data that was already extracted from the documents — only SUPPLEMENT missing fields.`;
+
+        try {
+          const result = await callClaude(
+            ANTHROPIC_API_KEY,
+            [{
+              role: "user",
+              content: `Business: ${businessName}\nAddress: ${address}\n\nCross-reference this business and return supplementary data as JSON. Only provide fields you are confident about.`,
+            }],
+            step2System,
+            4096,
+          );
+          const rawStep2Response = result.content?.[0]?.text || "{}";
+          step2Data = parseClaudeJson(rawStep2Response || "{}");
+          console.log(`Enrich step 2 complete: ${Object.keys(step2Data).length} enrichment fields`);
+        } catch (e) {
+          console.warn("Enrich step 2 failed (non-fatal):", e);
+        }
+      }
+
+      // Step 3: merge
+      const merged: Record<string, any> = { ...step2Data, ...step1Data };
+
+      const ALIASES: Record<string, string> = {
+        insured_name: "applicant_name", named_insured: "applicant_name",
+        business_name: "dba", doing_business_as: "dba",
+        federal_ein: "fein", employer_id: "fein",
+        phone: "business_phone", telephone: "business_phone",
+        policy_effective_date: "effective_date", policy_expiration_date: "expiration_date",
+        naic_code: "naics_code", naic_number: "naics_code",
+        number_of_employees: "num_employees", employee_count: "num_employees",
+        revenue: "annual_revenue", gross_revenue: "annual_revenue",
+      };
+      for (const [alias, canonical] of Object.entries(ALIASES)) {
+        if (merged[alias] && !merged[canonical]) merged[canonical] = merged[alias];
+      }
+      if (!merged.naics_code && step2Data.naics_code) merged.naics_code = step2Data.naics_code;
+      if (!merged.sic_code && step2Data.sic_code) merged.sic_code = step2Data.sic_code;
+      if (!merged.num_employees && step2Data.num_employees_estimate) merged.num_employees = step2Data.num_employees_estimate;
+      if (!merged.annual_revenue && step2Data.annual_revenue_estimate) merged.annual_revenue = step2Data.annual_revenue_estimate;
+      if (!merged.entity_type && step2Data.entity_type) merged.entity_type = step2Data.entity_type;
+      if (!merged.years_in_business && step2Data.year_established) {
+        merged.years_in_business = new Date().getFullYear() - parseInt(step2Data.year_established);
+      }
+
+      const missingFields = REQUIRED_FIELDS.filter((f) => !merged[f] || merged[f] === "");
+      const enrichedFields = Object.keys(step2Data).filter((k) => !step1Data[k]);
+
+      await supabase
+        .from("clark_submissions")
+        .update({
+          extracted_data: merged,
+          missing_fields: missingFields,
+          status: missingFields.length > 0 ? "needs_info" : "extracted",
+        })
+        .eq("id", activeSubmissionId)
+        .eq("user_id", user.id);
+
+      return new Response(JSON.stringify({
+        ok: true,
+        submission_id: activeSubmissionId,
+        extracted_data: merged,
+        missing_fields: missingFields,
+        enriched_fields: enrichedFields,
+        enrichment_fields_added: enrichedFields.length,
+      }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // ── Normal extraction flow below ──
 
     // Build the file list — prefer storage_files (URL-based, no body size limit)
     // over legacy pdf_files (base64 in body, limited to ~6 MB).
@@ -76,10 +186,6 @@ serve(async (req) => {
 
     if (filesToProcess.length === 0) throw new Error("No files provided");
 
-    const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
-    if (!ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY not configured");
-
-    const isDebugUser = DEBUG_EMAILS.has(user.email?.toLowerCase() ?? "");
     const debugPayload = isDebugUser
       ? {
           provider: "Clark AI",
@@ -350,6 +456,7 @@ Cross-reference this business and return supplementary data as JSON. Only provid
       missing_fields: missingFields,
       acord_forms: acordForms,
       questionnaire_token: missingFields.length > 0 ? qToken : null,
+      enrichment_skipped: skipEnrichment,
       steps_completed: {
         step1_fields: Object.keys(step1Data).length,
         step2_enrichment: Object.keys(step2Data).length,

@@ -351,16 +351,19 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
       const missingCount = data?.missing_fields?.length || 0;
       const extractedKeys = Object.keys(data?.extracted_data || {}).length;
       const steps = data?.steps_completed;
+      const enrichmentSkipped = data?.enrichment_skipped === true;
 
       let response = `✅ **Extraction complete!**\n\n`;
       if (steps) {
         response += `- **Step 1:** ${steps.step1_fields} fields extracted from documents\n`;
-        response += `- **Step 2:** ${steps.step2_enrichment} fields enriched from web research\n`;
-        response += `- **Step 3:** ${steps.step3_final} total fields after merge\n\n`;
+        if (!enrichmentSkipped) {
+          response += `- **Step 2:** ${steps.step2_enrichment} fields enriched from web research\n`;
+        }
+        response += `- **Total:** ${steps.step3_final} fields captured\n\n`;
       } else {
         response += `- **${extractedKeys}** fields extracted from ${files.length} document(s)\n\n`;
       }
-      
+
       if (missingCount > 0) {
         response += `⚠️ **${missingCount}** fields still missing:\n${(data?.missing_fields || []).slice(0, 8).map((f: string) => `  • ${f.replace(/_/g, " ")}`).join("\n")}${missingCount > 8 ? "\n  • ..." : ""}`;
       } else {
@@ -369,25 +372,38 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
 
       setMessages(prev => [...prev, { role: "assistant", content: response }]);
 
-      // Show inline questionnaire if there are missing fields
-      if (missingCount > 0 && newSubId) {
+      // If enrichment was skipped due to time, offer it as an optional next step
+      if (enrichmentSkipped) {
         setMessages(prev => [...prev, {
           role: "assistant",
-          content: "Fill in the missing fields below, or skip and generate forms with what we have:",
-          widget: "inline_questionnaire",
-          widgetData: { submissionId: newSubId, missingFields: data.missing_fields },
+          content: "⏱️ **Enrichment skipped** — the document was large so we ran out of time for web research on this pass.\n\nWould you like Clark to improve the form with business intelligence (NAICS/SIC codes, entity type, revenue estimates), or go straight to the questionnaire?",
+          actions: [
+            { label: "Improve with Enrichment", action: "enrich", icon: "sparkles" },
+            ...(missingCount > 0 ? [{ label: "Send Questionnaire to Client", action: "send_questionnaire", icon: "mail" }] : []),
+            { label: "Generate Forms Now", action: "finalize", icon: "download" },
+          ],
+        }]);
+      } else {
+        // Show inline questionnaire if there are missing fields
+        if (missingCount > 0 && newSubId) {
+          setMessages(prev => [...prev, {
+            role: "assistant",
+            content: "Fill in the missing fields below, or skip and generate forms with what we have:",
+            widget: "inline_questionnaire",
+            widgetData: { submissionId: newSubId, missingFields: data.missing_fields },
+          }]);
+        }
+
+        // Always show finalize button
+        setMessages(prev => [...prev, {
+          role: "assistant",
+          content: "",
+          actions: [
+            ...(missingCount > 0 ? [{ label: "Email Questionnaire to Client", action: "send_questionnaire", icon: "mail" }] : []),
+            { label: "Generate ACORD Forms & ZIP", action: "finalize", icon: "download" },
+          ],
         }]);
       }
-
-      // Always show finalize button
-      setMessages(prev => [...prev, {
-        role: "assistant",
-        content: "",
-        actions: [
-          ...(missingCount > 0 ? [{ label: "Email Questionnaire to Client", action: "send_questionnaire", icon: "mail" }] : []),
-          { label: "Generate ACORD Forms & ZIP", action: "finalize", icon: "download" },
-        ],
-      }]);
 
       setUploadedFiles([]);
       return data;
@@ -489,6 +505,63 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
   const handleAction = async (action: string) => {
     setIsLoading(true);
     try {
+      if (action === "enrich") {
+        if (!currentSubId) { toast.error("No active submission to enrich."); setIsLoading(false); return; }
+        setMessages(prev => [...prev, { role: "assistant", content: "🔍 Running web enrichment — looking up NAICS/SIC codes, entity type, and business details…" }]);
+        const { data, error } = await supabase.functions.invoke("clark-extract", {
+          body: { action: "enrich", submission_id: currentSubId },
+        });
+        if (error) throw error;
+        if (data?.ok === false) throw new Error(data.error || "Enrichment failed");
+
+        const added = data?.enrichment_fields_added ?? 0;
+        const missingCount = data?.missing_fields?.length ?? 0;
+        setLastExtractionData((prev: any) => ({
+          ...prev,
+          extracted_data: data.extracted_data,
+          missing_fields: data.missing_fields,
+          enrichment_skipped: false,
+        }));
+        onSubmissionsChanged?.();
+
+        setMessages(prev => [...prev, {
+          role: "assistant",
+          content: `✅ **Enrichment complete!** ${added > 0 ? `Added ${added} new field${added !== 1 ? "s" : ""} (NAICS/SIC codes, entity type, business details).` : "No additional fields could be confirmed from web research."}\n\n${missingCount > 0 ? `⚠️ **${missingCount}** field${missingCount !== 1 ? "s" : ""} still missing.` : "🎉 All required fields are now captured!"}`,
+          actions: [
+            ...(missingCount > 0 ? [
+              { label: "Fill Missing Fields", action: "show_questionnaire", icon: "sparkles" },
+              { label: "Email Questionnaire to Client", action: "send_questionnaire", icon: "mail" },
+            ] : []),
+            { label: "Generate ACORD Forms & ZIP", action: "finalize", icon: "download" },
+          ],
+        }]);
+
+        if (missingCount > 0 && currentSubId) {
+          setMessages(prev => [...prev, {
+            role: "assistant",
+            content: "",
+            widget: "inline_questionnaire",
+            widgetData: { submissionId: currentSubId, missingFields: data.missing_fields },
+          }]);
+        }
+        setIsLoading(false);
+        return;
+      }
+
+      if (action === "show_questionnaire") {
+        const missingFields = lastExtractionData?.missing_fields || [];
+        if (missingFields.length > 0 && currentSubId) {
+          setMessages(prev => [...prev, {
+            role: "assistant",
+            content: "Fill in the missing fields below, or skip and generate forms with what we have:",
+            widget: "inline_questionnaire",
+            widgetData: { submissionId: currentSubId, missingFields },
+          }]);
+        }
+        setIsLoading(false);
+        return;
+      }
+
       if (action === "send_questionnaire") {
         // Show inline email input widget instead of prompt()
         setMessages(prev => [...prev, {
@@ -952,6 +1025,7 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
                       >
                         {a.icon === "mail" && <Mail className="h-3.5 w-3.5" />}
                         {a.icon === "download" && <Download className="h-3.5 w-3.5" />}
+                        {a.icon === "sparkles" && <Sparkles className="h-3.5 w-3.5" />}
                         {a.label}
                       </Button>
                     ))}
