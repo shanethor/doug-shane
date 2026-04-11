@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, DragEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -130,10 +130,12 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
   const [debugPayload, setDebugPayload] = useState<ExtractionDebugPayload | null>(null);
   const [debugOpen, setDebugOpen] = useState(false);
   const [isDebugUser, setIsDebugUser] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const didLoad = useRef(false);
   const progressTimerRef = useRef<number | null>(null);
+  const dragCounter = useRef(0);
 
   // Auto-scroll on new messages
   useEffect(() => {
@@ -214,13 +216,20 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
     setPendingFiles(prev => prev ? [...prev, ...files] : files);
   };
 
+  /** Convert a File to a base64 string (data portion only) */
+  const fileToBase64 = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve((reader.result as string).split(",")[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
   /**
-   * Upload a single file to Supabase Storage and return its public URL.
-   * This keeps the edge function request body small (avoids the ~6MB body limit)
-   * and lets clark-extract fetch the file directly from storage.
+   * Upload a large file to Supabase Storage and return its public URL.
+   * Only used for files > 4 MB to stay under the edge function body limit.
    */
   const uploadFileToStorage = async (file: File, userId: string): Promise<string> => {
-    const ext = file.name.split(".").pop() || "pdf";
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
     const path = `clark/uploads/${userId}/${Date.now()}_${Math.random().toString(36).slice(2)}_${safeName}`;
 
@@ -228,30 +237,97 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
       .from("agency-assets")
       .upload(path, file, { contentType: file.type || "application/pdf", upsert: false });
 
-    if (uploadErr) throw new Error(`File upload failed: ${uploadErr.message}`);
+    if (uploadErr) throw new Error(`Storage upload failed: ${uploadErr.message}`);
 
     const { data: urlData } = supabase.storage.from("agency-assets").getPublicUrl(path);
     return urlData.publicUrl;
   };
 
-  /** Run the extraction in the background */
+  /** Drag-and-drop handlers */
+  const handleDragEnter = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current += 1;
+    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current -= 1;
+    if (dragCounter.current === 0) setIsDragging(false);
+  };
+
+  const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    dragCounter.current = 0;
+
+    if (isLoading || isExtracting) return;
+
+    const dropped = Array.from(e.dataTransfer.files).filter(f =>
+      /\.(pdf|doc|docx|png|jpg|jpeg)$/i.test(f.name)
+    );
+    if (dropped.length === 0) return;
+
+    // Reuse the existing file upload handler logic
+    setUploadedFiles(prev => [...prev, ...dropped]);
+    const names = dropped.map(f => f.name).join(", ");
+    setMessages(prev => [...prev, { role: "user", content: `📎 Uploaded: ${names}` }]);
+    setMessages(prev => [...prev,
+      { role: "assistant", content: "📋 **Great!** While I analyze these documents, please select which ACORD forms you need and which carrier(s) you're submitting to:" },
+      { role: "assistant", content: "", widget: "carrier_select", widgetData: { suggestedForms: ["125"] } },
+    ]);
+    setPendingFiles(prev => prev ? [...prev, ...dropped] : dropped);
+  };
+
+  /** Run the extraction — hybrid: base64 for ≤4 MB files, storage for larger */
   const runExtraction = async (files: File[], userPrompt: string, subId?: string) => {
     setIsExtracting(true);
     setDebugPayload(null);
     startExtractionProgress();
+
+    // 4 MB raw ≈ 5.3 MB base64 — safely under the ~6 MB edge function body limit
+    const MAX_DIRECT_BYTES = 4 * 1024 * 1024;
+
     try {
-      // Step 1: Upload files to Supabase Storage (avoids large request body / 6MB limit)
-      setExtractionStep("Uploading documents to secure storage…");
       const { data: { user: currentUser } } = await supabase.auth.getUser();
       if (!currentUser) throw new Error("Not authenticated");
 
-      const storageFiles = await Promise.all(
-        files.map(async (f) => ({
-          url: await uploadFileToStorage(f, currentUser.id),
-          name: f.name,
-          mimeType: f.type || "application/pdf",
-        }))
-      );
+      const pdfFiles: Array<{ base64: string; mimeType: string; name: string }> = [];
+      const storageFiles: Array<{ url: string; name: string; mimeType: string }> = [];
+
+      for (const f of files) {
+        if (f.size <= MAX_DIRECT_BYTES) {
+          // Small file — encode directly, no network round-trip needed
+          pdfFiles.push({
+            base64: await fileToBase64(f),
+            mimeType: f.type || "application/pdf",
+            name: f.name,
+          });
+        } else {
+          // Large file — upload to storage so the edge function fetches it by URL
+          setExtractionStep(`Uploading ${f.name} (${Math.round(f.size / 1024 / 1024)} MB)…`);
+          try {
+            const url = await uploadFileToStorage(f, currentUser.id);
+            storageFiles.push({ url, name: f.name, mimeType: f.type || "application/pdf" });
+          } catch (uploadErr: any) {
+            // Storage upload failed — fall back to base64 and warn
+            console.warn(`Storage upload failed for ${f.name}, falling back to base64:`, uploadErr);
+            pdfFiles.push({
+              base64: await fileToBase64(f),
+              mimeType: f.type || "application/pdf",
+              name: f.name,
+            });
+          }
+        }
+      }
 
       setMessages(prev => [...prev, {
         role: "assistant",
@@ -259,7 +335,12 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
       }]);
 
       const { data, error } = await supabase.functions.invoke("clark-extract", {
-        body: { storage_files: storageFiles, user_prompt: userPrompt, submission_id: subId },
+        body: {
+          ...(pdfFiles.length > 0 && { pdf_files: pdfFiles }),
+          ...(storageFiles.length > 0 && { storage_files: storageFiles }),
+          user_prompt: userPrompt,
+          submission_id: subId,
+        },
       });
       if (error) throw error;
       if (data?.debug) setDebugPayload(data.debug);
@@ -643,7 +724,21 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
   };
 
   return (
-    <Card className="flex flex-col h-[calc(100vh-12rem)]">
+    <Card
+      className="flex flex-col h-[calc(100vh-12rem)] relative"
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+    >
+      {/* Drag-and-drop overlay */}
+      {isDragging && (
+        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-primary bg-primary/5 backdrop-blur-sm pointer-events-none">
+          <Upload className="h-10 w-10 text-primary mb-3 animate-bounce" />
+          <p className="text-base font-semibold text-primary">Drop documents here</p>
+          <p className="text-xs text-muted-foreground mt-1">PDF, DOCX, PNG, JPG supported</p>
+        </div>
+      )}
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between gap-2">
           <CardTitle className="flex items-center gap-2 text-lg">
@@ -762,7 +857,7 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
-            placeholder="Ask Clark or upload documents…"
+            placeholder="Ask Clark, upload, or drag & drop documents…"
             disabled={isLoading || isExtracting}
           />
           <Button onClick={handleSend} disabled={isLoading || isExtracting} size="icon">
