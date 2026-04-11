@@ -166,11 +166,14 @@ export default function Clark() {
             <ClarkChat
               key={chatKey}
               submissionId={activeSubId}
+              tier={tier}
+              submissionCount={submissionCount}
               onSubmissionCreated={(id) => {
                 setActiveSubId(id);
                 refreshSubmissions();
               }}
               onSubmissionsChanged={refreshSubmissions}
+              onNewClient={handleNewSubmission}
             />
           )}
         </div>

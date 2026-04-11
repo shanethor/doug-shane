@@ -8,7 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Send, Upload, FileText, Loader2, Bot, User, Mail, Download, Code2 } from "lucide-react";
+import { Send, Upload, FileText, Loader2, Bot, User, Mail, Download, Code2, Plus, Sparkles, AlertCircle } from "lucide-react";
 import ClarkCarrierFormSelect from "./ClarkCarrierFormSelect";
 import ClarkInlineQuestionnaire from "./ClarkInlineQuestionnaire";
 import { Label } from "@/components/ui/label";
@@ -35,7 +35,7 @@ const EXTRACTION_PROGRESS_STEPS = [
   { value: 90, label: "Clark AI is finalizing your extraction…" },
 ];
 
-function InlineEmailInput({ onSend }: { onSend: (email: string, name: string) => Promise<boolean> }) {
+function InlineEmailInput({ onSend, submitLabel = "Send Questionnaire" }: { onSend: (email: string, name: string) => Promise<boolean>; submitLabel?: string }) {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [sent, setSent] = useState(false);
@@ -53,46 +53,28 @@ function InlineEmailInput({ onSend }: { onSend: (email: string, name: string) =>
       <Card className="border-primary/30 bg-primary/5">
         <CardContent className="py-3 flex items-center gap-2 text-sm">
           <Mail className="h-4 w-4 text-primary" />
-          Questionnaire email sent to {email}
+          Sent to <strong>{email}</strong>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card>
+    <Card className="border-border/60">
       <CardContent className="pt-4 pb-3 space-y-3">
-        <div className="space-y-1">
-          <Label htmlFor="q-name" className="text-xs">Client Name *</Label>
-          <Input
-            id="q-name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="John Smith"
-            className="h-8 text-sm"
-            disabled={submitting}
-          />
+        <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-1">
+            <Label htmlFor="q-name" className="text-xs text-muted-foreground">Name</Label>
+            <Input id="q-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="John Smith" className="h-8 text-sm" disabled={submitting} />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="q-email" className="text-xs text-muted-foreground">Email</Label>
+            <Input id="q-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@example.com" className="h-8 text-sm" disabled={submitting} />
+          </div>
         </div>
-        <div className="space-y-1">
-          <Label htmlFor="q-email" className="text-xs">Client Email *</Label>
-          <Input
-            id="q-email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="client@example.com"
-            className="h-8 text-sm"
-            disabled={submitting}
-          />
-        </div>
-        <Button
-          size="sm"
-          className="w-full gap-1.5"
-          disabled={!email.includes("@") || !name.trim() || submitting}
-          onClick={handleSubmit}
-        >
+        <Button size="sm" className="w-full gap-1.5" disabled={!email.includes("@") || !name.trim() || submitting} onClick={handleSubmit}>
           {submitting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Mail className="h-3.5 w-3.5" />}
-          {submitting ? "Sending..." : "Send Questionnaire"}
+          {submitting ? "Sending…" : submitLabel}
         </Button>
       </CardContent>
     </Card>
@@ -111,11 +93,16 @@ interface ClarkChatProps {
   submissionId?: string;
   onSubmissionCreated?: (id: string) => void;
   onSubmissionsChanged?: () => void;
+  onNewClient?: () => void;
+  tier?: "free" | "starter" | "pro" | "elite";
+  submissionCount?: number;
 }
 
-export default function ClarkChat({ submissionId: initialSubId, onSubmissionCreated, onSubmissionsChanged }: ClarkChatProps) {
+const WELCOME_MESSAGE = "Hi! I'm **Clark** — your AI insurance submission assistant.\n\nUpload client documents (dec pages, ACORD apps, loss runs) and I'll:\n• Extract all insurance data automatically\n• Map it to the correct ACORD forms\n• Flag any missing fields\n• Bundle everything into a ready-to-send ZIP\n\nDrag & drop files anywhere, or type **\"new client\"** to start a fresh submission.";
+
+export default function ClarkChat({ submissionId: initialSubId, onSubmissionCreated, onSubmissionsChanged, onNewClient, tier = "free", submissionCount = 0 }: ClarkChatProps) {
   const [messages, setMessages] = useState<Message[]>([
-    { role: "assistant", content: "Hi! I'm Clark. Upload your client documents (dec pages, ACORD apps, loss runs) and I'll extract the data, map it to ACORD forms, and identify any missing information.\n\nDrop files below or describe what you need." },
+    { role: "assistant", content: WELCOME_MESSAGE },
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -515,7 +502,7 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
       }
 
       if (action === "finalize") {
-        setMessages(prev => [...prev, { role: "assistant", content: "⏳ Generating filled ACORD forms and bundling into ZIP..." }]);
+        setMessages(prev => [...prev, { role: "assistant", content: "⏳ Generating filled ACORD forms and bundling into ZIP…" }]);
 
         const { data, error } = await supabase.functions.invoke("clark-finalize", {
           body: { submission_id: currentSubId },
@@ -524,8 +511,11 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
 
         setMessages(prev => [...prev, {
           role: "assistant",
-          content: `✅ **Submission finalized!**\n\n- ${data.forms_generated} ACORD form(s) filled with extracted data\n- Carriers: ${data.carriers.join(", ")}\n\nYour ZIP is ready for download.`,
-          actions: [{ label: "Download ZIP", action: "download_zip", icon: "download" }],
+          content: `✅ **Submission finalized!**\n\n• ${data.forms_generated} ACORD form(s) filled\n• Carriers: ${data.carriers?.join(", ") || "General"}\n\nDownload the ZIP or email it directly.`,
+          actions: [
+            { label: "Download ZIP", action: "download_zip", icon: "download" },
+            { label: "Email Submission", action: "email_submission", icon: "mail" },
+          ],
         }]);
 
         setLastExtractionData((prev: any) => ({ ...prev, zip_url: data.zip_url }));
@@ -536,12 +526,76 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
       if (action === "download_zip" && lastExtractionData?.zip_url) {
         window.open(lastExtractionData.zip_url, "_blank");
       }
+
+      if (action === "email_submission") {
+        setMessages(prev => [...prev, {
+          role: "assistant",
+          content: "📧 Who should receive this submission? Enter a name and email:",
+          widget: "email_submission",
+          widgetData: { submissionId: currentSubId },
+        }]);
+      }
     } catch (err: any) {
       toast.error(err.message || "Action failed");
       setMessages(prev => [...prev, { role: "assistant", content: `❌ ${err.message || "Something went wrong."}` }]);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  /** Build a friendly tier info response based on the user's current plan */
+  const buildTierResponse = (): string => {
+    const tierDetails: Record<string, { name: string; limit: string; price: string; perks: string[] }> = {
+      free:    { name: "Free",    limit: "0 submissions",       price: "Free",       perks: ["No active plan — upgrade to start processing submissions"] },
+      starter: { name: "Starter", limit: "3/month",             price: "$49.99/mo",  perks: ["3 AI submissions/month", "ACORD form generation", "Client questionnaires", "PDF extraction & field mapping"] },
+      pro:     { name: "Pro",     limit: "10/month",            price: "$149.99/mo", perks: ["10 AI submissions/month", "Everything in Starter", "Priority processing", "Carrier-specific packaging"] },
+      elite:   { name: "Elite",   limit: "Unlimited",           price: "$399.99/mo", perks: ["Unlimited submissions", "Everything in Pro", "10 verified leads/month", "White-glove support"] },
+    };
+    const current = tierDetails[tier] || tierDetails.free;
+    const used = tier === "elite" ? "∞" : `${submissionCount}/${current.limit.split("/")[0]}`;
+    let msg = `📊 **Your Clark Plan: ${current.name}** (${current.price})\n\n`;
+    msg += `Submissions used this month: **${used}**\n\n`;
+    msg += `**What's included:**\n${current.perks.map(p => `• ${p}`).join("\n")}`;
+    if (tier === "free") {
+      msg += `\n\n⬆️ **Upgrade to Starter ($49.99/mo)** to start processing submissions. Just ask me to upgrade!`;
+    } else if (tier === "starter") {
+      msg += `\n\n⬆️ Need more? **Pro ($149.99/mo)** gives you 10 submissions/month.`;
+    } else if (tier === "pro") {
+      msg += `\n\n⬆️ On a busy month? **Elite ($399.99/mo)** gives you unlimited submissions + verified leads.`;
+    }
+    return msg;
+  };
+
+  /** Return a local response for common intent patterns, or null to fall through to AI */
+  const getLocalIntentResponse = (text: string): string | "NEW_CLIENT" | null => {
+    const t = text.toLowerCase().trim();
+
+    // New client / reset
+    if (/\b(new client|new submission|start over|start fresh|another client|new case|reset|fresh start)\b/.test(t)) {
+      return "NEW_CLIENT";
+    }
+
+    // Tier / pricing / limits
+    if (/\b(plan|tier|pricing|cost|price|upgrade|limit|how many submissions?|monthly|subscription|what do i get|features)\b/.test(t)) {
+      return buildTierResponse();
+    }
+
+    // What Clark does / how it works
+    if (/\b(what (can|do) you|how (does|do) (this|clark|it) work|capabilities|what is clark|what does clark|explain (clark|how)|help me understand)\b/.test(t)) {
+      return `🤖 **How Clark works:**\n\n1. **Upload documents** — Drop any dec page, ACORD app, loss run, or certificate of insurance\n2. **AI extraction** — Clark reads every page and pulls all insurance data (coverages, limits, dates, classifications, prior carriers, and more)\n3. **Form mapping** — Data gets mapped to the correct ACORD forms (125, 126, 127, 130)\n4. **Gap detection** — Any missing required fields are flagged so you can fill them in or send the client a quick questionnaire\n5. **Generate & send** — Everything bundles into a clean ZIP ready for carrier submission\n\nSupported documents: **dec pages, ACORD applications, loss runs, certificates of insurance, endorsements**\n\nType **"new client"** to start, or just drag & drop files.`;
+    }
+
+    // Limitations
+    if (/\b(can'?t|cannot|unable|don'?t support|limitation|not (able|supported|work)|what (can'?t|don'?t))\b/.test(t)) {
+      return `ℹ️ **Current Clark limitations:**\n\n• **Page limit:** Up to 120 pages per upload (larger files are capped at page 120)\n• **File types:** PDF works best; images (PNG/JPG) are supported but text-heavy PDFs extract more accurately\n• **Handwritten forms:** Handwriting is harder for AI to read — typed/digital docs work best\n• **Scanned images:** Low-resolution scans may miss some fields\n• **Monthly limits:** Based on your plan (${tier === "elite" ? "unlimited on your Elite plan" : `${submissionCount} used this month on your ${tier} plan`})\n• **Form coverage:** ACORD 125, 126, 127, and 130 are fully mapped — other forms use best-effort field matching\n\nIf extraction misses something, use the inline questionnaire to fill gaps manually.`;
+    }
+
+    // Supported forms
+    if (/\b(acord|forms?|125|126|127|130|which forms?|what forms?)\b/.test(t)) {
+      return `📋 **Supported ACORD Forms:**\n\n• **ACORD 125** — Commercial Insurance Application (always included)\n• **ACORD 126** — Commercial General Liability Section\n• **ACORD 127** — Business Auto Section\n• **ACORD 130** — Workers Compensation Application\n\nClark auto-detects which supplemental forms are needed based on the coverages found in your documents. You can also manually select forms when confirming carrier selection.`;
+    }
+
+    return null;
   };
 
   const handleSend = useCallback(async () => {
@@ -554,6 +608,29 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
     setIsLoading(true);
 
     try {
+      // Check for local intents first (free, instant, no API call needed)
+      if (trimmed && uploadedFiles.length === 0) {
+        const localResp = getLocalIntentResponse(trimmed);
+
+        if (localResp === "NEW_CLIENT") {
+          setMessages(prev => [...prev, { role: "assistant", content: "✅ Starting a fresh submission. Upload your client's documents whenever you're ready!" }]);
+          setCurrentSubId(undefined);
+          setLastExtractionData(null);
+          setPendingFiles(null);
+          setPendingPrompt("");
+          setUploadedFiles([]);
+          setIsLoading(false);
+          onNewClient?.();
+          return;
+        }
+
+        if (localResp) {
+          setMessages(prev => [...prev, { role: "assistant", content: localResp }]);
+          setIsLoading(false);
+          return;
+        }
+      }
+
       if (uploadedFiles.length > 0) {
         // Files are in uploadedFiles — if carrier wasn't selected yet, prompt it
         if (!pendingFiles) {
@@ -563,7 +640,7 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
           setMessages(prev => [...prev,
             {
               role: "assistant",
-              content: "📋 Before I extract, please select which ACORD forms you need and which carrier(s):"
+              content: "📋 Before I extract, please select which ACORD forms you need and which carrier(s) you're submitting to:"
             },
             {
               role: "assistant",
@@ -573,12 +650,11 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
             }
           ]);
         } else {
-          // Already have pending, just add more context
           setPendingPrompt(prev => prev ? `${prev}\n${trimmed}` : trimmed);
         }
         setIsLoading(false);
       } else {
-        // Text-only message — send to assistant
+        // Text-only message — send to AI assistant
         const allMessages = [...messages, userMsg].map(m => ({ role: m.role, content: m.content }));
         const { data, error } = await supabase.functions.invoke("connect-assistant", {
           body: { messages: allMessages, context: { mode: "clark" } },
@@ -588,7 +664,7 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
         if (typeof data === "string") {
           setMessages(prev => [...prev, { role: "assistant", content: data }]);
         } else {
-          setMessages(prev => [...prev, { role: "assistant", content: data?.text || data?.choices?.[0]?.message?.content || "I'm not sure how to help with that." }]);
+          setMessages(prev => [...prev, { role: "assistant", content: data?.text || data?.choices?.[0]?.message?.content || "I'm not sure how to help with that. Try uploading a document or ask me about Clark's features." }]);
         }
         setIsLoading(false);
       }
@@ -598,7 +674,7 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
       setMessages(prev => [...prev, { role: "assistant", content: "Sorry, something went wrong. Please try again." }]);
       setIsLoading(false);
     }
-  }, [input, uploadedFiles, messages, currentSubId, onSubmissionCreated, pendingFiles]);
+  }, [input, uploadedFiles, messages, currentSubId, onSubmissionCreated, pendingFiles, tier, submissionCount]);
 
   // Load an existing submission into the chat
   const loadSubmission = async (subId: string) => {
@@ -699,6 +775,36 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
     }
   };
 
+  const handleSendSubmission = async (email: string, name: string) => {
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.functions.invoke("clark-notify", {
+        body: {
+          action: "send_submission",
+          submission_id: currentSubId,
+          recipient_email: email,
+          recipient_name: name || undefined,
+        },
+      });
+      if (error) throw error;
+      setMessages(prev => [...prev, {
+        role: "assistant",
+        content: `📧 Submission emailed to **${email}**!`,
+      }]);
+      toast.success("Submission email sent!");
+      return true;
+    } catch (err: any) {
+      toast.error(err.message || "Failed to send submission email");
+      setMessages(prev => [...prev, {
+        role: "assistant",
+        content: `❌ Failed to send submission email: ${err.message || "Unknown error"}`,
+      }]);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const renderWidget = (msg: Message) => {
     if (msg.widget === "carrier_select") {
       return (
@@ -720,6 +826,9 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
     if (msg.widget === "email_questionnaire") {
       return <InlineEmailInput onSend={handleSendQuestionnaire} />;
     }
+    if (msg.widget === "email_submission") {
+      return <InlineEmailInput onSend={handleSendSubmission} submitLabel="Send Submission" />;
+    }
     return null;
   };
 
@@ -739,26 +848,48 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
           <p className="text-xs text-muted-foreground mt-1">PDF, DOCX, PNG, JPG supported</p>
         </div>
       )}
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-3 border-b">
         <div className="flex items-center justify-between gap-2">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Bot className="h-5 w-5 text-primary" />
-            Clark AI
-            <Badge variant="secondary" className="text-xs">Insurance Tool</Badge>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+              <Bot className="h-4 w-4 text-primary" />
+            </div>
+            <span>Clark</span>
+            <Badge variant="secondary" className="text-xs font-normal">AI Submission Assistant</Badge>
             {isExtracting && (
-              <Badge variant="outline" className="text-xs gap-1 animate-pulse">
+              <Badge variant="outline" className="text-xs gap-1 animate-pulse border-primary/40 text-primary">
                 <Loader2 className="h-3 w-3 animate-spin" />
-                Extracting…
+                Analyzing…
               </Badge>
             )}
           </CardTitle>
 
-          {isDebugUser && debugPayload && (
-            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setDebugOpen(true)}>
-              <Code2 className="h-3.5 w-3.5" />
-              AI Response
+          <div className="flex items-center gap-1.5">
+            {isDebugUser && debugPayload && (
+              <Button variant="ghost" size="sm" className="gap-1.5 h-7 text-xs" onClick={() => setDebugOpen(true)}>
+                <Code2 className="h-3 w-3" />
+                Debug
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 h-7 text-xs"
+              onClick={() => {
+                setMessages([{ role: "assistant", content: WELCOME_MESSAGE }]);
+                setCurrentSubId(undefined);
+                setLastExtractionData(null);
+                setPendingFiles(null);
+                setPendingPrompt("");
+                setUploadedFiles([]);
+                onNewClient?.();
+              }}
+              disabled={isLoading || isExtracting}
+            >
+              <Plus className="h-3 w-3" />
+              New Client
             </Button>
-          )}
+          </div>
         </div>
 
         {isExtracting && (
@@ -783,11 +914,17 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
                         <Bot className="h-4 w-4 text-primary" />
                       </div>
                     )}
-                    <div className={`max-w-[80%] rounded-lg px-3 py-2 text-sm whitespace-pre-wrap ${
-                      msg.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted"
-                    }`}>
-                      {msg.content}
-                    </div>
+                    <div className={`max-w-[85%] rounded-xl px-3.5 py-2.5 text-sm whitespace-pre-wrap leading-relaxed ${
+                      msg.role === "user"
+                        ? "bg-primary text-primary-foreground rounded-br-sm"
+                        : "bg-muted/70 border border-border/40 rounded-bl-sm"
+                    }`}
+                    dangerouslySetInnerHTML={{
+                      __html: msg.content
+                        .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+                        .replace(/•/g, "•"),
+                    }}
+                  />
                     {msg.role === "user" && (
                       <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted">
                         <User className="h-4 w-4" />

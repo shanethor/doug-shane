@@ -216,6 +216,74 @@ serve(async (req) => {
       });
     }
 
+    if (action === "send_submission") {
+      const recipientEmail = body.recipient_email;
+      const recipientName = body.recipient_name || "Team";
+      if (!recipientEmail) throw new Error("recipient_email is required");
+
+      const extractedData = (submission.extracted_data || {}) as Record<string, any>;
+      const zipUrl = submission.final_zip_url as string | null;
+      const acordForms = (submission.acord_forms || []) as string[];
+      const carriers = (submission.carriers || []) as string[];
+
+      const fieldRows = [
+        ["Business / Applicant", extractedData.applicant_name || extractedData.dba],
+        ["Address", [extractedData.mailing_address, extractedData.city, extractedData.state, extractedData.zip].filter(Boolean).join(", ")],
+        ["Phone", extractedData.business_phone],
+        ["FEIN", extractedData.fein],
+        ["Entity Type", extractedData.entity_type],
+        ["Effective Date", extractedData.effective_date],
+        ["Expiration Date", extractedData.expiration_date],
+        ["Coverage Requested", extractedData.coverage_requested],
+        ["Annual Revenue", extractedData.annual_revenue ? `$${Number(extractedData.annual_revenue).toLocaleString()}` : null],
+        ["Employees", extractedData.num_employees],
+        ["Prior Carrier", extractedData.prior_carrier],
+        ["Prior Premium", extractedData.prior_premium ? `$${Number(extractedData.prior_premium).toLocaleString()}` : null],
+      ].filter(([, v]) => v);
+
+      const tableRows = fieldRows.map(([label, value]) =>
+        `<tr><td style="padding:6px 12px 6px 0;color:#666;font-size:13px;white-space:nowrap;vertical-align:top;">${label}</td><td style="padding:6px 0;font-size:13px;font-weight:500;">${value}</td></tr>`
+      ).join("");
+
+      const html = `
+        <div style="font-family: Arial, sans-serif; max-width: 620px; margin: 0 auto; padding: 24px; color: #111;">
+          <div style="background:#f8f9fa;border-radius:8px;padding:20px 24px;margin-bottom:24px;">
+            <h2 style="margin:0 0 4px;font-size:18px;">Insurance Submission — ${submission.business_name || submission.client_name || "Client"}</h2>
+            <p style="margin:0;color:#666;font-size:13px;">Prepared by ${agentName} · ${firmName}</p>
+          </div>
+
+          <table style="width:100%;border-collapse:collapse;margin-bottom:20px;">
+            ${tableRows}
+          </table>
+
+          ${acordForms.length > 0 ? `<p style="font-size:13px;margin-bottom:8px;"><strong>ACORD Forms:</strong> ${acordForms.map((f: string) => `ACORD ${f}`).join(", ")}</p>` : ""}
+          ${carriers.length > 0 ? `<p style="font-size:13px;margin-bottom:16px;"><strong>Carriers:</strong> ${carriers.join(", ")}</p>` : ""}
+
+          ${zipUrl ? `
+          <div style="margin:24px 0;">
+            <a href="${zipUrl}" style="background:#111;color:white;padding:12px 24px;text-decoration:none;border-radius:6px;display:inline-block;font-size:14px;font-weight:600;">
+              ⬇ Download Submission ZIP
+            </a>
+          </div>` : `<p style="color:#888;font-size:13px;font-style:italic;">ZIP file not yet generated — log in to finalize.</p>`}
+
+          <div style="margin-top:32px;padding-top:16px;border-top:1px solid #eee;">
+            <a href="${origin}/clark" style="color:#6366f1;font-size:13px;text-decoration:none;">Open Clark →</a>
+          </div>
+          <p style="color:#bbb;font-size:11px;margin-top:12px;">${firmName} — Powered by Clark AI</p>
+        </div>
+      `;
+
+      await sendEmail({
+        to: [recipientEmail],
+        subject: `Insurance Submission — ${submission.business_name || submission.client_name || "Client"} (${acordForms.map((f: string) => `ACORD ${f}`).join(", ")})`,
+        html,
+      });
+
+      return new Response(JSON.stringify({ success: true, message: "Submission email sent" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     throw new Error(`Unknown action: ${action}`);
   } catch (err) {
     console.error("clark-notify error:", err);
