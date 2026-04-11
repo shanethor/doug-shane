@@ -23,6 +23,7 @@ const REQUIRED_FIELDS = [
 const DEBUG_EMAILS = new Set([
   "dwenz17@gmail.com",
   "shane@houseofthor.com",
+  "dwenz@aurarisk.net",
 ]);
 
 serve(async (req) => {
@@ -150,8 +151,8 @@ Rules:
 - Be extraordinarily thorough — insurance underwriters depend on this data`;
 
     const docBlocks = await buildDocumentBlocks(filesToProcess, {
-      maxTotalPdfPages: 120,
-      maxPdfChunkPages: 30,  // 30 pages/batch → max 4 batches for a 120-page doc (was 10 → 10 batches)
+      maxTotalPdfPages: 150,
+      maxPdfChunkPages: 30,  // 30 pages/batch → max 5 batches for a 150-page doc
     });
     if (docBlocks.length === 0) throw new Error("No supported files provided");
 
@@ -206,14 +207,22 @@ Rules:
     console.log(`STEP 1 complete: ${Object.keys(step1Data).length} fields extracted`);
 
     console.log("STEP 2: Web enrichment...");
-    await new Promise((r) => setTimeout(r, 1000));
 
     const businessName = step1Data.applicant_name || step1Data.insured_name || step1Data.dba || "";
     const address = [step1Data.mailing_address, step1Data.city, step1Data.state, step1Data.zip].filter(Boolean).join(", ");
 
     let step2Data: Record<string, any> = {};
 
-    if (businessName) {
+    // Skip enrichment if we're running close to the 150s Supabase wall-clock limit.
+    // Large docs (120+ pages) use ~100s in step 1 — step 2 would push us over.
+    const elapsedAfterStep1 = Date.now() - extractionStart;
+    const skipEnrichment = elapsedAfterStep1 > 90_000;
+    if (skipEnrichment) {
+      console.log(`STEP 2 skipped: ${Math.round(elapsedAfterStep1 / 1000)}s elapsed — preserving timeout budget for save`);
+    }
+
+    if (businessName && !skipEnrichment) {
+      await new Promise((r) => setTimeout(r, 1000));
       const step2System = `You are a business intelligence researcher. Given a business name and address extracted from insurance documents, search your knowledge to cross-reference and verify their current details.
 
 Return ONLY valid JSON with these fields (omit any you cannot determine with confidence):
@@ -250,7 +259,7 @@ Cross-reference this business and return supplementary data as JSON. Only provid
       } catch (e) {
         console.warn("Step 2 enrichment failed (non-fatal):", e);
       }
-    } else {
+    } else if (!skipEnrichment) {
       console.log("STEP 2 skipped: no business name to research");
     }
 

@@ -865,10 +865,16 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
           </CardTitle>
 
           <div className="flex items-center gap-1.5">
-            {isDebugUser && debugPayload && (
-              <Button variant="ghost" size="sm" className="gap-1.5 h-7 text-xs" onClick={() => setDebugOpen(true)}>
+            {isDebugUser && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5 h-7 text-xs"
+                onClick={() => setDebugOpen(true)}
+                disabled={!debugPayload}
+              >
                 <Code2 className="h-3 w-3" />
-                Debug
+                AI Response
               </Button>
             )}
             <Button
