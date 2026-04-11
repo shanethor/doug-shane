@@ -70,20 +70,35 @@ export async function callClaude(
   retries = 3,
 ): Promise<any> {
   for (let attempt = 0; attempt <= retries; attempt++) {
-    const resp = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: maxTokens,
-        system,
-        messages,
-      }),
-    });
+    // Per-call timeout: abort if Claude hasn't responded in 55 seconds
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 55_000);
+
+    let resp: Response;
+    try {
+      resp = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        signal: controller.signal,
+        headers: {
+          "x-api-key": apiKey,
+          "anthropic-version": "2023-06-01",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: maxTokens,
+          system,
+          messages,
+        }),
+      });
+    } catch (fetchErr: any) {
+      clearTimeout(timeoutId);
+      if (fetchErr?.name === "AbortError") {
+        throw new Error("Claude API call timed out after 55s");
+      }
+      throw fetchErr;
+    }
+    clearTimeout(timeoutId);
 
     if (resp.ok) return resp.json();
 

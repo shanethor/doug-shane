@@ -214,13 +214,25 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
     setPendingFiles(prev => prev ? [...prev, ...files] : files);
   };
 
-  const fileToBase64 = (file: File): Promise<string> =>
-    new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve((reader.result as string).split(",")[1]);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
+  /**
+   * Upload a single file to Supabase Storage and return its public URL.
+   * This keeps the edge function request body small (avoids the ~6MB body limit)
+   * and lets clark-extract fetch the file directly from storage.
+   */
+  const uploadFileToStorage = async (file: File, userId: string): Promise<string> => {
+    const ext = file.name.split(".").pop() || "pdf";
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const path = `clark/uploads/${userId}/${Date.now()}_${Math.random().toString(36).slice(2)}_${safeName}`;
+
+    const { error: uploadErr } = await supabase.storage
+      .from("agency-assets")
+      .upload(path, file, { contentType: file.type || "application/pdf", upsert: false });
+
+    if (uploadErr) throw new Error(`File upload failed: ${uploadErr.message}`);
+
+    const { data: urlData } = supabase.storage.from("agency-assets").getPublicUrl(path);
+    return urlData.publicUrl;
+  };
 
   /** Run the extraction in the background */
   const runExtraction = async (files: File[], userPrompt: string, subId?: string) => {
@@ -228,11 +240,16 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
     setDebugPayload(null);
     startExtractionProgress();
     try {
-      const pdfFiles = await Promise.all(
+      // Step 1: Upload files to Supabase Storage (avoids large request body / 6MB limit)
+      setExtractionStep("Uploading documents to secure storage…");
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if (!currentUser) throw new Error("Not authenticated");
+
+      const storageFiles = await Promise.all(
         files.map(async (f) => ({
-          base64: await fileToBase64(f),
-          mimeType: f.type || "application/pdf",
+          url: await uploadFileToStorage(f, currentUser.id),
           name: f.name,
+          mimeType: f.type || "application/pdf",
         }))
       );
 
@@ -242,7 +259,7 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
       }]);
 
       const { data, error } = await supabase.functions.invoke("clark-extract", {
-        body: { pdf_files: pdfFiles, user_prompt: userPrompt, submission_id: subId },
+        body: { storage_files: storageFiles, user_prompt: userPrompt, submission_id: subId },
       });
       if (error) throw error;
       if (data?.debug) setDebugPayload(data.debug);

@@ -98,10 +98,85 @@ const ACORD_125_CHECKBOXES: Record<string, string> = {
   producer_bill: "F[0].P1[0].Policy_Payment_ProducerBillIndicator_A[0]",
 };
 
-/** Simple mappings for ACORD 126 (GL). We'll add real field names once inspected. */
-const ACORD_126_MAP: Record<string, string> = {};
-const ACORD_127_MAP: Record<string, string> = {};
-const ACORD_130_MAP: Record<string, string> = {};
+/** ACORD 126 — Commercial General Liability Section */
+const ACORD_126_MAP: Record<string, string> = {
+  // Header / producer
+  applicant_name:   "F[0].P1[0].NamedInsured_FullName_A[0]",
+  effective_date:   "F[0].P1[0].Policy_EffectiveDate_A[0]",
+  expiration_date:  "F[0].P1[0].Policy_ExpirationDate_A[0]",
+  policy_number:    "F[0].P1[0].Policy_PolicyNumberIdentifier_A[0]",
+  firm_name:        "F[0].P1[0].Producer_FullName_A[0]",
+  producer_name:    "F[0].P1[0].Producer_ContactPerson_FullName_A[0]",
+  carrier_name:     "F[0].P1[0].Insurer_FullName_A[0]",
+  // GL Limits
+  gl_each_occurrence:          "F[0].P1[0].GeneralLiability_EachOccurrenceLimit_A[0]",
+  gl_general_aggregate:        "F[0].P1[0].GeneralLiability_GeneralAggregateLimit_A[0]",
+  gl_products_aggregate:       "F[0].P1[0].GeneralLiability_ProductsCompletedOperationsAggregateLimit_A[0]",
+  gl_personal_injury:          "F[0].P1[0].GeneralLiability_PersonalAndAdvertisingInjuryLimit_A[0]",
+  gl_fire_damage:              "F[0].P1[0].GeneralLiability_FireDamageLimitAnyOneFire_A[0]",
+  gl_medical_expense:          "F[0].P1[0].GeneralLiability_MedicalExpenseLimitAnyOnePerson_A[0]",
+  // Classification
+  gl_class_code:               "F[0].P1[0].Classification_ClassCode_A[0]",
+  gl_class_description:        "F[0].P1[0].Classification_ClassificationDescription_A[0]",
+  gl_annual_payroll:           "F[0].P1[0].Classification_PayrollAmount_A[0]",
+  gl_gross_sales:              "F[0].P1[0].Classification_GrossSalesAmount_A[0]",
+  gl_area:                     "F[0].P1[0].Classification_AreaAmount_A[0]",
+  gl_units:                    "F[0].P1[0].Classification_UnitCount_A[0]",
+  // Prior coverage
+  prior_carrier:               "F[0].P1[0].Policy_PriorInsurer_FullName_A[0]",
+  prior_premium:               "F[0].P1[0].Policy_PriorInsurer_PremiumAmount_A[0]",
+};
+
+/** ACORD 127 — Business Auto Section */
+const ACORD_127_MAP: Record<string, string> = {
+  applicant_name:   "F[0].P1[0].NamedInsured_FullName_A[0]",
+  effective_date:   "F[0].P1[0].Policy_EffectiveDate_A[0]",
+  expiration_date:  "F[0].P1[0].Policy_ExpirationDate_A[0]",
+  policy_number:    "F[0].P1[0].Policy_PolicyNumberIdentifier_A[0]",
+  firm_name:        "F[0].P1[0].Producer_FullName_A[0]",
+  producer_name:    "F[0].P1[0].Producer_ContactPerson_FullName_A[0]",
+  carrier_name:     "F[0].P1[0].Insurer_FullName_A[0]",
+  // Auto limits
+  auto_bi_each_person:         "F[0].P1[0].BusinessAuto_BodilyInjury_EachPersonLimit_A[0]",
+  auto_bi_each_accident:       "F[0].P1[0].BusinessAuto_BodilyInjury_EachAccidentLimit_A[0]",
+  auto_pd_each_accident:       "F[0].P1[0].BusinessAuto_PropertyDamage_EachAccidentLimit_A[0]",
+  auto_combined_single_limit:  "F[0].P1[0].BusinessAuto_CombinedSingleLimit_A[0]",
+  auto_uninsured_motorist:     "F[0].P1[0].BusinessAuto_UninsuredMotoristLimit_A[0]",
+  auto_medical_payments:       "F[0].P1[0].BusinessAuto_MedicalPaymentsLimit_A[0]",
+  // Vehicle counts
+  vehicle_count:               "F[0].P1[0].Vehicle_Count_A[0]",
+  // Prior
+  prior_carrier:               "F[0].P1[0].Policy_PriorInsurer_FullName_A[0]",
+  prior_premium:               "F[0].P1[0].Policy_PriorInsurer_PremiumAmount_A[0]",
+};
+
+/** ACORD 130 — Workers Compensation Application */
+const ACORD_130_MAP: Record<string, string> = {
+  applicant_name:   "F[0].P1[0].NamedInsured_FullName_A[0]",
+  mailing_address:  "F[0].P1[0].NamedInsured_MailingAddress_LineOne_A[0]",
+  city:             "F[0].P1[0].NamedInsured_MailingAddress_CityName_A[0]",
+  state:            "F[0].P1[0].NamedInsured_MailingAddress_StateOrProvinceCode_A[0]",
+  zip:              "F[0].P1[0].NamedInsured_MailingAddress_PostalCode_A[0]",
+  business_phone:   "F[0].P1[0].NamedInsured_Primary_PhoneNumber_A[0]",
+  fein:             "F[0].P1[0].NamedInsured_TaxIdentifier_A[0]",
+  effective_date:   "F[0].P1[0].Policy_EffectiveDate_A[0]",
+  expiration_date:  "F[0].P1[0].Policy_ExpirationDate_A[0]",
+  policy_number:    "F[0].P1[0].Policy_PolicyNumberIdentifier_A[0]",
+  firm_name:        "F[0].P1[0].Producer_FullName_A[0]",
+  producer_name:    "F[0].P1[0].Producer_ContactPerson_FullName_A[0]",
+  carrier_name:     "F[0].P1[0].Insurer_FullName_A[0]",
+  // WC fields
+  wc_class_code:               "F[0].P1[0].WorkersComp_ClassCode_A[0]",
+  wc_class_description:        "F[0].P1[0].WorkersComp_ClassificationDescription_A[0]",
+  wc_annual_payroll:           "F[0].P1[0].WorkersComp_PayrollAmount_A[0]",
+  experience_mod:              "F[0].P1[0].WorkersComp_ExperienceModificationFactor_A[0]",
+  num_employees:               "F[0].P1[0].WorkersComp_EmployeeCount_A[0]",
+  years_in_business:           "F[0].P1[0].WorkersComp_YearsInBusiness_A[0]",
+  // Prior
+  prior_carrier:               "F[0].P1[0].Policy_PriorInsurer_FullName_A[0]",
+  prior_policy_number:         "F[0].P1[0].Policy_PriorInsurer_PolicyNumberIdentifier_A[0]",
+  prior_premium:               "F[0].P1[0].Policy_PriorInsurer_PremiumAmount_A[0]",
+};
 
 const FORM_MAPS: Record<string, Record<string, string>> = {
   "125": ACORD_125_MAP,

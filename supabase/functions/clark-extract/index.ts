@@ -44,8 +44,36 @@ serve(async (req) => {
     const { data: { user }, error: authErr } = await supabase.auth.getUser(token);
     if (authErr || !user) throw new Error("Authentication failed");
 
-    const { pdf_files, user_prompt, submission_id } = await req.json();
-    if (!Array.isArray(pdf_files) || pdf_files.length === 0) throw new Error("No files provided");
+    const { pdf_files, storage_files, user_prompt, submission_id } = await req.json();
+
+    // Build the file list — prefer storage_files (URL-based, no body size limit)
+    // over legacy pdf_files (base64 in body, limited to ~6 MB).
+    let filesToProcess: Array<{ base64: string; mimeType: string; name: string }> = [];
+
+    if (Array.isArray(storage_files) && storage_files.length > 0) {
+      // Fetch each file from Supabase Storage (same-network fetch — fast)
+      for (const sf of storage_files) {
+        const resp = await fetch(sf.url as string);
+        if (!resp.ok) throw new Error(`Could not fetch uploaded file: ${sf.url} (${resp.status})`);
+        const buf = await resp.arrayBuffer();
+        const bytes = new Uint8Array(buf);
+        let binary = "";
+        const chunkSize = 8192;
+        for (let i = 0; i < bytes.length; i += chunkSize) {
+          binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+        }
+        filesToProcess.push({
+          base64: btoa(binary),
+          mimeType: (sf.mimeType as string) || "application/pdf",
+          name: (sf.name as string) || "document.pdf",
+        });
+      }
+    } else if (Array.isArray(pdf_files) && pdf_files.length > 0) {
+      // Legacy path: base64 sent directly in body
+      filesToProcess = pdf_files;
+    }
+
+    if (filesToProcess.length === 0) throw new Error("No files provided");
 
     const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
     if (!ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY not configured");
@@ -121,9 +149,9 @@ Rules:
 - If multiple documents provided, merge intelligently — most specific/recent values win
 - Be extraordinarily thorough — insurance underwriters depend on this data`;
 
-    const docBlocks = await buildDocumentBlocks(pdf_files, {
-      maxTotalPdfPages: 100,
-      maxPdfChunkPages: 10,
+    const docBlocks = await buildDocumentBlocks(filesToProcess, {
+      maxTotalPdfPages: 120,
+      maxPdfChunkPages: 30,  // 30 pages/batch → max 4 batches for a 120-page doc (was 10 → 10 batches)
     });
     if (docBlocks.length === 0) throw new Error("No supported files provided");
 
@@ -132,9 +160,20 @@ Rules:
     let step1Data: Record<string, any> = {};
     const totalBatches = docBlocks.length;
 
+    // Budget: 125 s leaves a 25-second buffer before Supabase's 150-second hard timeout.
+    const TIMEOUT_BUDGET_MS = 125_000;
+    const extractionStart = Date.now();
+
     for (let i = 0; i < docBlocks.length; i++) {
       const batchNum = i + 1;
-      if (i > 0) await new Promise((r) => setTimeout(r, 1200));
+
+      // Timeout guard — save what we have instead of crashing mid-loop
+      if (i > 0 && Date.now() - extractionStart > TIMEOUT_BUDGET_MS) {
+        console.warn(`Timeout budget reached after batch ${i} — saving partial results (${Object.keys(step1Data).length} fields so far)`);
+        break;
+      }
+
+      if (i > 0) await new Promise((r) => setTimeout(r, 800));  // reduced from 1200ms
 
       // Build context-aware prompt: tell Claude what we already have so it supplements, not duplicates
       const alreadyExtractedKeys = Object.keys(step1Data);
