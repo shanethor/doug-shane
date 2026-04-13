@@ -83,6 +83,8 @@ export default function ClarkQuestionnaire() {
               questionnaire_token: token,
               fields_filled: Object.keys(filledAnswers).length,
               still_missing: stillMissing.length,
+              client_name: submission.client_name || merged.applicant_name || merged.insured_name || null,
+              business_name: submission.business_name || merged.dba || merged.business_name || null,
             }),
           }
         );

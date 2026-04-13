@@ -86,6 +86,7 @@ const ACORD_125_CHECKBOXES: Record<string, string> = {
   lob_bop: "F[0].P1[0].Policy_LineOfBusiness_BusinessOwnersIndicator_A[0]",
   lob_inland_marine: "F[0].P1[0].Policy_LineOfBusiness_CommercialInlandMarineIndicator_A[0]",
   lob_boiler: "F[0].P1[0].Policy_LineOfBusiness_BoilerAndMachineryIndicator_A[0]",
+  lob_wc: "F[0].P1[0].Policy_LineOfBusiness_WorkersCompensationIndicator_A[0]",
 
   // Policy status
   status_quote: "F[0].P1[0].Policy_Status_QuoteIndicator_A[0]",
@@ -337,7 +338,7 @@ serve(async (req) => {
             if (acordForms.includes("126")) safeCheck(form, ACORD_125_CHECKBOXES.lob_gl);
             if (acordForms.includes("127")) safeCheck(form, ACORD_125_CHECKBOXES.lob_auto);
             if (acordForms.includes("130")) {
-              // WC is not on 125 but umbrella might be
+              safeCheck(form, ACORD_125_CHECKBOXES.lob_wc);
             }
 
             // Coverage detection from extracted data

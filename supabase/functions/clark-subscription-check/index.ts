@@ -7,23 +7,26 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const ADMIN_EMAIL = "dwenz@aurarisk.net";
+/** Emails that always get unlimited access without Stripe */
+const ADMIN_EMAILS = new Set([
+  "dwenz@aurarisk.net",
+  "shane@houseofthor.com",
+  "dwenz17@gmail.com",
+]);
 
-const PRODUCT_TO_TIER: Record<string, string> = {
-  prod_UIL4LdZKBoNI3Y: "starter",
-  prod_UIL4fc1vH7hi7J: "pro",
-  prod_UIL7wOFaZIvNcS: "elite",
-  // Legacy product IDs
-  prod_UIKhDnujwDeOYb: "starter",
-  prod_UIKiOGZubz4ZBN: "pro",
-  prod_UIKigWLViBnKOc: "elite",
-};
+/** All Stripe product IDs (current + legacy) that map to the single unlimited plan */
+const UNLIMITED_PRODUCT_IDS = new Set([
+  "prod_UIL7wOFaZIvNcS",  // current unlimited (was elite)
+  "prod_UIL4LdZKBoNI3Y",  // legacy starter
+  "prod_UIL4fc1vH7hi7J",  // legacy pro
+  "prod_UIKhDnujwDeOYb",  // legacy starter v1
+  "prod_UIKiOGZubz4ZBN",  // legacy pro v1
+  "prod_UIKigWLViBnKOc",  // legacy elite v1
+]);
 
-const TIER_LIMITS: Record<string, number> = {
-  starter: 3,
-  pro: 10,
-  elite: Infinity,
-};
+/** Soft cap per month — triggers notification to admin for outreach */
+const MONTHLY_SOFT_CAP = 100;
+const CAP_NOTIFY_EMAIL = "shane@houseofthor.com";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -42,10 +45,10 @@ serve(async (req) => {
     const { data: { user }, error: authErr } = await supabase.auth.getUser(token);
     if (authErr || !user) throw new Error("Authentication failed");
 
-    // Admin bypass
-    if (user.email === ADMIN_EMAIL) {
+    // Admin bypass — unlimited, no Stripe check needed
+    if (user.email && ADMIN_EMAILS.has(user.email)) {
       return new Response(JSON.stringify({
-        tier: "elite",
+        tier: "unlimited",
         limit: Infinity,
         used: 0,
         canSubmit: true,
@@ -76,8 +79,8 @@ serve(async (req) => {
         const subs = await stripe.subscriptions.list({ customer: customerId, status: "active" });
         for (const sub of subs.data) {
           const productId = sub.items.data[0]?.price?.product as string;
-          if (PRODUCT_TO_TIER[productId]) {
-            tier = PRODUCT_TO_TIER[productId];
+          if (UNLIMITED_PRODUCT_IDS.has(productId)) {
+            tier = "unlimited";
             break;
           }
         }
@@ -96,13 +99,41 @@ serve(async (req) => {
       .gte("created_at", startOfMonth.toISOString());
 
     const used = count || 0;
-    const limit = TIER_LIMITS[tier] ?? 0;
+
+    // If paying user just hit the soft cap, fire a notification
+    if (tier === "unlimited" && used === MONTHLY_SOFT_CAP) {
+      const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+      if (RESEND_API_KEY) {
+        try {
+          await fetch("https://api.resend.com/emails", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${RESEND_API_KEY}` },
+            body: JSON.stringify({
+              from: "AURA <noreply@buildingaura.site>",
+              to: [CAP_NOTIFY_EMAIL],
+              subject: `Clark: ${user.email} hit ${MONTHLY_SOFT_CAP} submissions this month`,
+              html: `
+                <div style="font-family:sans-serif;max-width:560px;margin:0 auto;padding:24px;">
+                  <h2 style="color:#1a1a2e;">High-Volume Clark User</h2>
+                  <p><strong>${user.email}</strong> just reached <strong>${MONTHLY_SOFT_CAP} submissions</strong> this billing period.</p>
+                  <p>This is the soft cap trigger. Consider reaching out to discuss their usage, offer a dedicated plan, or check if they need support.</p>
+                  <p style="color:#888;font-size:12px;margin-top:24px;">User ID: ${user.id}</p>
+                </div>
+              `,
+            }),
+          });
+          console.log(`Cap notification sent for ${user.email}`);
+        } catch (notifyErr) {
+          console.error("Failed to send cap notification:", notifyErr);
+        }
+      }
+    }
 
     return new Response(JSON.stringify({
       tier,
-      limit,
+      limit: tier === "unlimited" ? Infinity : 0,
       used,
-      canSubmit: used < limit,
+      canSubmit: tier === "unlimited",
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (err) {
     console.error("clark-subscription-check error:", err);

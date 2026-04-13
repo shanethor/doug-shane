@@ -618,24 +618,22 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
 
   /** Build a friendly tier info response based on the user's current plan */
   const buildTierResponse = (): string => {
-    const tierDetails: Record<string, { name: string; limit: string; price: string; perks: string[] }> = {
-      free:    { name: "Free",    limit: "0 submissions",       price: "Free",       perks: ["No active plan — upgrade to start processing submissions"] },
-      starter: { name: "Starter", limit: "3/month",             price: "$49.99/mo",  perks: ["3 AI submissions/month", "ACORD form generation", "Client questionnaires", "PDF extraction & field mapping"] },
-      pro:     { name: "Pro",     limit: "10/month",            price: "$149.99/mo", perks: ["10 AI submissions/month", "Everything in Starter", "Priority processing", "Carrier-specific packaging"] },
-      elite:   { name: "Elite",   limit: "Unlimited",           price: "$399.99/mo", perks: ["Unlimited submissions", "Everything in Pro", "10 verified leads/month", "White-glove support"] },
-    };
-    const current = tierDetails[tier] || tierDetails.free;
-    const used = tier === "elite" ? "∞" : `${submissionCount}/${current.limit.split("/")[0]}`;
-    let msg = `📊 **Your Clark Plan: ${current.name}** (${current.price})\n\n`;
-    msg += `Submissions used this month: **${used}**\n\n`;
-    msg += `**What's included:**\n${current.perks.map(p => `• ${p}`).join("\n")}`;
-    if (tier === "free") {
-      msg += `\n\n⬆️ **Upgrade to Starter ($49.99/mo)** to start processing submissions. Just ask me to upgrade!`;
-    } else if (tier === "starter") {
-      msg += `\n\n⬆️ Need more? **Pro ($149.99/mo)** gives you 10 submissions/month.`;
-    } else if (tier === "pro") {
-      msg += `\n\n⬆️ On a busy month? **Elite ($399.99/mo)** gives you unlimited submissions + verified leads.`;
+    const isPaid = tier === "unlimited" || tier === "elite" || tier === "starter" || tier === "pro";
+    if (isPaid) {
+      let msg = `📊 **Your Clark Plan: Unlimited** ($299.99/mo)\n\n`;
+      msg += `Submissions this month: **${submissionCount}**\n\n`;
+      msg += `**What's included:**\n`;
+      msg += `• Unlimited AI submissions\n`;
+      msg += `• ACORD form generation (125, 126, 127, 130)\n`;
+      msg += `• Client questionnaires & outreach\n`;
+      msg += `• PDF extraction & smart field mapping\n`;
+      msg += `• Carrier-specific packaging\n`;
+      msg += `• Priority processing`;
+      return msg;
     }
+    let msg = `📊 **Your Clark Plan: Free**\n\n`;
+    msg += `You don't have an active plan yet.\n\n`;
+    msg += `⬆️ **Get Unlimited ($299.99/mo)** to start processing submissions with AI-powered extraction, ACORD form generation, client questionnaires, and carrier packaging. Just ask me to upgrade!`;
     return msg;
   };
 
@@ -660,7 +658,7 @@ export default function ClarkChat({ submissionId: initialSubId, onSubmissionCrea
 
     // Limitations
     if (/\b(can'?t|cannot|unable|don'?t support|limitation|not (able|supported|work)|what (can'?t|don'?t))\b/.test(t)) {
-      return `ℹ️ **Current Clark limitations:**\n\n• **Page limit:** Up to 120 pages per upload (larger files are capped at page 120)\n• **File types:** PDF works best; images (PNG/JPG) are supported but text-heavy PDFs extract more accurately\n• **Handwritten forms:** Handwriting is harder for AI to read — typed/digital docs work best\n• **Scanned images:** Low-resolution scans may miss some fields\n• **Monthly limits:** Based on your plan (${tier === "elite" ? "unlimited on your Elite plan" : `${submissionCount} used this month on your ${tier} plan`})\n• **Form coverage:** ACORD 125, 126, 127, and 130 are fully mapped — other forms use best-effort field matching\n\nIf extraction misses something, use the inline questionnaire to fill gaps manually.`;
+      return `ℹ️ **Current Clark limitations:**\n\n• **Page limit:** Up to 120 pages per upload (larger files are capped at page 120)\n• **File types:** PDF works best; images (PNG/JPG) are supported but text-heavy PDFs extract more accurately\n• **Handwritten forms:** Handwriting is harder for AI to read — typed/digital docs work best\n• **Scanned images:** Low-resolution scans may miss some fields\n• **Monthly usage:** ${submissionCount} submissions used this month (unlimited plan)\n• **Form coverage:** ACORD 125, 126, 127, and 130 are fully mapped — other forms use best-effort field matching\n\nIf extraction misses something, use the inline questionnaire to fill gaps manually.`;
     }
 
     // Supported forms

@@ -5,7 +5,7 @@ import ClarkChat from "@/components/clark/ClarkChat";
 import ClarkSubmissionsPanel from "@/components/clark/ClarkSubmissionsPanel";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CLARK_TIERS, CLARK_ADMIN_EMAIL, type ClarkTierKey } from "@/lib/clark-tiers";
+import { CLARK_TIERS, CLARK_ADMIN_EMAILS, type ClarkTierKey } from "@/lib/clark-tiers";
 import { toast } from "sonner";
 import { CreditCard, Zap, PanelLeftClose, PanelLeft } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -33,11 +33,16 @@ export default function Clark() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    if (user.email === CLARK_ADMIN_EMAIL) {
-      setTier("elite");
+    // Admin emails always get unlimited
+    if (user.email && CLARK_ADMIN_EMAILS.includes(user.email)) {
+      setTier("unlimited");
     } else {
       const { data: subData } = await supabase.functions.invoke("clark-subscription-check");
-      if (subData?.tier) setTier(subData.tier as ClarkTierKey);
+      if (subData?.tier && subData.tier !== "free") {
+        setTier("unlimited"); // all paid plans map to unlimited now
+      } else if (subData?.tier) {
+        setTier(subData.tier as ClarkTierKey | "free");
+      }
     }
 
     const { data: profile } = await supabase
@@ -62,9 +67,9 @@ export default function Clark() {
 
   useEffect(() => { checkProfile(); }, []);
 
-  const handleUpgrade = async (tierKey: ClarkTierKey) => {
+  const handleUpgrade = async () => {
     try {
-      const priceId = CLARK_TIERS[tierKey].price_id;
+      const priceId = CLARK_TIERS.unlimited.price_id;
       const { data, error } = await supabase.functions.invoke("create-checkout", {
         body: { price_id: priceId, success_url: `${window.location.origin}/clark`, cancel_url: `${window.location.origin}/clark` },
       });
@@ -99,9 +104,7 @@ export default function Clark() {
     return <ClarkOnboarding onComplete={() => setHasProfile(true)} />;
   }
 
-  const currentTier = tier === "free" ? null : CLARK_TIERS[tier];
-  const limit = currentTier?.monthlyLimit ?? 0;
-  const atLimit = tier !== "elite" && tier !== "free" && submissionCount >= limit;
+  const isPaid = tier === "unlimited";
 
   return (
     <div className="min-h-screen bg-background">
@@ -112,22 +115,22 @@ export default function Clark() {
               {showPanel ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeft className="h-4 w-4" />}
             </Button>
             <h1 className="text-lg sm:text-xl font-bold">Clark</h1>
-            <Badge variant={tier === "free" ? "secondary" : "default"} className="text-xs">
-              {tier === "free" ? "Free" : currentTier?.name}
+            <Badge variant={isPaid ? "default" : "secondary"} className="text-xs">
+              {isPaid ? "Unlimited" : "Free"}
             </Badge>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
-            {tier !== "elite" && (
+            {isPaid && (
               <span className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
-                {submissionCount}/{limit || "—"} this month
+                {submissionCount} this month
               </span>
             )}
-            {tier === "free" && (
-              <Button size="sm" onClick={() => handleUpgrade("starter")} className="gap-1.5 text-xs sm:text-sm">
-                <Zap className="h-3.5 w-3.5" /> Upgrade
+            {!isPaid && (
+              <Button size="sm" onClick={handleUpgrade} className="gap-1.5 text-xs sm:text-sm">
+                <Zap className="h-3.5 w-3.5" /> Get Unlimited — $299.99/mo
               </Button>
             )}
-            {tier !== "free" && (
+            {isPaid && (
               <Button size="sm" variant="outline" className="gap-1.5 text-xs sm:text-sm" onClick={async () => {
                 const { data } = await supabase.functions.invoke("customer-portal");
                 if (data?.url) window.open(data.url, "_blank");
@@ -151,16 +154,15 @@ export default function Clark() {
           </div>
         )}
         <div className={`flex-1 p-2 sm:p-4 overflow-hidden ${isMobile && showPanel ? "hidden" : ""}`}>
-          {atLimit ? (
-            <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 sm:p-6 text-center space-y-3">
-              <h2 className="text-lg font-semibold">Submission limit reached</h2>
-              <p className="text-sm text-muted-foreground">
-                You've used all {limit} submissions for this month. Upgrade to increase your limit.
+          {!isPaid ? (
+            <div className="rounded-lg border border-primary/30 bg-primary/5 p-4 sm:p-6 text-center space-y-3">
+              <h2 className="text-lg font-semibold">Subscribe to Clark</h2>
+              <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                Get unlimited AI-powered ACORD form submissions, client questionnaires, PDF extraction, and carrier packaging for $299.99/month.
               </p>
-              <div className="flex gap-2 justify-center flex-wrap">
-                {tier === "starter" && <Button onClick={() => handleUpgrade("pro")}>Upgrade to Pro ($99/mo)</Button>}
-                {(tier === "starter" || tier === "pro") && <Button variant="outline" onClick={() => handleUpgrade("elite")}>Go Elite ($249/mo)</Button>}
-              </div>
+              <Button onClick={handleUpgrade} className="gap-1.5">
+                <Zap className="h-4 w-4" /> Get Unlimited — $299.99/mo
+              </Button>
             </div>
           ) : (
             <ClarkChat
