@@ -73,6 +73,7 @@ const ProductSettings = lazy(() => import("./pages/ProductSettings"));
 const PostCheckoutOnboard = lazy(() => import("./pages/PostCheckoutOnboard"));
 const Clark = lazy(() => import("./pages/Clark"));
 const ClarkQuestionnaire = lazy(() => import("./pages/ClarkQuestionnaire"));
+const LeadVerify = lazy(() => import("./pages/LeadVerify"));
 
 const queryClient = new QueryClient();
 
@@ -181,6 +182,7 @@ const App = () => (
             <Route path="/reset-password" element={<ResetPassword />} />
 
             <Route path="/clark/questionnaire/:token" element={<ClarkQuestionnaire />} />
+            <Route path="/lead-verify/:token" element={<LeadVerify />} />
             <Route path="/clark" element={<ProductProtectedRoute><Clark /></ProductProtectedRoute>} />
 
             <Route path="/leads/:industry" element={<LeadLanding />} />

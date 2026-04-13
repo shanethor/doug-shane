@@ -7,7 +7,8 @@ import { Separator } from "@/components/ui/separator";
 import {
   X, Mail, Phone, Globe, Copy, Check, Sparkles, Loader2,
   ArrowUpRight, Building2, MapPin, DollarSign, Target, User,
-  MessageSquare, ExternalLink, RefreshCw,
+  MessageSquare, ExternalLink, RefreshCw, ShieldCheck, Send,
+  AlertCircle, CheckCircle2, HelpCircle, XCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -41,6 +42,15 @@ export default function LeadOutreachPanel({ lead, onClose }: Props) {
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [converting, setConverting] = useState(false);
+
+  // Questionnaire
+  const [sendingQuestionnaire, setSendingQuestionnaire] = useState(false);
+  const [questionnaireSent, setQuestionnaireSent] = useState(
+    !!lead.questionnaire_sent_at
+  );
+  const questionnaireStatus = (lead as any).questionnaire_status as string | undefined;
+  const questionnaireResponse = (lead as any).questionnaire_response as string | undefined;
+  const isVerified = (lead as any).verified as boolean | undefined;
 
   // ── Find contact info via enrich-lead waterfall (Serper → Apollo → PDL) ──
   const handleFindContact = async () => {
@@ -217,6 +227,33 @@ FOLLOW-UP MESSAGE:
     }
   };
 
+  // ── Send verification questionnaire ──
+  const handleSendQuestionnaire = async () => {
+    if (!lead.email && !lead.phone) {
+      toast.error("No email on file — add an email address first");
+      return;
+    }
+    setSendingQuestionnaire(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("send-lead-questionnaire", {
+        body: { lead_id: lead.id },
+      });
+      if (error) throw new Error(error.message);
+      if (data?.error) throw new Error(data.error);
+      setQuestionnaireSent(true);
+      updateLead.mutate({ id: lead.id } as any);
+      toast.success(
+        data?.test_mode
+          ? `Verification sent to shanebaseball08@gmail.com (test mode)`
+          : `Verification email sent`
+      );
+    } catch (err: any) {
+      toast.error(err.message || "Failed to send verification email");
+    } finally {
+      setSendingQuestionnaire(false);
+    }
+  };
+
   // ── Save contact info ──
   const handleSaveContact = async () => {
     await updateLead.mutateAsync({
@@ -316,6 +353,73 @@ FOLLOW-UP MESSAGE:
               <p className="text-xs leading-relaxed" style={{ color: "hsl(240 5% 70%)" }}>{lead.signal}</p>
             </div>
           )}
+
+          {/* Verification Questionnaire */}
+          <div className="space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "hsl(240 5% 46%)" }}>
+              Interest Verification
+            </p>
+
+            {/* Status badge if already sent/responded */}
+            {questionnaireStatus === "responded" && (
+              <div
+                className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs"
+                style={{
+                  background: questionnaireResponse === "yes" ? "hsl(140 50% 40% / 0.12)" : questionnaireResponse === "maybe" ? "hsl(220 80% 55% / 0.12)" : "hsl(240 6% 14%)",
+                  border: `1px solid ${questionnaireResponse === "yes" ? "hsl(140 50% 40% / 0.3)" : questionnaireResponse === "maybe" ? "hsl(220 80% 55% / 0.3)" : "hsl(240 6% 22%)"}`,
+                }}
+              >
+                {questionnaireResponse === "yes" && <CheckCircle2 className="h-3.5 w-3.5 text-green-400 shrink-0" />}
+                {questionnaireResponse === "maybe" && <HelpCircle className="h-3.5 w-3.5 text-blue-400 shrink-0" />}
+                {questionnaireResponse === "no" && <XCircle className="h-3.5 w-3.5 shrink-0" style={{ color: "hsl(240 5% 50%)" }} />}
+                <span style={{ color: "hsl(240 5% 80%)" }}>
+                  Response: <strong>{questionnaireResponse === "yes" ? "Actively looking" : questionnaireResponse === "maybe" ? "Maybe — wants more info" : "Not right now"}</strong>
+                </span>
+                {isVerified && (
+                  <span className="ml-auto flex items-center gap-1 text-[10px] font-semibold" style={{ color: "hsl(140 50% 55%)" }}>
+                    <ShieldCheck className="h-3 w-3" /> Verified
+                  </span>
+                )}
+              </div>
+            )}
+
+            {questionnaireStatus === "sent" && questionnaireStatus !== "responded" && (
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs" style={{ background: "hsl(45 80% 50% / 0.08)", border: "1px solid hsl(45 80% 50% / 0.2)" }}>
+                <AlertCircle className="h-3.5 w-3.5 shrink-0" style={{ color: "hsl(45 80% 55%)" }} />
+                <span style={{ color: "hsl(240 5% 70%)" }}>Questionnaire sent — awaiting response</span>
+              </div>
+            )}
+
+            <Button
+              className="w-full gap-2 h-9 text-xs"
+              style={{
+                background: questionnaireSent || questionnaireStatus === "responded"
+                  ? "hsl(240 6% 14%)"
+                  : "hsl(260 60% 52%)",
+                color: questionnaireSent || questionnaireStatus === "responded" ? "hsl(240 5% 55%)" : "white",
+                border: questionnaireSent ? "1px solid hsl(240 6% 20%)" : "none",
+              }}
+              onClick={handleSendQuestionnaire}
+              disabled={sendingQuestionnaire || questionnaireStatus === "responded"}
+              title={!lead.email ? "No email on file — add one above first" : ""}
+            >
+              {sendingQuestionnaire
+                ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Sending…</>
+                : questionnaireStatus === "responded"
+                  ? <><ShieldCheck className="h-3.5 w-3.5" /> Response Received</>
+                  : questionnaireSent || questionnaireStatus === "sent"
+                    ? <><Send className="h-3.5 w-3.5" /> Resend Verification</>
+                    : <><Send className="h-3.5 w-3.5" /> Send Verification Email</>
+              }
+            </Button>
+            {!lead.email && (
+              <p className="text-[10px] text-center" style={{ color: "hsl(240 5% 44%)" }}>
+                Add email above to send verification
+              </p>
+            )}
+          </div>
+
+          <Separator style={{ background: "hsl(240 6% 14%)" }} />
 
           {/* Contact Info */}
           <div className="space-y-3">
