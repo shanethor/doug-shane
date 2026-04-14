@@ -112,7 +112,7 @@ export default function SmartCalendar() {
   const [leads, setLeads] = useState<any[]>([]);
   const [externalCalendars, setExternalCalendars] = useState<{id: string; provider: string; email_address: string}[]>([]);
   const [defaultCalendarId, setDefaultCalendarId] = useState<string>(() => {
-    try { return localStorage.getItem("aura-default-calendar") || ""; } catch { return ""; }
+    try { return localStorage.getItem("aura-default-calendar") || ""; } catch { console.warn("[SmartCalendar] localStorage access failed"); return ""; }
   });
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
@@ -311,7 +311,8 @@ export default function SmartCalendar() {
         } else {
           toast.success("Event created");
         }
-      } catch {
+      } catch (err) {
+        console.warn("[SmartCalendar] Failed to sync event externally:", err);
         toast.success("Event created (external sync skipped)");
       }
     }

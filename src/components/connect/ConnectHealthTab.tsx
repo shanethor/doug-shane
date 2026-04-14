@@ -64,7 +64,8 @@ export default function ConnectHealthTab() {
         return true;
       });
       setChecks(unique);
-    } catch {
+    } catch (err) {
+      console.error("[ConnectHealthTab] Failed to load health checks:", err);
       toast.error("Failed to load health checks");
     } finally {
       setLoading(false);
@@ -92,7 +93,8 @@ export default function ConnectHealthTab() {
       setNotes("");
       setShowForm(false);
       loadChecks();
-    } catch {
+    } catch (err) {
+      console.error("[ConnectHealthTab] Failed to save health check:", err);
       toast.error("Failed to save health check");
     } finally {
       setPosting(false);

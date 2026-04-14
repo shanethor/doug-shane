@@ -149,14 +149,18 @@ export default function ConnectSpotlightTab() {
         const sorted = [...data.flyers].sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
         setHistory(sorted);
       }
-    } catch { /* silent */ }
+    } catch (err) {
+      console.warn("[ConnectSpotlightTab] Failed to load flyer history:", err);
+    }
   }, []);
 
   const loadBrands = useCallback(async () => {
     try {
       const { data, error } = await supabase.functions.invoke("spotlight-flyer", { body: { action: "list_brands" } });
       if (!error && data?.brands) setBrands(data.brands);
-    } catch { /* silent */ }
+    } catch (err) {
+      console.warn("[ConnectSpotlightTab] Failed to load brands:", err);
+    }
   }, []);
 
   const loadTemplates = useCallback(async () => {
@@ -212,7 +216,9 @@ export default function ConnectSpotlightTab() {
       await supabase.functions.invoke("spotlight-flyer", { body: { action: "delete_brand", brand_id: brandId } });
       toast("Brand deleted");
       await loadBrands();
-    } catch { /* silent */ }
+    } catch (err) {
+      console.warn("[ConnectSpotlightTab] Failed to delete brand:", err);
+    }
   };
 
   const handleBrandSaved = async (brand: BrandPackage) => {

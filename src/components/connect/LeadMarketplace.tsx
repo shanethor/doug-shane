@@ -192,7 +192,8 @@ function PostLeadModal({ open, onClose }: { open: boolean; onClose: () => void }
       toast.success("Lead posted to marketplace!");
       onClose();
       setTitle(""); setDescription(""); setEstimatedValue(""); setOfferValue("");
-    } catch {
+    } catch (err) {
+      console.error("[LeadMarketplace] Failed to post lead:", err);
       toast.error("Failed to post lead");
     }
   };
@@ -365,7 +366,8 @@ function MarketplaceContent() {
       toast.success(`"${post.title}" claimed & imported to your pipeline!`, {
         action: { label: "View Pipeline", onClick: () => navigate("/connect/pipeline") },
       });
-    } catch {
+    } catch (err) {
+      console.error("[LeadMarketplace] Failed to request lead:", err);
       toast.error("Failed to request lead");
     }
   };

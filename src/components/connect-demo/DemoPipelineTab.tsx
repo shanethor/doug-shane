@@ -583,7 +583,7 @@ export default function DemoPipelineTab() {
   const [leadsByType, setLeadsByType] = useState<Record<string, DemoLead[]>>(() => {
     if (hasRealLeads && realDemoLeads.length > 0) return { [industry]: realDemoLeads };
     const stored = sessionStorage.getItem("connect-demo-leads-by-type");
-    if (stored) { try { return JSON.parse(stored); } catch {} }
+    if (stored) { try { return JSON.parse(stored); } catch (err) { console.warn("[DemoPipelineTab] Failed to parse stored leads:", err); } }
     return { ...DEMO_LEADS_BY_TYPE };
   });
 

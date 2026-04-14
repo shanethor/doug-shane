@@ -237,7 +237,8 @@ Write a 2-3 sentence re-engagement text/email that feels personal and warm — n
       });
       if (error) throw error;
       setPrompt(data?.text || data?.response || "Could not generate prompt.");
-    } catch {
+    } catch (err) {
+      console.error("[ConnectCadenceTab] Failed to generate prompt:", err);
       toast.error("Failed to generate prompt");
     } finally {
       setLoading(false);
@@ -312,7 +313,8 @@ export default function ConnectCadenceTab() {
         .order("next_touch_at", { ascending: true });
       if (error) throw error;
       setContacts((data as CadenceContact[]) || []);
-    } catch {
+    } catch (err) {
+      console.error("[ConnectCadenceTab] Failed to load cadence contacts:", err);
       toast.error("Failed to load cadence contacts");
     } finally {
       setLoading(false);
@@ -383,7 +385,8 @@ export default function ConnectCadenceTab() {
       toast.success("Contact added to cadence!");
       resetForm();
       loadContacts();
-    } catch {
+    } catch (err) {
+      console.error("[ConnectCadenceTab] Failed to add contact:", err);
       toast.error("Failed to add contact");
     } finally {
       setPosting(false);
@@ -427,7 +430,8 @@ export default function ConnectCadenceTab() {
       toast.success(`Touched! Next: ${nextTouch.toLocaleDateString()}`);
       setTouchNote("");
       loadContacts();
-    } catch {
+    } catch (err) {
+      console.error("[ConnectCadenceTab] Failed to update contact touch:", err);
       toast.error("Failed to update");
     }
   };
@@ -456,7 +460,8 @@ export default function ConnectCadenceTab() {
       });
       if (error) throw error;
       toast.success("Added to your calendar!");
-    } catch {
+    } catch (err) {
+      console.error("[ConnectCadenceTab] Failed to sync to calendar:", err);
       toast.error("Failed to sync to calendar");
     } finally {
       setSyncing(null);
@@ -473,7 +478,8 @@ export default function ConnectCadenceTab() {
       if (error) throw error;
       toast.success(contact.is_active ? "Paused" : "Resumed");
       loadContacts();
-    } catch {
+    } catch (err) {
+      console.error("[ConnectCadenceTab] Failed to toggle active status:", err);
       toast.error("Failed to update");
     }
   };

@@ -64,7 +64,8 @@ export default function DemoEmailTab() {
       }
       // Reload the page data after sync
       window.location.reload();
-    } catch {
+    } catch (err) {
+      console.error("[DemoEmailTab] Email sync failed:", err);
       toast.error("Sync failed — please try again");
     } finally {
       setSyncing(false);
@@ -150,7 +151,8 @@ export default function DemoEmailTab() {
           toast.error(result.error || "Failed to send email");
         }
       }
-    } catch {
+    } catch (err) {
+      console.error("[DemoEmailTab] Failed to send email:", err);
       toast.error("Failed to send email");
     } finally {
       setSending(false);

@@ -94,7 +94,9 @@ ${lead ? "4. **Client Context** (stage, next steps)" : ""}`;
               const parsed = JSON.parse(jsonStr);
               const content = parsed.choices?.[0]?.delta?.content;
               if (content) { text += content; setAiContent(text); }
-            } catch {}
+            } catch (parseErr) {
+              console.warn("[CalendarContextPanel] Failed to parse streaming line:", parseErr);
+            }
           }
         }
       }
@@ -102,7 +104,8 @@ ${lead ? "4. **Client Context** (stage, next steps)" : ""}`;
         const data = await resp.json().catch(() => null);
         if (data?.reply) setAiContent(data.reply);
       }
-    } catch {
+    } catch (err) {
+      console.error("[CalendarContextPanel] Failed to generate summary:", err);
       setAiContent("Unable to generate summary. Please try again.");
     } finally {
       setAiLoading(false);
@@ -161,7 +164,9 @@ Write a warm, professional follow-up email (3-4 paragraphs). Include:
               const parsed = JSON.parse(jsonStr);
               const content = parsed.choices?.[0]?.delta?.content;
               if (content) { text += content; setFollowUp(text); }
-            } catch {}
+            } catch (parseErr) {
+              console.warn("[CalendarContextPanel] Failed to parse streaming line:", parseErr);
+            }
           }
         }
       }
@@ -169,7 +174,8 @@ Write a warm, professional follow-up email (3-4 paragraphs). Include:
         const data = await resp.json().catch(() => null);
         if (data?.reply) setFollowUp(data.reply);
       }
-    } catch {
+    } catch (err) {
+      console.error("[CalendarContextPanel] Failed to generate follow-up:", err);
       setFollowUp("Unable to generate follow-up. Please try again.");
     } finally {
       setFollowUpLoading(false);

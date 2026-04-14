@@ -173,7 +173,8 @@ export default function MeetingPrepSection({ compact = false, clientNamePrefill 
       } else {
         toast.error(data.error || "Failed to generate");
       }
-    } catch {
+    } catch (err) {
+      console.error("[MeetingPrepSection] Error generating feeder list:", err);
       toast.error("Error generating feeder list");
     } finally {
       clearInterval(interval);
@@ -213,7 +214,8 @@ export default function MeetingPrepSection({ compact = false, clientNamePrefill 
         toast.error("Failed to generate intro email");
         setIntroDialog(null);
       }
-    } catch {
+    } catch (err) {
+      console.error("[MeetingPrepSection] Error drafting intro email:", err);
       toast.error("Error drafting intro email");
       setIntroDialog(null);
     } finally {

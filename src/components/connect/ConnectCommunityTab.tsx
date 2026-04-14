@@ -97,7 +97,8 @@ export default function ConnectCommunityTab() {
         author_name: profiles[p.user_id] || "Anonymous",
         liked_by_me: myLikes.has(p.id),
       })));
-    } catch {
+    } catch (err) {
+      console.error("[ConnectCommunityTab] Failed to load posts:", err);
       toast.error("Failed to load posts");
     } finally {
       setLoading(false);
@@ -123,7 +124,8 @@ export default function ConnectCommunityTab() {
       setNewBody("");
       setShowForm(false);
       loadPosts();
-    } catch {
+    } catch (err) {
+      console.error("[ConnectCommunityTab] Failed to create post:", err);
       toast.error("Failed to create post");
     } finally {
       setPosting(false);
@@ -141,7 +143,8 @@ export default function ConnectCommunityTab() {
         await supabase.from("connect_community_posts").update({ likes_count: post.likes_count + 1 }).eq("id", post.id);
       }
       loadPosts();
-    } catch {
+    } catch (err) {
+      console.error("[ConnectCommunityTab] Failed to update like:", err);
       toast.error("Failed to update like");
     }
   };

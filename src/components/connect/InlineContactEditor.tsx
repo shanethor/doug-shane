@@ -85,7 +85,8 @@ export default function InlineContactEditor({ contact, onUpdate, onSave, onDismi
 
       onUpdate(contact.id, updates);
       toast.success("Contact details saved");
-    } catch {
+    } catch (err) {
+      console.error("[InlineContactEditor] Failed to save:", err);
       toast.error("Failed to save");
     } finally {
       setSaving(false);

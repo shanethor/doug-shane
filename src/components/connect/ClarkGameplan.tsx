@@ -90,7 +90,9 @@ Make it specific to their industry, signal, and situation. Include actual email/
                 fullText += content;
                 setGameplan(fullText);
               }
-            } catch {}
+            } catch (parseErr) {
+              console.warn("[ClarkGameplan] Failed to parse streaming line:", parseErr);
+            }
           }
         }
       } else if (typeof data === "string") {

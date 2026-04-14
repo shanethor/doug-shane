@@ -253,13 +253,39 @@ export function SourceConfigDialog({ open, onOpenChange, sourceName, existingCon
     }
   }, [existingConfig, sourceName]);
 
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+
+  const validateSettings = (): boolean => {
+    const errors: Record<string, string> = {};
+    if (isActive) {
+      // Validate API key fields are filled when source is being activated
+      const apiKeyFields = meta.fields.filter(f => f.key === "api_key");
+      for (const field of apiKeyFields) {
+        const value = (settings[field.key] || "").trim();
+        if (!value) {
+          errors[field.key] = `${field.label} is required when source is active`;
+        } else if (value.length < 8) {
+          errors[field.key] = `${field.label} looks too short — please double-check`;
+        }
+      }
+    }
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSave = async () => {
+    if (!validateSettings()) {
+      toast.error("Please fix the errors before saving");
+      return;
+    }
     try {
       await upsert.mutateAsync({ source: sourceName, is_active: isActive, settings });
       toast.success(`${sourceName} configuration saved`);
       onOpenChange(false);
-    } catch {
-      toast.error("Failed to save configuration");
+    } catch (err: any) {
+      const msg = err?.message || "Failed to save configuration";
+      toast.error(msg);
+      console.error(`[SourceConfig] Failed to save ${sourceName}:`, err);
     }
   };
 
@@ -292,16 +318,28 @@ export function SourceConfigDialog({ open, onOpenChange, sourceName, existingCon
               {f.type === "textarea" ? (
                 <Textarea
                   value={settings[f.key] || ""}
-                  onChange={(e) => setSettings((p) => ({ ...p, [f.key]: e.target.value }))}
+                  onChange={(e) => {
+                    setSettings((p) => ({ ...p, [f.key]: e.target.value }));
+                    if (validationErrors[f.key]) setValidationErrors((p) => { const n = { ...p }; delete n[f.key]; return n; });
+                  }}
                   placeholder={f.placeholder}
                   rows={2}
+                  className={validationErrors[f.key] ? "border-destructive" : ""}
                 />
               ) : (
                 <Input
                   value={settings[f.key] || ""}
-                  onChange={(e) => setSettings((p) => ({ ...p, [f.key]: e.target.value }))}
+                  onChange={(e) => {
+                    setSettings((p) => ({ ...p, [f.key]: e.target.value }));
+                    if (validationErrors[f.key]) setValidationErrors((p) => { const n = { ...p }; delete n[f.key]; return n; });
+                  }}
                   placeholder={f.placeholder}
+                  type={f.key === "api_key" ? "password" : "text"}
+                  className={validationErrors[f.key] ? "border-destructive" : ""}
                 />
+              )}
+              {validationErrors[f.key] && (
+                <p className="text-[11px] text-destructive mt-1">{validationErrors[f.key]}</p>
               )}
             </div>
           ))}

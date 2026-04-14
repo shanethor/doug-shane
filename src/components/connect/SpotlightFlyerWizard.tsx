@@ -342,7 +342,8 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, ini
             brand_colors: brandColors.filter(Boolean),
           });
           hydrateFromEnrichment(enrichment);
-        } catch {
+        } catch (err) {
+          console.warn("[SpotlightFlyerWizard] Failed to enrich flyer:", err);
           // Keep the demo moving with local fallbacks if enrichment is unavailable.
         }
 
@@ -408,7 +409,8 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, ini
             brand_colors: brandColors.filter(Boolean),
           });
           hydrateFromEnrichment(enrichment);
-        } catch {
+        } catch (err) {
+          console.warn("[SpotlightFlyerWizard] Failed to enrich flyer:", err);
           // Fall through to local defaults if AI enrichment is unavailable.
         }
 

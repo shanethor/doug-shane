@@ -63,7 +63,9 @@ async function streamChat({
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.access_token) token = session.access_token;
-    } catch {}
+    } catch (err) {
+      console.warn("[DemoAssistantTab] Failed to get auth session:", err);
+    }
 
     const resp = await fetch(CHAT_URL, {
       method: "POST",
@@ -107,7 +109,8 @@ async function streamChat({
           const parsed = JSON.parse(json);
           const c = parsed.choices?.[0]?.delta?.content as string | undefined;
           if (c) onDelta(c);
-        } catch {
+        } catch (parseErr) {
+          console.warn("[DemoAssistantTab] Failed to parse streaming line:", parseErr);
           buf = line + "\n" + buf;
           break;
         }

@@ -81,10 +81,14 @@ export default function ConnectOnboarding() {
     }
     supabase
       .from("profiles")
-      .select("connect_vertical, specializations, states_of_operation, industry, onboarding_completed, full_name, agency_name")
+      .select("connect_vertical, specializations, states_of_operation, industry, onboarding_completed, full_name, agency_name, theme_preference")
       .eq("user_id", user.id)
       .single()
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        if (error) {
+          console.error("Failed to fetch profile during onboarding check:", error);
+          return;
+        }
         if (data?.onboarding_completed) {
           localStorage.setItem(`aura_onboarding_completed_${user.id}`, "true");
           navigate("/connect/leads", { replace: true });
@@ -100,6 +104,12 @@ export default function ConnectOnboarding() {
           setLastName(parts.slice(1).join(" ") || "");
         }
         if (data?.agency_name) setAgencyName(data.agency_name);
+        if (data?.theme_preference) {
+          const isDark = data.theme_preference === "dark";
+          setTheme(isDark ? "dark" : "light");
+          document.documentElement.classList.toggle("dark", isDark);
+          localStorage.setItem("aura-dark-mode", isDark ? "true" : "false");
+        }
       });
   }, [user?.id]);
 
@@ -1213,6 +1223,11 @@ function ReadyStep({ firstName, saving, onComplete }: { firstName: string; savin
             <p className="text-[10px] text-muted-foreground">{desc}</p>
           </div>
         ))}
+      </div>
+
+      <div className="p-4 rounded-lg border border-yellow-500/30 bg-yellow-50/5 text-sm text-muted-foreground">
+        <p className="font-medium text-foreground mb-1">Next steps:</p>
+        <p>Visit <span className="font-semibold">Settings</span> to connect your email and configure your lead sources for the best results.</p>
       </div>
 
       <Button

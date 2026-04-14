@@ -67,7 +67,9 @@ export function useConnectedAccounts() {
           emailDetail = conns.map((c: any) => c.email_address).join(", ");
         }
       }
-    } catch {}
+    } catch (err) {
+      console.warn("[ConnectedAccountsStatus] Failed to fetch email connections:", err);
+    }
 
     // Check network connections status
     let networkConns: Record<string, any> = {};
@@ -84,7 +86,9 @@ export function useConnectedAccounts() {
           networkConns[c.source] = c;
         });
       }
-    } catch {}
+    } catch (err) {
+      console.warn("[ConnectedAccountsStatus] Failed to fetch network connections:", err);
+    }
 
     const googleContacts = networkConns["google_contacts"];
     const outlookContacts = networkConns["outlook_contacts"];
@@ -104,7 +108,9 @@ export function useConnectedAccounts() {
         const data = await resp.json();
         outlookConnected = (data.connections || []).some((c: any) => c.provider === "outlook");
       }
-    } catch {}
+    } catch (err) {
+      console.warn("[ConnectedAccountsStatus] Failed to check Outlook email:", err);
+    }
 
     setAccounts([
       {
@@ -386,7 +392,7 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
   const refresh = onRefresh ?? hook.refresh;
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState(() => {
-    try { return localStorage.getItem("aura-connected-accounts-collapsed") === "true"; } catch { return false; }
+    try { return localStorage.getItem("aura-connected-accounts-collapsed") === "true"; } catch { console.warn("[ConnectedAccountsStatus] localStorage access failed"); return false; }
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const phoneFileInputRef = useRef<HTMLInputElement>(null);
@@ -438,7 +444,10 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
       });
 
       if (!removeResp.ok) {
-        const removeData = await removeResp.json().catch(() => ({}));
+        const removeData = await removeResp.json().catch((err) => {
+          console.error("[ConnectedAccountsStatus] Failed to parse remove response:", err);
+          return {};
+        });
         throw new Error(removeData.error || "Failed to clear old Gmail connection");
       }
 
@@ -839,7 +848,9 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
         setMyProfileUrls(urls);
         setProfilesLoaded(true);
       }
-    } catch {}
+    } catch (err) {
+      console.warn("[ConnectedAccountsStatus] Failed to load profile URLs:", err);
+    }
   }, [profilesLoaded]);
 
   // ─── Save & scrape profile URLs ───
@@ -871,7 +882,10 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
       }
       setProfilesLoaded(false);
       refresh();
-    } catch { toast.error("Failed to save profiles"); }
+    } catch (err) {
+      console.error("[ConnectedAccountsStatus] Failed to save profiles:", err);
+      toast.error("Failed to save profiles");
+    }
     finally { setActionLoading(null); }
   };
 
@@ -894,7 +908,10 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
       else toast.success(`Rescraped ${data.rescraped} profile(s)`);
       setProfilesLoaded(false);
       refresh();
-    } catch { toast.error("Rescrape failed"); }
+    } catch (err) {
+      console.error("[ConnectedAccountsStatus] Rescrape failed:", err);
+      toast.error("Rescrape failed");
+    }
     finally { setActionLoading(null); }
   };
 
@@ -917,7 +934,10 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
       setSocialUrl("");
       setSocialPlatform("");
       refresh();
-    } catch { toast.error("Failed to scrape social profile"); }
+    } catch (err) {
+      console.error("[ConnectedAccountsStatus] Failed to scrape social profile:", err);
+      toast.error("Failed to scrape social profile");
+    }
     finally { setActionLoading(null); }
   };
 
@@ -958,7 +978,8 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
       setSocialHandles("");
       setSocialPlatform("");
       refresh();
-    } catch {
+    } catch (err) {
+      console.error("[ConnectedAccountsStatus] Failed to import social contacts:", err);
       toast.error("Failed to import social contacts");
     } finally {
       setActionLoading(null);
@@ -991,7 +1012,8 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
       }
       toast.success("Disconnected");
       refresh();
-    } catch {
+    } catch (err) {
+      console.error("[ConnectedAccountsStatus] Failed to disconnect:", err);
       toast.error("Failed to disconnect");
     } finally {
       setActionLoading(null);
@@ -1105,7 +1127,11 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
         try {
           const parsed = JSON.parse(text);
           contacts = Array.isArray(parsed) ? parsed : (parsed.contacts || parsed.members || parsed.attendees || parsed.followers || parsed.friends || []);
-        } catch { toast.error("Invalid JSON file"); return; }
+        } catch (err) {
+          console.error("[ConnectedAccountsStatus] Invalid JSON file:", err);
+          toast.error("Invalid JSON file");
+          return;
+        }
       } else {
         // CSV parse
         const lines = text.split("\n");

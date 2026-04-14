@@ -128,7 +128,9 @@ export default function DemoSpotlightTab() {
         id: d.id, title: d.title, type: d.type, status: d.status,
         created_at: d.created_at, result_image_url: d.result_image_url,
       })));
-    } catch {}
+    } catch (err) {
+      console.warn("[DemoSpotlightTab] Failed to load flyer history:", err);
+    }
   }, []);
 
   const loadBrands = useCallback(async () => {
@@ -141,7 +143,9 @@ export default function DemoSpotlightTab() {
           tagline: d.tagline, disclaimer: d.disclaimer, industry: d.industry, tone: d.tone,
         })));
       }
-    } catch {}
+    } catch (err) {
+      console.warn("[DemoSpotlightTab] Failed to load brands:", err);
+    }
   }, []);
 
   useEffect(() => { loadBrands(); loadHistory(); }, [loadBrands, loadHistory]);
@@ -154,7 +158,10 @@ export default function DemoSpotlightTab() {
     try {
       await supabase.functions.invoke("spotlight-flyer", { body: { action: "delete_flyer", flyer_id: flyerId } });
       toast("Flyer deleted"); await loadHistory();
-    } catch { toast.error("Could not delete flyer."); }
+    } catch (err) {
+      console.error("[DemoSpotlightTab] Failed to delete flyer:", err);
+      toast.error("Could not delete flyer.");
+    }
   };
 
   const handleDeleteBrand = async (brandId: string) => {
@@ -162,7 +169,9 @@ export default function DemoSpotlightTab() {
     try {
       await supabase.functions.invoke("spotlight-flyer", { body: { action: "delete_brand", brand_id: brandId } });
       toast("Brand deleted"); await loadBrands();
-    } catch {}
+    } catch (err) {
+      console.warn("[DemoSpotlightTab] Failed to delete brand:", err);
+    }
   };
 
   // ── VIEW: Brand setup ──

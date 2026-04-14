@@ -104,11 +104,13 @@ Return ONLY the JSON array, no other text.`,
         const jsonMatch = text.match(/\[[\s\S]*\]/);
         const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : "[]");
         setEvents(parsed);
-      } catch {
+      } catch (parseErr) {
+        console.error("[ConnectSignalsTab] Failed to parse events:", parseErr);
         setEvents([]);
         toast.error("Failed to parse events");
       }
-    } catch {
+    } catch (err) {
+      console.error("[ConnectSignalsTab] Failed to fetch events:", err);
       toast.error("Failed to fetch events");
     } finally {
       setLoading(false);
@@ -266,11 +268,13 @@ Return ONLY the JSON array, no other text.`,
         const jsonMatch = text.match(/\[[\s\S]*\]/);
         const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : "[]");
         setNews(parsed);
-      } catch {
+      } catch (parseErr) {
+        console.error("[ConnectSignalsTab] Failed to parse news:", parseErr);
         setNews([]);
         toast.error("Failed to parse news");
       }
-    } catch {
+    } catch (err) {
+      console.error("[ConnectSignalsTab] Failed to fetch news:", err);
       toast.error("Failed to fetch news");
     } finally {
       setLoading(false);
@@ -420,11 +424,13 @@ Return ONLY the JSON array, no other text.`,
         const jsonMatch = text.match(/\[[\s\S]*\]/);
         const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : "[]");
         setSignals(parsed);
-      } catch {
+      } catch (parseErr) {
+        console.error("[ConnectSignalsTab] Failed to parse signals:", parseErr);
         setSignals([]);
         toast.error("Failed to parse signals");
       }
-    } catch {
+    } catch (err) {
+      console.error("[ConnectSignalsTab] Failed to scan for signals:", err);
       toast.error("Failed to scan for signals");
     } finally {
       setLoading(false);

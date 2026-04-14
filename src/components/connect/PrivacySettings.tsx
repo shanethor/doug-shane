@@ -68,7 +68,8 @@ export default function PrivacySettings() {
       } as any);
       toast.success(!currentlyAccepted ? `${consentType.replace(/_/g, " ")} accepted` : `${consentType.replace(/_/g, " ")} revoked`);
       loadData();
-    } catch {
+    } catch (err) {
+      console.error("[PrivacySettings] Failed to update consent:", err);
       toast.error("Failed to update consent");
     } finally {
       setTogglingConsent(null);
@@ -93,7 +94,8 @@ export default function PrivacySettings() {
       setEmailConnected(false);
       toast.success("Email disconnected. No further syncs will occur.");
       loadData();
-    } catch {
+    } catch (err) {
+      console.error("[PrivacySettings] Failed to disconnect email:", err);
       toast.error("Failed to disconnect email");
     } finally {
       setDisconnecting(false);
@@ -109,7 +111,8 @@ export default function PrivacySettings() {
       } as any);
       toast.success(`${type.replace(/_/g, " ")} request submitted`);
       loadData();
-    } catch {
+    } catch (err) {
+      console.error("[PrivacySettings] Failed to submit request:", err);
       toast.error("Failed to submit request");
     } finally {
       setSubmitting(null);

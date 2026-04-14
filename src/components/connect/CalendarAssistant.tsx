@@ -138,7 +138,9 @@ Keep responses concise and actionable. Use markdown formatting.`;
                   return [...prev, { role: "assistant", content: assistantText }];
                 });
               }
-            } catch {}
+            } catch (parseErr) {
+              console.warn("[CalendarAssistant] Failed to parse streaming line:", parseErr);
+            }
           }
         }
       }

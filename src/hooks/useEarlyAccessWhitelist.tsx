@@ -1,4 +1,5 @@
 import { useAuth } from "@/hooks/useAuth";
+import { useSubscription } from "@/hooks/useSubscription";
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,8 +9,12 @@ import { isMasterEmail, isWhitelistedEmail } from "@/lib/master-accounts";
 // Pages that are always accessible (not gated)
 const UNGATED_PAGES = ["dashboard", "pipeline", "leads", "studio", "property", "clark", "create"];
 
+// Pages unlocked by an active Connect subscription (subscribers shouldn't be blocked)
+const SUBSCRIBER_PAGES = ["connect", "intelligence", "email", "calendar", "rewards", "create"];
+
 export function useEarlyAccessWhitelist() {
   const { user } = useAuth();
+  const { subscribed } = useSubscription();
   const email = user?.email?.toLowerCase() ?? "";
   const isWhitelisted = isWhitelistedEmail(email);
   const isMaster = isMasterEmail(email);
@@ -24,6 +29,8 @@ export function useEarlyAccessWhitelist() {
   const isPageGated = (page: string) => {
     if (isWhitelisted) return false;
     if (UNGATED_PAGES.includes(page)) return false;
+    // Paying subscribers get access to all Connect features
+    if (subscribed && SUBSCRIBER_PAGES.includes(page)) return false;
     return true;
   };
 
@@ -36,12 +43,16 @@ export function useEarlyAccessWhitelist() {
 
   /** Returns list of page keys the user can actually access */
   const getAccessiblePages = (): string[] => {
-    const BLOCKED_MODULES = ["email", "calendar", "intelligence", "connect"];
-    if (isMaster) {
-      return ["connect", "intelligence", "pipeline", "email", "calendar", "create", "leads", "property", "clark"]
-        .filter(p => !BLOCKED_MODULES.includes(p));
+    const ALL_PAGES = ["connect", "intelligence", "pipeline", "email", "calendar", "create", "leads", "property", "clark", "rewards"];
+    if (isMaster || isWhitelisted) {
+      return ALL_PAGES.filter(p => p !== "property" || canSeeProperty());
     }
-    const pages = [...UNGATED_PAGES.filter(p => p !== "property" && !BLOCKED_MODULES.includes(p))];
+    if (subscribed) {
+      const pages = [...UNGATED_PAGES.filter(p => p !== "property"), ...SUBSCRIBER_PAGES];
+      if (canSeeProperty()) pages.push("property");
+      return [...new Set(pages)];
+    }
+    const pages = [...UNGATED_PAGES.filter(p => p !== "property")];
     if (canSeeProperty()) pages.push("property");
     return pages;
   };

@@ -752,7 +752,9 @@ function ResultsTable({ latestBatchId, onPurchaseLeads, greyedOut }: { latestBat
           await updateLead.mutateAsync({ id: lead.id, ...updates });
           enriched++;
         }
-      } catch { /* skip */ }
+      } catch (err) {
+        console.warn("[LeadGenerator] Failed to enrich lead:", err);
+      }
     }
     toast.success(`Enriched ${enriched}/${unenriched.slice(0, 10).length} leads with contact info`);
     setEnrichingAll(false);
@@ -1257,10 +1259,10 @@ export default function LeadGenerator() {
   const [latestBatchId, setLatestBatchId] = useState<string | null>(null);
   const [purchaseDismissed, setPurchaseDismissed] = useState(false);
   const [tipDismissed, setTipDismissed] = useState(() => {
-    try { return localStorage.getItem("lead-tip-dismissed") === "true"; } catch { return false; }
+    try { return localStorage.getItem("lead-tip-dismissed") === "true"; } catch { console.warn("[LeadGenerator] localStorage access failed"); return false; }
   });
   const [lastGeneratedAt, setLastGeneratedAt] = useState<number | null>(() => {
-    try { const v = localStorage.getItem("lead-last-generated"); return v ? parseInt(v) : null; } catch { return null; }
+    try { const v = localStorage.getItem("lead-last-generated"); return v ? parseInt(v) : null; } catch { console.warn("[LeadGenerator] localStorage access failed"); return null; }
   });
   const { data: studioQual } = useStudioQualification();
 
@@ -1315,7 +1317,9 @@ export default function LeadGenerator() {
       setPurchaseDismissed(false);
       const now = Date.now();
       setLastGeneratedAt(now);
-      try { localStorage.setItem("lead-last-generated", String(now)); } catch {}
+      try { localStorage.setItem("lead-last-generated", String(now)); } catch (err) {
+        console.warn("[LeadGenerator] Failed to save last generated time:", err);
+      }
     }
     qc.invalidateQueries({ queryKey: ["engine-leads"] });
     qc.invalidateQueries({ queryKey: ["engine-tier-summary"] });
@@ -1426,7 +1430,9 @@ export default function LeadGenerator() {
 
   const handleDismissTip = () => {
     setTipDismissed(true);
-    try { localStorage.setItem("lead-tip-dismissed", "true"); } catch {}
+    try { localStorage.setItem("lead-tip-dismissed", "true"); } catch (err) {
+      console.warn("[LeadGenerator] Failed to save tip dismissed state:", err);
+    }
   };
 
   return (

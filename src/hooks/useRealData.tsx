@@ -35,7 +35,8 @@ export function useRealEmailData() {
       } else {
         setHasEmail(false);
       }
-    } catch {
+    } catch (err) {
+      console.error("[useRealEmailData] Failed to fetch email data:", err);
       setHasEmail(false);
     } finally {
       setLoading(false);
@@ -63,7 +64,9 @@ export function useRealPipelineData() {
         .order("updated_at", { ascending: false })
         .limit(100);
       setLeads((data as any[]) || []);
-    } catch {} finally { setLoading(false); }
+    } catch (err) {
+      console.error("[useRealPipelineData] Failed to fetch pipeline data:", err);
+    } finally { setLoading(false); }
   }, [user]);
 
   useEffect(() => { refresh(); }, [refresh]);
@@ -87,7 +90,9 @@ export function useRealCalendarData() {
         .order("start_time", { ascending: true })
         .limit(200);
       setEvents((data as any[]) || []);
-    } catch {} finally { setLoading(false); }
+    } catch (err) {
+      console.error("[useRealCalendarData] Failed to fetch calendar data:", err);
+    } finally { setLoading(false); }
   }, [user]);
 
   useEffect(() => { refresh(); }, [refresh]);
@@ -111,7 +116,9 @@ export function useRealNetworkData() {
         .order("updated_at", { ascending: false })
         .limit(500);
       setContacts((data as any[]) || []);
-    } catch {} finally { setLoading(false); }
+    } catch (err) {
+      console.error("[useRealNetworkData] Failed to fetch network data:", err);
+    } finally { setLoading(false); }
   }, [user]);
 
   useEffect(() => { refresh(); }, [refresh]);

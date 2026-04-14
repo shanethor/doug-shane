@@ -30,8 +30,8 @@ function SpotlightSection() {
       if (!error && data?.flyers) {
         setHistory(data.flyers);
       }
-    } catch {
-      // silent
+    } catch (err) {
+      console.warn("[ConnectToolsTab] Failed to load flyer history:", err);
     } finally {
       setLoadingHistory(false);
     }
@@ -213,7 +213,8 @@ function WarmIntroGenerator() {
       });
       if (error) throw error;
       setGeneratedMessage(data?.text || data?.response || "Could not generate message.");
-    } catch {
+    } catch (err) {
+      console.error("[ConnectToolsTab] Failed to generate intro:", err);
       toast.error("Failed to generate intro");
     } finally {
       setLoading(false);

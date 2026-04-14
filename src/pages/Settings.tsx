@@ -206,6 +206,24 @@ export default function Settings() {
 
   const handleSave = async () => {
     if (!user) return;
+
+    // Validate OpenAI key format if provider is openai
+    if (aiProvider === "openai" && openaiKey) {
+      const trimmed = openaiKey.trim();
+      if (!trimmed.startsWith("sk-")) {
+        toast.error("OpenAI API key should start with 'sk-'. Please check your key.");
+        return;
+      }
+      if (trimmed.length < 20) {
+        toast.error("OpenAI API key looks too short. Please double-check it.");
+        return;
+      }
+    }
+    if (aiProvider === "openai" && !openaiKey.trim()) {
+      toast.error("Please enter your OpenAI API key, or switch back to AURA AI.");
+      return;
+    }
+
     setSaving(true);
     try {
       const nonEmpty = Object.fromEntries(
@@ -226,7 +244,8 @@ export default function Settings() {
       if (error) throw error;
       toast.success("Settings saved!");
     } catch (err: any) {
-      toast.error(err.message || "Failed to save");
+      console.error("[Settings] Save failed:", err);
+      toast.error(err.message || "Failed to save settings. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -345,7 +364,9 @@ export default function Settings() {
                     .formatToParts(new Date())
                     .find((p) => p.type === "timeZoneName")?.value || "";
                   label = `${label} (${offset})`;
-                } catch {}
+                } catch (err) {
+                  console.warn("[Settings] Failed to calculate timezone offset for", tz, err);
+                }
                 return (
                   <SelectItem key={tz} value={tz}>
                     {label}

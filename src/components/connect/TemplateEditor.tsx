@@ -122,7 +122,8 @@ export default function TemplateEditor({ templateId, brands, onBack }: Props) {
         if (e.cta) update({ cta: e.cta });
         toast.success("Clark updated your template");
       }
-    } catch {
+    } catch (err) {
+      console.error("[TemplateEditor] Clark couldn't update the template:", err);
       toast.error("Clark couldn't update the template right now");
     } finally {
       setSageLoading(false);
@@ -182,7 +183,8 @@ export default function TemplateEditor({ templateId, brands, onBack }: Props) {
       if (tempContainer) {
         tempContainer.remove();
       }
-    } catch {
+    } catch (err) {
+      console.error("[TemplateEditor] Export failed:", err);
       toast.error("Export failed — try again");
     } finally {
       setExporting(false);

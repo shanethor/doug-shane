@@ -53,7 +53,8 @@ export default function ConnectReferralsTab() {
         .order("created_at", { ascending: false });
       if (error) throw error;
       setReferrals(data || []);
-    } catch {
+    } catch (err) {
+      console.error("[ConnectReferralsTab] Failed to load referrals:", err);
       toast.error("Failed to load referrals");
     } finally {
       setLoading(false);
@@ -81,7 +82,8 @@ export default function ConnectReferralsTab() {
       setContactCompany("");
       setShowForm(false);
       loadReferrals();
-    } catch {
+    } catch (err) {
+      console.error("[ConnectReferralsTab] Failed to add referral:", err);
       toast.error("Failed to add referral");
     } finally {
       setPosting(false);
@@ -97,7 +99,8 @@ export default function ConnectReferralsTab() {
       if (error) throw error;
       toast.success(`Status updated to ${STATUS_CONFIG[status]?.label || status}`);
       loadReferrals();
-    } catch {
+    } catch (err) {
+      console.error("[ConnectReferralsTab] Failed to update status:", err);
       toast.error("Failed to update status");
     }
   };

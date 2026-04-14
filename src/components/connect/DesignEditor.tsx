@@ -160,7 +160,9 @@ export default function DesignEditor({
               });
               canvas.add(r);
             }
-          } catch {}
+          } catch (err) {
+            console.warn("[DesignEditor] Failed to load canvas object:", err);
+          }
         }
         canvas.renderAll();
         pushHistory();
