@@ -32,7 +32,16 @@ export const LEGACY_PRODUCT_IDS = [
   "prod_UIKhDnujwDeOYb", // legacy starter
   "prod_UIKiOGZubz4ZBN", // legacy pro
   "prod_UIKigWLViBnKOc", // legacy elite
+  "prod_UKqU2BeYFkyGBj", // Platform bundle ($450/mo — includes Connect + Clark)
 ];
+
+/** Platform bundle — $450/mo, includes Connect + Clark Insurance Assistant */
+export const PLATFORM_BUNDLE = {
+  product_id: "prod_UKqU2BeYFkyGBj",
+  price_id: "price_1TMAncEISdUzafyh2fIdLi7r",
+  priceLabel: "$450/mo",
+  priceNum: 450,
+} as const;
 
 export type ClarkTierKey = keyof typeof CLARK_TIERS;
 

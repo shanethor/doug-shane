@@ -12,6 +12,9 @@ const corsHeaders = {
 const CONNECT_INTRO_PRICE = "price_1THMJEEISdUzafyheeWsSVFZ";  // $99/mo buildout
 const CONNECT_STANDARD_PRICE = "price_1THMOLEISdUzafyhEilOA2mY"; // $249/mo
 
+// Platform bundle: Connect + Clark Insurance Assistant ($450/mo)
+const PLATFORM_BUNDLE_PRICE = "price_1TMAncEISdUzafyh2fIdLi7r"; // $450/mo
+
 const logStep = (step: string, details?: any) => {
   const d = details ? ` - ${JSON.stringify(details)}` : "";
   console.log(`[CREATE-CHECKOUT] ${step}${d}`);
@@ -89,6 +92,28 @@ serve(async (req) => {
       }
       const session = await stripe.checkout.sessions.create(sessionParams);
       logStep("Studio checkout session created", { sessionId: session.id });
+      return new Response(JSON.stringify({ url: session.url }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+
+    // Platform bundle: Connect + Clark ($450/mo flat)
+    if (product === "platform") {
+      const sessionParams: any = {
+        customer: customerId,
+        line_items: [{ price: PLATFORM_BUNDLE_PRICE, quantity: 1 }],
+        mode: "subscription",
+        subscription_data: {
+          metadata: { user_id: user.id, branch: selectedBranch, product: "platform" },
+        },
+        metadata: { user_id: user.id, branch: selectedBranch, product: "platform" },
+        success_url: successUrl,
+        cancel_url: cancelUrl,
+      };
+      if (coupon) sessionParams.discounts = [{ coupon }];
+      const session = await stripe.checkout.sessions.create(sessionParams);
+      logStep("Platform bundle checkout created", { sessionId: session.id });
       return new Response(JSON.stringify({ url: session.url }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,

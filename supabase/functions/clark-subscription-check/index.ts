@@ -22,6 +22,7 @@ const UNLIMITED_PRODUCT_IDS = new Set([
   "prod_UIKhDnujwDeOYb",  // legacy starter v1
   "prod_UIKiOGZubz4ZBN",  // legacy pro v1
   "prod_UIKigWLViBnKOc",  // legacy elite v1
+  "prod_UKqU2BeYFkyGBj",  // Platform bundle ($450/mo — includes Connect + Clark)
 ]);
 
 /** Soft cap per month — triggers notification to admin for outreach */
