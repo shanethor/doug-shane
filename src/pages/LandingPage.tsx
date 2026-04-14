@@ -224,7 +224,8 @@ export default function LandingPage() {
               <div className="hidden md:flex gap-1">
                 <a href="#leads" className="text-[13px] text-[#A1A1AA] no-underline px-3 py-1.5 rounded-full hover:text-[hsl(140_12%_72%)] transition-colors">Leads</a>
                 <a href="#connect" className="text-[13px] text-[#A1A1AA] no-underline px-3 py-1.5 rounded-full hover:text-[hsl(140_12%_72%)] transition-colors">Connect</a>
-                <Link to="/clark" className="text-[13px] text-[#A1A1AA] no-underline px-3 py-1.5 rounded-full hover:text-[hsl(140_12%_72%)] transition-colors">Clark</Link>
+                <a href="#clark" className="text-[13px] text-[#A1A1AA] no-underline px-3 py-1.5 rounded-full hover:text-[hsl(140_12%_72%)] transition-colors">Clark</a>
+                <a href="#pricing" className="text-[13px] text-[#A1A1AA] no-underline px-3 py-1.5 rounded-full hover:text-[hsl(140_12%_72%)] transition-colors">Pricing</a>
                 <a href="#research" className="text-[13px] text-[#A1A1AA] no-underline px-3 py-1.5 rounded-full hover:text-[hsl(140_12%_72%)] transition-colors">Why AI</a>
               </div>
             </div>
@@ -248,11 +249,11 @@ export default function LandingPage() {
               className="text-[clamp(40px,6vw,72px)] max-sm:text-4xl font-bold leading-[1.1] tracking-[-0.02em] text-white mb-6"
               style={{ textShadow: "0 4px 24px rgba(0,0,0,0.55)" }}
             >
-              AI‑Native Tools and Agents for Modern Firms
+              AI‑Native Tools for Modern Firms
             </h1>
             <p className="text-[17px] font-medium max-w-[600px] mx-auto leading-[1.65] mb-8" style={{ color: "hsl(140 12% 58%)" }}>
-              <span style={{ color: "hsl(140 12% 72%)" }} className="font-semibold">AURA CONNECT</span> gives your team an AI‑powered workspace for email, calendar, pipeline, and insurance workflows.{" "}
-              <span className="text-[#F59E0B] font-semibold">AURA AGENT</span> builds the custom agents and automations that make it yours.
+              <span style={{ color: "hsl(140 12% 72%)" }} className="font-semibold">AURA CONNECT</span> gives your team an AI‑powered workspace for email, calendar, pipeline, and sales workflows.{" "}
+              <span className="font-semibold" style={{ color: "hsl(140 12% 72%)" }}>Clark Insurance Assistant</span> automates ACORD submissions, document extraction, and client outreach for insurance producers.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
               <Link
@@ -663,19 +664,29 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ═══ CLARK — AI Insurance Assistant ═══ */}
+        {/* ═══ CLARK — Insurance Assistant (Add-on) ═══ */}
         <section className="lp-reveal pt-[120px] max-sm:pt-20 pb-[60px] relative" id="clark" ref={addRevealRef}>
           <div className="max-w-[1200px] mx-auto px-12 max-md:px-8 max-sm:px-5">
             <div className="border-t border-white/[0.06] pt-14">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 max-lg:gap-10 items-center">
                 <div>
-                  <div className="text-[11px] font-semibold tracking-[0.12em] uppercase mb-4" style={{ color: "hsl(140 12% 58%)" }}>AI Insurance Assistant</div>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="text-[11px] font-semibold tracking-[0.12em] uppercase" style={{ color: "hsl(140 12% 58%)" }}>Clark Insurance Assistant</div>
+                    <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full border" style={{ borderColor: "hsl(140 12% 42% / 0.3)", background: "hsl(140 12% 42% / 0.08)", color: "hsl(140 12% 72%)" }}>Add-on</span>
+                  </div>
                   <h2 className="text-[clamp(28px,3.5vw,44px)] font-bold tracking-[-0.035em] leading-[1.1] text-white mb-5">
                     Meet Clark.
                   </h2>
-                  <p className="text-[15px] text-[#A1A1AA] leading-[1.7] mb-6 max-w-[480px]">
+                  <p className="text-[15px] text-[#A1A1AA] leading-[1.7] mb-5 max-w-[480px]">
                     Clark is your AI-powered insurance submission builder. Upload dec pages, loss runs, or any insurance document — Clark extracts every data point, cross-references business intel, and auto-fills ACORD forms in minutes, not hours.
                   </p>
+
+                  {/* Pricing block */}
+                  <div className="p-5 border rounded-xl mb-6" style={{ background: "hsl(140 12% 42% / 0.04)", borderColor: "hsl(140 12% 42% / 0.15)" }}>
+                    <div className="text-sm text-[#A1A1AA] mb-1"><strong className="text-white text-lg">$299.99</strong>/month</div>
+                    <div className="text-[12px] text-[#71717A] leading-[1.55]">Unlimited AI submissions · ACORD auto-fill · client questionnaires</div>
+                    <div className="text-[12px] font-medium mt-1.5" style={{ color: "hsl(140 12% 62%)" }}>Available standalone or bundled with Connect</div>
+                  </div>
 
                   <div className="space-y-4 mb-8">
                     {[
@@ -701,7 +712,7 @@ export default function LandingPage() {
                     onMouseEnter={(e) => (e.currentTarget.style.background = "hsl(140 12% 52%)")}
                     onMouseLeave={(e) => (e.currentTarget.style.background = "hsl(140 12% 42%)")}
                   >
-                    Try Clark
+                    Try Clark Insurance Assistant
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
                       <path d="M5 12h14" /><path d="M12 5l7 7-7 7" />
                     </svg>
@@ -745,6 +756,103 @@ export default function LandingPage() {
         </section>
 
         {/* ═══ AURA STUDIO — hidden for now ═══ */}
+        {/* ═══ AURA AGENT — hidden for now, preserved for future launch ═══ */}
+
+        {/* ═══ WHICH PRODUCT IS RIGHT FOR ME? ═══ */}
+        <section className="lp-reveal pt-[120px] max-sm:pt-20 pb-[60px] relative" id="pricing" ref={addRevealRef}>
+          <div className="max-w-[1200px] mx-auto px-12 max-md:px-8 max-sm:px-5">
+            <div className="border-t border-[hsl(140_12%_42%/0.15)] pt-14">
+              <div className="mb-10 text-center">
+                <div className="text-[11px] font-semibold tracking-[0.12em] uppercase mb-4" style={{ color: "hsl(140 12% 58%)" }}>Simple Pricing</div>
+                <h2 className="text-[clamp(28px,3.5vw,44px)] font-bold tracking-[-0.035em] leading-[1.1] text-white mb-3">
+                  Which product is right for you?
+                </h2>
+                <p className="text-[15px] text-[#71717A] max-w-[560px] mx-auto leading-[1.6]">
+                  AURA Connect is for any sales professional. Clark Insurance Assistant is built specifically for insurance producers. Buy them separately or save with the Platform bundle.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-10">
+                {/* Connect */}
+                <div className="p-6 rounded-2xl border transition-all hover:border-[hsl(140_12%_42%/0.3)] hover:-translate-y-0.5" style={{ background: "hsl(140 12% 42% / 0.04)", borderColor: "hsl(140 12% 42% / 0.12)" }}>
+                  <div className="text-[11px] font-semibold tracking-[0.1em] uppercase mb-3" style={{ color: "hsl(140 12% 58%)" }}>AURA Connect</div>
+                  <div className="mb-4">
+                    <span className="text-3xl font-bold text-white">$249</span>
+                    <span className="text-sm text-[#71717A]">/month</span>
+                  </div>
+                  <div className="text-[12px] font-medium mb-4 px-3 py-1.5 rounded-lg inline-block" style={{ background: "hsl(140 12% 42% / 0.1)", color: "hsl(140 12% 62%)" }}>Launch: $99/mo during buildout</div>
+                  <p className="text-[13px] text-[#A1A1AA] leading-[1.6] mb-5">AI workspace for sales professionals in any industry. Email, calendar, pipeline, outreach, and marketing tools in one platform.</p>
+                  <div className="space-y-2 text-[12px] text-[#A1A1AA]">
+                    {["AI-powered email & calendar", "Sales pipeline management", "Outreach cadences & follow-ups", "Brand studio & marketing tools", "Clark AI chat assistant", "Free targeted leads monthly"].map((f) => (
+                      <div key={f} className="flex items-center gap-2">
+                        <span className="w-1 h-1 rounded-full shrink-0" style={{ background: "hsl(140 12% 52%)" }} />
+                        {f}
+                      </div>
+                    ))}
+                  </div>
+                  <Link to="/request-access" className="mt-6 w-full inline-flex items-center justify-center gap-2 text-sm font-medium text-[#08080A] px-5 py-2.5 rounded-lg transition-colors no-underline" style={{ background: "hsl(140 12% 42%)" }} onMouseEnter={(e) => (e.currentTarget.style.background = "hsl(140 12% 52%)")} onMouseLeave={(e) => (e.currentTarget.style.background = "hsl(140 12% 42%)")}>
+                    Get Connect
+                  </Link>
+                </div>
+
+                {/* Platform Bundle — featured */}
+                <div className="p-6 rounded-2xl border-2 transition-all hover:-translate-y-0.5 relative" style={{ background: "hsl(140 12% 42% / 0.08)", borderColor: "hsl(140 12% 42% / 0.4)" }}>
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 text-[10px] font-bold tracking-wider uppercase px-4 py-1 rounded-full" style={{ background: "hsl(140 12% 42%)", color: "#08080A" }}>Best Value</div>
+                  <div className="text-[11px] font-semibold tracking-[0.1em] uppercase mb-3" style={{ color: "hsl(140 12% 72%)" }}>Platform Bundle</div>
+                  <div className="mb-1">
+                    <span className="text-3xl font-bold text-white">$450</span>
+                    <span className="text-sm text-[#71717A]">/month</span>
+                  </div>
+                  <div className="text-[12px] text-[#71717A] mb-4 line-through">$548.99/mo if purchased separately</div>
+                  <p className="text-[13px] text-[#A1A1AA] leading-[1.6] mb-5">Everything in Connect plus Clark Insurance Assistant. The complete AURA platform for insurance producers and agencies.</p>
+                  <div className="space-y-2 text-[12px] text-[#A1A1AA]">
+                    {["Everything in AURA Connect", "Clark Insurance Assistant", "Unlimited ACORD submissions", "Document extraction & auto-fill", "Client questionnaires", "Priority processing"].map((f) => (
+                      <div key={f} className="flex items-center gap-2">
+                        <span className="w-1 h-1 rounded-full shrink-0" style={{ background: "hsl(140 12% 72%)" }} />
+                        {f}
+                      </div>
+                    ))}
+                  </div>
+                  <Link to="/request-access" className="mt-6 w-full inline-flex items-center justify-center gap-2 text-sm font-bold text-[#08080A] px-5 py-2.5 rounded-lg transition-colors no-underline" style={{ background: "hsl(140 12% 52%)" }} onMouseEnter={(e) => (e.currentTarget.style.background = "hsl(140 12% 62%)")} onMouseLeave={(e) => (e.currentTarget.style.background = "hsl(140 12% 52%)")}>
+                    Get the Platform
+                  </Link>
+                </div>
+
+                {/* Clark Insurance Assistant */}
+                <div className="p-6 rounded-2xl border transition-all hover:border-[hsl(140_12%_42%/0.3)] hover:-translate-y-0.5" style={{ background: "hsl(140 12% 42% / 0.04)", borderColor: "hsl(140 12% 42% / 0.12)" }}>
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="text-[11px] font-semibold tracking-[0.1em] uppercase" style={{ color: "hsl(140 12% 58%)" }}>Clark Insurance Assistant</div>
+                    <span className="text-[9px] font-semibold px-2 py-0.5 rounded-full" style={{ background: "hsl(140 12% 42% / 0.15)", color: "hsl(140 12% 62%)" }}>Add-on</span>
+                  </div>
+                  <div className="mb-4">
+                    <span className="text-3xl font-bold text-white">$299.99</span>
+                    <span className="text-sm text-[#71717A]">/month</span>
+                  </div>
+                  <p className="text-[13px] text-[#A1A1AA] leading-[1.6] mb-5">Purpose-built for insurance producers. Automate submissions, extract documents, and auto-fill ACORD forms. Works standalone or with Connect.</p>
+                  <div className="space-y-2 text-[12px] text-[#A1A1AA]">
+                    {["Unlimited AI submissions", "ACORD 125, 126, 127, 130 auto-fill", "PDF extraction (up to 95 pages)", "Smart business data enrichment", "Client questionnaires", "Carrier-specific packaging"].map((f) => (
+                      <div key={f} className="flex items-center gap-2">
+                        <span className="w-1 h-1 rounded-full shrink-0" style={{ background: "hsl(140 12% 52%)" }} />
+                        {f}
+                      </div>
+                    ))}
+                  </div>
+                  <Link to="/clark" className="mt-6 w-full inline-flex items-center justify-center gap-2 text-sm font-medium text-[#08080A] px-5 py-2.5 rounded-lg transition-colors no-underline" style={{ background: "hsl(140 12% 42%)" }} onMouseEnter={(e) => (e.currentTarget.style.background = "hsl(140 12% 52%)")} onMouseLeave={(e) => (e.currentTarget.style.background = "hsl(140 12% 42%)")}>
+                    Try Clark
+                  </Link>
+                </div>
+              </div>
+
+              {/* Leads callout */}
+              <div className="p-5 rounded-xl border text-center" style={{ background: "hsl(140 12% 42% / 0.03)", borderColor: "hsl(140 12% 42% / 0.1)" }}>
+                <p className="text-[13px] text-[#A1A1AA]">
+                  <span className="font-semibold text-white">AURA Leads</span> — AI-sourced and enriched leads from 70+ databases. Available as a standalone purchase, no subscription required.
+                  {" "}<a href="#leads" className="font-medium no-underline" style={{ color: "hsl(140 12% 62%)" }}>Learn more →</a>
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
 
         {/* ═══ WHY AI-NATIVE MATTERS — Research Section ═══ */}
         <section className="lp-reveal pt-[120px] max-sm:pt-20 pb-[60px] relative" id="research" ref={addRevealRef}>
@@ -771,7 +879,7 @@ export default function LandingPage() {
               </div>
 
               <p className="text-[14px] text-[#71717A] leading-[1.65] max-w-[700px]">
-                <span className="font-semibold text-white">AURA CONNECT</span> and <span className="font-semibold text-[#F59E0B]">AURA AGENT</span> are built to help small and mid‑sized firms capture these same gains — without hiring an internal AI team.
+                <span className="font-semibold text-white">AURA CONNECT</span> and <span className="font-semibold text-white">Clark Insurance Assistant</span> are built to help small and mid‑sized firms capture these same gains — without hiring an internal AI team.
               </p>
             </div>
           </div>
@@ -779,33 +887,29 @@ export default function LandingPage() {
 
         {/* ═══ FOOTER ═══ */}
         <footer className="max-w-[1200px] mx-auto pt-[120px] max-sm:pt-16 pb-12 max-sm:pb-6 px-12 max-md:px-8 max-sm:px-5">
-          <div className="border-t border-white/[0.06] pt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.5fr_1fr_1fr_1fr] gap-12 mb-16">
+          <div className="border-t border-white/[0.06] pt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.5fr_1fr_1fr] gap-12 mb-16">
             <div>
               <div className="flex items-center gap-2.5 text-sm font-semibold tracking-[0.06em] text-white mb-3">
                 <AuraLogoSVG size={20} />
                 AURA
               </div>
               <p className="text-[13px] text-[#71717A] leading-[1.6] max-w-[260px]">
-                Automated Universal Risk Advisor. AI-native infrastructure for insurance, property, and consulting.
+                AI-native tools for modern sales teams and insurance producers. Built by AURA Risk Group.
               </p>
             </div>
             <div>
               <div className="text-[13px] font-semibold text-white mb-4">Platform</div>
               <a href="#leads" className="block text-[13px] text-[#71717A] py-1 hover:text-white transition-colors no-underline">AURA Leads</a>
               <a href="#connect" className="block text-[13px] text-[#71717A] py-1 hover:text-white transition-colors no-underline">AURA Connect</a>
-              <Link to="/clark" className="block text-[13px] text-[#71717A] py-1 hover:text-white transition-colors no-underline">Clark AI</Link>
+              <a href="#clark" className="block text-[13px] text-[#71717A] py-1 hover:text-white transition-colors no-underline">Clark Insurance Assistant</a>
+              <a href="#pricing" className="block text-[13px] text-[#71717A] py-1 hover:text-white transition-colors no-underline">Pricing</a>
+            </div>
+            <div>
+              <div className="text-[13px] font-semibold text-white mb-4">Get Started</div>
+              <Link to="/request-access" className="block text-[13px] text-[#71717A] py-1 hover:text-white transition-colors no-underline">Create Account</Link>
+              <Link to="/connectdemo/auth" className="block text-[13px] text-[#71717A] py-1 hover:text-white transition-colors no-underline">Try the Demo</Link>
+              <Link to="/become-partner" className="block text-[13px] text-[#71717A] py-1 hover:text-white transition-colors no-underline">Become a Partner</Link>
               <a href="#research" className="block text-[13px] text-[#71717A] py-1 hover:text-white transition-colors no-underline">Why AI</a>
-            </div>
-            <div>
-              <div className="text-[13px] font-semibold text-white mb-4">Company</div>
-              <span className="block text-[13px] text-[#71717A] py-1">About</span>
-              <span className="block text-[13px] text-[#71717A] py-1">Careers</span>
-              <span className="block text-[13px] text-[#71717A] py-1">Contact</span>
-            </div>
-            <div>
-              <div className="text-[13px] font-semibold text-white mb-4">Resources</div>
-              <span className="block text-[13px] text-[#71717A] py-1">Documentation</span>
-              <span className="block text-[13px] text-[#71717A] py-1">API</span>
             </div>
           </div>
           <div className="flex justify-between items-center text-xs text-[#52525B] border-t border-white/[0.06] pt-6">
