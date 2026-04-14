@@ -7,8 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CLARK_TIERS, CLARK_ADMIN_EMAILS, type ClarkTierKey } from "@/lib/clark-tiers";
 import { toast } from "sonner";
-import { CreditCard, Zap, PanelLeftClose, PanelLeft } from "lucide-react";
+import { CreditCard, Zap, PanelLeftClose, PanelLeft, ArrowRight, Network } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Link } from "react-router-dom";
 
 export default function Clark() {
   const [loading, setLoading] = useState(true);
@@ -142,7 +143,25 @@ export default function Clark() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-7xl flex relative" style={{ height: "calc(100vh - 53px)" }}>
+      <div className="mx-auto max-w-7xl px-3 sm:px-4 py-2">
+        <Link
+          to="/connect"
+          className="group flex items-center justify-between gap-3 px-4 py-2.5 rounded-lg border border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10 hover:from-primary/10 hover:to-primary/15 transition-all duration-200"
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary/15 shrink-0">
+              <Network className="h-4 w-4 text-primary" />
+            </div>
+            <div>
+              <p className="text-sm font-medium">Launch Aura Connect</p>
+              <p className="text-xs text-muted-foreground">CRM, pipeline, leads, email & calendar tools</p>
+            </div>
+          </div>
+          <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
+        </Link>
+      </div>
+
+      <div className="mx-auto max-w-7xl flex relative" style={{ height: "calc(100vh - 105px)" }}>
         {showPanel && (
           <div className={`${isMobile ? "absolute inset-0 z-30 bg-background" : "w-72 border-r shrink-0"}`}>
             <ClarkSubmissionsPanel

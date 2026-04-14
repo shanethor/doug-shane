@@ -6,7 +6,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { isMasterEmail } from "@/lib/master-accounts";
 import { ComingSoonGate } from "@/components/connect/ComingSoonGate";
 import { useEarlyAccessWhitelist } from "@/hooks/useEarlyAccessWhitelist";
-import { Loader2 } from "lucide-react";
+import { Loader2, ArrowRight, Shield } from "lucide-react";
+import { Link } from "react-router-dom";
 
 // Lazy-load heavy sub-pages to keep the ConnectProduct chunk small
 const StudioUpsellPage = lazy(() => import("@/components/StudioUpsellPage"));
@@ -116,6 +117,26 @@ function QuoteTicker() {
   );
 }
 
+function CrossProductBanner() {
+  return (
+    <Link
+      to="/clark"
+      className="group flex items-center justify-between gap-3 mx-2 sm:mx-4 lg:mx-6 mt-3 px-4 py-3 rounded-lg border border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10 hover:from-primary/10 hover:to-primary/15 transition-all duration-200"
+    >
+      <div className="flex items-center gap-3">
+        <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-primary/15 shrink-0">
+          <Shield className="h-5 w-5 text-primary" />
+        </div>
+        <div>
+          <p className="text-sm font-medium">Clark Insurance Assistant</p>
+          <p className="text-xs text-muted-foreground">AI-powered ACORD forms, client questionnaires & carrier packaging</p>
+        </div>
+      </div>
+      <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
+    </Link>
+  );
+}
+
 export default function ConnectProduct() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -179,6 +200,7 @@ export default function ConnectProduct() {
         studioUnlocked={false}
       >
         <QuoteTicker />
+        <CrossProductBanner />
         <div className="flex-1 w-full px-2 sm:px-4 lg:px-6 py-4">
           <div style={{
             opacity: introComplete ? 1 : 0,
