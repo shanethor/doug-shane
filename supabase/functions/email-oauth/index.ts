@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { encryptToken } from "../_shared/token-crypto.ts";
+import { encryptToken, safeDecrypt } from "../_shared/token-crypto.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -46,6 +46,8 @@ serve(async (req) => {
     );
 
     if (action === "get_auth_url") {
+      const { code_challenge, code_challenge_method } = body;
+
       // Return the OAuth URL for the provider
       if (provider === "gmail") {
         const clientId = Deno.env.get("GOOGLE_CLIENT_ID");
@@ -55,7 +57,11 @@ serve(async (req) => {
           });
         }
         const scopes = "https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/contacts.readonly";
-        const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirect_uri)}&response_type=code&scope=${encodeURIComponent(scopes)}&access_type=offline&prompt=consent&state=gmail`;
+        let url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirect_uri)}&response_type=code&scope=${encodeURIComponent(scopes)}&access_type=offline&prompt=consent&state=gmail`;
+        // PKCE: append code_challenge if provided
+        if (code_challenge && code_challenge_method) {
+          url += `&code_challenge=${encodeURIComponent(code_challenge)}&code_challenge_method=${code_challenge_method}`;
+        }
         return new Response(JSON.stringify({ url }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
@@ -67,7 +73,11 @@ serve(async (req) => {
           });
         }
         const scopes = "openid email profile User.Read Mail.Read Mail.Send Calendars.ReadWrite Contacts.Read offline_access";
-        const url = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirect_uri)}&response_type=code&scope=${encodeURIComponent(scopes)}&state=outlook`;
+        let url = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirect_uri)}&response_type=code&scope=${encodeURIComponent(scopes)}&state=outlook`;
+        // PKCE: append code_challenge if provided
+        if (code_challenge && code_challenge_method) {
+          url += `&code_challenge=${encodeURIComponent(code_challenge)}&code_challenge_method=${code_challenge_method}`;
+        }
         return new Response(JSON.stringify({ url }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
@@ -81,20 +91,25 @@ serve(async (req) => {
       // Exchange auth code for tokens
       let tokenResp: Response;
       let tokenData: any;
+      const { code_verifier } = body;
 
       if (provider === "gmail") {
         const clientId = Deno.env.get("GOOGLE_CLIENT_ID")!;
         const clientSecret = Deno.env.get("GOOGLE_CLIENT_SECRET")!;
+        const tokenParams: Record<string, string> = {
+          code,
+          client_id: clientId,
+          client_secret: clientSecret,
+          redirect_uri: redirect_uri,
+          grant_type: "authorization_code",
+        };
+        // PKCE: include code_verifier if provided
+        if (code_verifier) tokenParams.code_verifier = code_verifier;
+
         tokenResp = await fetch(GMAIL_TOKEN_URL, {
           method: "POST",
           headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: new URLSearchParams({
-            code,
-            client_id: clientId,
-            client_secret: clientSecret,
-            redirect_uri: redirect_uri,
-            grant_type: "authorization_code",
-          }),
+          body: new URLSearchParams(tokenParams),
         });
         tokenData = await tokenResp.json();
         if (!tokenResp.ok) {
@@ -158,17 +173,21 @@ serve(async (req) => {
       } else if (provider === "outlook") {
         const clientId = Deno.env.get("MICROSOFT_CLIENT_ID")!;
         const clientSecret = Deno.env.get("MICROSOFT_CLIENT_SECRET")!;
+        const outlookParams: Record<string, string> = {
+          code,
+          client_id: clientId,
+          client_secret: clientSecret,
+          redirect_uri: redirect_uri,
+          grant_type: "authorization_code",
+          scope: "openid email profile User.Read Mail.Read Mail.Send Calendars.ReadWrite Contacts.Read offline_access",
+        };
+        // PKCE: include code_verifier if provided
+        if (code_verifier) outlookParams.code_verifier = code_verifier;
+
         tokenResp = await fetch(OUTLOOK_TOKEN_URL, {
           method: "POST",
           headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: new URLSearchParams({
-            code,
-            client_id: clientId,
-            client_secret: clientSecret,
-            redirect_uri: redirect_uri,
-            grant_type: "authorization_code",
-            scope: "openid email profile User.Read Mail.Read Mail.Send Calendars.ReadWrite Contacts.Read offline_access",
-          }),
+          body: new URLSearchParams(outlookParams),
         });
         tokenData = await tokenResp.json();
         if (!tokenResp.ok) {
@@ -263,20 +282,46 @@ serve(async (req) => {
     if (action === "disconnect" || action === "remove") {
       const { connection_id } = body;
       if (connection_id) {
-        // Disconnect by specific connection ID
+        // Fetch connection to revoke tokens at the provider
         const { data: conn } = await adminClient
           .from("email_connections")
-          .select("provider, email_address")
+          .select("provider, email_address, access_token, refresh_token")
           .eq("id", connection_id)
           .eq("user_id", userId)
           .maybeSingle();
-        
+
+        // Revoke tokens at the OAuth provider (best-effort)
+        if (conn) {
+          try {
+            const accessToken = await safeDecrypt(conn.access_token || "");
+            const refreshToken = await safeDecrypt(conn.refresh_token || "");
+            if (conn.provider === "gmail") {
+              // Google: revoke either token (revoking one revokes the family)
+              const tokenToRevoke = refreshToken || accessToken;
+              if (tokenToRevoke) {
+                await fetch(`https://oauth2.googleapis.com/revoke?token=${encodeURIComponent(tokenToRevoke)}`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                });
+              }
+            } else if (conn.provider === "outlook") {
+              // Microsoft: no single revoke endpoint, but we can invalidate the refresh token
+              // by calling the logout endpoint — tokens expire naturally (1hr for access)
+              // Best practice: delete from DB + let access token expire
+              console.log(`[email-oauth] Outlook tokens for ${conn.email_address} cleared from DB; access token will expire naturally.`);
+            }
+          } catch (revokeErr) {
+            // Don't block disconnect on revocation failure
+            console.warn("[email-oauth] Token revocation failed (non-blocking):", revokeErr);
+          }
+        }
+
         await adminClient
           .from("email_connections")
           .delete()
           .eq("id", connection_id)
           .eq("user_id", userId);
-        
+
         // Also remove matching external calendar
         if (conn) {
           await adminClient
@@ -288,6 +333,25 @@ serve(async (req) => {
         }
       } else {
         // Legacy: disconnect by provider (removes all connections for that provider)
+        // Fetch all connections to revoke tokens first
+        const { data: conns } = await adminClient
+          .from("email_connections")
+          .select("access_token, refresh_token")
+          .eq("user_id", userId)
+          .eq("provider", provider);
+
+        for (const conn of (conns || [])) {
+          try {
+            const refreshToken = await safeDecrypt(conn.refresh_token || "");
+            if (provider === "gmail" && refreshToken) {
+              await fetch(`https://oauth2.googleapis.com/revoke?token=${encodeURIComponent(refreshToken)}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+              });
+            }
+          } catch { /* non-blocking */ }
+        }
+
         await adminClient
           .from("email_connections")
           .delete()

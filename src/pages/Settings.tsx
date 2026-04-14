@@ -166,6 +166,19 @@ export default function Settings() {
   const connectEmail = async (provider: "gmail" | "outlook") => {
     setConnectingProvider(provider);
     try {
+      // --- PKCE: generate code_verifier + code_challenge ---
+      const verifierBytes = crypto.getRandomValues(new Uint8Array(32));
+      const codeVerifier = btoa(String.fromCharCode(...verifierBytes))
+        .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+      const challengeDigest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(codeVerifier));
+      const codeChallenge = btoa(String.fromCharCode(...new Uint8Array(challengeDigest)))
+        .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+
+      // --- CSRF: random state token ---
+      const stateToken = `${provider}_${crypto.randomUUID()}`;
+      sessionStorage.setItem("oauth_state", stateToken);
+      sessionStorage.setItem("oauth_code_verifier", codeVerifier);
+
       const headers = await getAuthHeaders();
       const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-oauth`, {
         method: "POST",
@@ -174,14 +187,16 @@ export default function Settings() {
           action: "get_auth_url",
           provider,
           redirect_uri: `${window.location.origin}/email-callback`,
+          code_challenge: codeChallenge,
+          code_challenge_method: "S256",
         }),
       });
       const data = await resp.json();
       if (!resp.ok) throw new Error(data.error || "Failed to get auth URL");
 
-      // Add state parameter (provider) to the URL
+      // Override state with our CSRF token
       const authUrl = new URL(data.url);
-      authUrl.searchParams.set("state", provider);
+      authUrl.searchParams.set("state", stateToken);
       window.location.href = authUrl.toString();
     } catch (err: any) {
       toast.error(err.message || "Failed to connect");

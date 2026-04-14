@@ -11,7 +11,7 @@ export default function EmailCallback() {
 
   useEffect(() => {
     const code = searchParams.get("code");
-    const state = searchParams.get("state"); // provider name
+    const state = searchParams.get("state"); // CSRF state token: "provider_uuid"
     const error = searchParams.get("error");
 
     if (error) {
@@ -26,6 +26,24 @@ export default function EmailCallback() {
       return;
     }
 
+    // --- CSRF validation: compare state with what we stored ---
+    const savedState = sessionStorage.getItem("oauth_state");
+    if (savedState && savedState !== state) {
+      setStatus("error");
+      setMessage("Security error: OAuth state mismatch. Please try connecting again.");
+      sessionStorage.removeItem("oauth_state");
+      sessionStorage.removeItem("oauth_code_verifier");
+      return;
+    }
+    sessionStorage.removeItem("oauth_state");
+
+    // Extract provider from state (format: "provider_uuid")
+    const provider = state.includes("_") ? state.split("_")[0] : state;
+
+    // --- PKCE: retrieve code_verifier ---
+    const codeVerifier = sessionStorage.getItem("oauth_code_verifier") || undefined;
+    sessionStorage.removeItem("oauth_code_verifier");
+
     (async () => {
       try {
         const headers = await getAuthHeaders();
@@ -34,9 +52,10 @@ export default function EmailCallback() {
           headers,
           body: JSON.stringify({
             action: "exchange_code",
-            provider: state,
+            provider,
             code,
             redirect_uri: `${window.location.origin}/email-callback`,
+            code_verifier: codeVerifier,
           }),
         });
 
