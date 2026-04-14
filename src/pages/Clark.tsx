@@ -7,9 +7,49 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CLARK_TIERS, CLARK_ADMIN_EMAILS, type ClarkTierKey } from "@/lib/clark-tiers";
 import { toast } from "sonner";
-import { CreditCard, Zap, PanelLeftClose, PanelLeft, ArrowRight, Network } from "lucide-react";
+import { CreditCard, Zap, PanelLeftClose, PanelLeft, ArrowRight, Network, X } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Link } from "react-router-dom";
+
+function ConnectBanner() {
+  const [dismissed, setDismissed] = useState(() => {
+    try { return sessionStorage.getItem("clark-connect-banner-dismissed") === "true"; } catch { return false; }
+  });
+
+  if (dismissed) return null;
+
+  return (
+    <div className="relative mx-auto max-w-7xl px-3 sm:px-4 py-2">
+      <Link
+        to="/connect"
+        className="group flex items-center justify-between gap-3 px-4 py-2.5 pr-10 rounded-lg border border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10 hover:from-primary/10 hover:to-primary/15 transition-all duration-200"
+      >
+        <div className="flex items-center gap-3">
+          <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary/15 shrink-0">
+            <Network className="h-4 w-4 text-primary" />
+          </div>
+          <div>
+            <p className="text-sm font-medium">Launch Aura Connect</p>
+            <p className="text-xs text-muted-foreground">CRM, pipeline, leads, email & calendar tools</p>
+          </div>
+        </div>
+        <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
+      </Link>
+      <button
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          sessionStorage.setItem("clark-connect-banner-dismissed", "true");
+          setDismissed(true);
+        }}
+        className="absolute top-4 right-5 p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+        aria-label="Dismiss"
+      >
+        <X className="h-3.5 w-3.5" />
+      </button>
+    </div>
+  );
+}
 
 export default function Clark() {
   const [loading, setLoading] = useState(true);
@@ -143,23 +183,7 @@ export default function Clark() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-7xl px-3 sm:px-4 py-2">
-        <Link
-          to="/connect"
-          className="group flex items-center justify-between gap-3 px-4 py-2.5 rounded-lg border border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10 hover:from-primary/10 hover:to-primary/15 transition-all duration-200"
-        >
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary/15 shrink-0">
-              <Network className="h-4 w-4 text-primary" />
-            </div>
-            <div>
-              <p className="text-sm font-medium">Launch Aura Connect</p>
-              <p className="text-xs text-muted-foreground">CRM, pipeline, leads, email & calendar tools</p>
-            </div>
-          </div>
-          <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
-        </Link>
-      </div>
+      <ConnectBanner />
 
       <div className="mx-auto max-w-7xl flex relative" style={{ height: "calc(100vh - 105px)" }}>
         {showPanel && (

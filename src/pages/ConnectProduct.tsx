@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { isMasterEmail } from "@/lib/master-accounts";
 import { ComingSoonGate } from "@/components/connect/ComingSoonGate";
 import { useEarlyAccessWhitelist } from "@/hooks/useEarlyAccessWhitelist";
-import { Loader2, ArrowRight, Shield } from "lucide-react";
+import { Loader2, ArrowRight, Shield, X } from "lucide-react";
 import { Link } from "react-router-dom";
 
 // Lazy-load heavy sub-pages to keep the ConnectProduct chunk small
@@ -118,22 +118,42 @@ function QuoteTicker() {
 }
 
 function CrossProductBanner() {
+  const [dismissed, setDismissed] = useState(() => {
+    try { return sessionStorage.getItem("connect-clark-banner-dismissed") === "true"; } catch { return false; }
+  });
+
+  if (dismissed) return null;
+
   return (
-    <Link
-      to="/clark"
-      className="group flex items-center justify-between gap-3 mx-2 sm:mx-4 lg:mx-6 mt-3 px-4 py-3 rounded-lg border border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10 hover:from-primary/10 hover:to-primary/15 transition-all duration-200"
-    >
-      <div className="flex items-center gap-3">
-        <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-primary/15 shrink-0">
-          <Shield className="h-5 w-5 text-primary" />
+    <div className="relative mx-2 sm:mx-4 lg:mx-6 mt-3">
+      <Link
+        to="/clark"
+        className="group flex items-center justify-between gap-3 px-4 py-3 pr-10 rounded-lg border border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10 hover:from-primary/10 hover:to-primary/15 transition-all duration-200"
+      >
+        <div className="flex items-center gap-3">
+          <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-primary/15 shrink-0">
+            <Shield className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <p className="text-sm font-medium">Clark Insurance Assistant</p>
+            <p className="text-xs text-muted-foreground">AI-powered ACORD forms, client questionnaires & carrier packaging</p>
+          </div>
         </div>
-        <div>
-          <p className="text-sm font-medium">Clark Insurance Assistant</p>
-          <p className="text-xs text-muted-foreground">AI-powered ACORD forms, client questionnaires & carrier packaging</p>
-        </div>
-      </div>
-      <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
-    </Link>
+        <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
+      </Link>
+      <button
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          sessionStorage.setItem("connect-clark-banner-dismissed", "true");
+          setDismissed(true);
+        }}
+        className="absolute top-2 right-2 p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+        aria-label="Dismiss"
+      >
+        <X className="h-3.5 w-3.5" />
+      </button>
+    </div>
   );
 }
 
