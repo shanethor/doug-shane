@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { fetchAIGateway } from "../_shared/ai-gateway.ts";
+
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -83,9 +85,8 @@ serve(async (req) => {
       });
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      console.error("LOVABLE_API_KEY not configured");
+    if (!"") {
+      console.error(""" not configured");
       return new Response(JSON.stringify({ error: "Service temporarily unavailable" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -144,13 +145,7 @@ serve(async (req) => {
     console.log(`Scraped ${markdown.length} chars from ${formattedUrl}`);
 
     // Step 2: Use AI to extract insurance-relevant business data from the scraped content
-    const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
+    const aiResp = await fetchAIGateway({
         model: "google/gemini-2.5-flash",
         messages: [
           {
@@ -189,8 +184,7 @@ Return ONLY a valid JSON object. No explanations.`,
           },
         ],
         temperature: 0.1,
-      }),
-    });
+      });
 
     if (!aiResp.ok) {
       const errText = await aiResp.text();

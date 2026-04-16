@@ -1,4 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { fetchAIGateway } from "../_shared/ai-gateway.ts";
+
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -26,8 +28,6 @@ Deno.serve(async (req) => {
 
     const { action, context } = await req.json();
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("AI service not configured");
 
     // Fetch user's leads for context
     const { data: leads } = await supabase
@@ -162,13 +162,7 @@ Generate my relationship intelligence dashboard. Cross-reference my network cont
       throw new Error("Unknown action: " + action);
     }
 
-    const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-      },
-      body: JSON.stringify({
+    const aiRes = await fetchAIGateway({
         model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: systemPrompt },
@@ -176,8 +170,7 @@ Generate my relationship intelligence dashboard. Cross-reference my network cont
         ],
         temperature: 0.7,
         response_format: { type: "json_object" },
-      }),
-    });
+      });
 
     if (!aiRes.ok) {
       const errText = await aiRes.text();

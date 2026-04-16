@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { fetchAIGateway } from "../_shared/ai-gateway.ts";
+
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -148,8 +150,6 @@ serve(async (req) => {
     }
 
     // Now use AI to infer missing fields from context and regenerate gaps
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("Service temporarily unavailable");
 
     // Collect all target fields across all forms
     const allFields = new Set<string>();
@@ -218,13 +218,7 @@ Return inferred values (only those supported by known data) and remaining gaps.`
         inferredProps[f] = { type: "string", description: `Value for ${f}` };
       }
 
-      const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+      const aiResponse = await fetchAIGateway({
           model: "google/gemini-3-flash-preview",
           messages: [
             { role: "system", content: "You are an expert insurance underwriter assistant. Only fill inferred_values with data that is directly supported by the known data provided. If known data is sparse, return few or zero inferred values — do NOT fabricate data to fill fields." },
@@ -262,8 +256,7 @@ Return inferred values (only those supported by known data) and remaining gaps.`
             },
           }],
           tool_choice: { type: "function", function: { name: "fill_and_gap" } },
-        }),
-      });
+        });
 
       if (aiResponse.ok) {
         const aiResult = await aiResponse.json();

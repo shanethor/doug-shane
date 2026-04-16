@@ -1,4 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { fetchAIGateway } from "../_shared/ai-gateway.ts";
+
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -245,9 +247,8 @@ async function scrapeProfiles(
   profiles: { url: string; platform: string }[]
 ): Promise<any[]> {
   const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
-  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
-  if (!FIRECRAWL_API_KEY || !LOVABLE_API_KEY) {
+  if (!FIRECRAWL_API_KEY || !"") {
     return profiles.map((p) => ({
       platform: p.platform,
       error: "Scraping or AI service not configured",
@@ -342,13 +343,7 @@ If the platform blocked most content, still extract whatever is visible. Return 
 Profile content:
 ${markdown.slice(0, 10000)}`;
 
-      const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        },
-        body: JSON.stringify({
+      const aiRes = await fetchAIGateway({
           model: "google/gemini-3-flash-preview",
           messages: [
             { role: "system", content: "You extract structured contact data from scraped web pages. Return only valid JSON." },
@@ -356,8 +351,7 @@ ${markdown.slice(0, 10000)}`;
           ],
           temperature: 0.2,
           response_format: { type: "json_object" },
-        }),
-      });
+        });
 
       if (!aiRes.ok) {
         console.error("AI extraction error:", aiRes.status);

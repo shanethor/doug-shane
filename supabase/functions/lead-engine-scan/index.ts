@@ -11,6 +11,8 @@ import {
 } from "../_shared/lead-scan.ts";
 import { enrichLeadsBatch, enrichInsertedLeads } from "../_shared/lead-enrich.ts";
 import { calculateLeadScore, tierMap, activityTypeMap, validateExtractedLeads } from "../_shared/lead-score.ts";
+import { fetchAIGateway } from "../_shared/ai-gateway.ts";
+
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -34,8 +36,7 @@ Deno.serve(async (req) => {
       return jsonResp({ error: "Missing authorization header" }, 401);
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
+    if (!"") {
       return jsonResp({ error: "AI service not configured" }, 500);
     }
 
@@ -80,7 +81,7 @@ Deno.serve(async (req) => {
     }
 
     // ── FIRECRAWL PATH ──
-    return await handleFirecrawlScan(userId, source, settings, batchId, adminClient, LOVABLE_API_KEY);
+    return await handleFirecrawlScan(userId, source, settings, batchId, adminClient, "");
 
   } catch (err: any) {
     console.error("[lead-engine-scan] Error:", err);
@@ -275,10 +276,7 @@ async function handleFirecrawlScan(
   const firecrawlText = allSearchResults.map((r, i) => `[${i + 1}] Title: ${r.title}\nSnippet: ${r.description}\nURL: ${r.url}`).join("\n\n");
   const extractionPrompt = buildExtractionPrompt(source, firecrawlText);
 
-  const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: { "Authorization": `Bearer ${lovableApiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
+  const aiResp = await fetchAIGateway({
       model: "google/gemini-2.5-flash",
       messages: [
         { role: "system", content: "You are a strict data extraction tool. You ONLY extract information that explicitly appears in the provided text. You NEVER invent, fabricate, or hallucinate data. If information is not present, use null. Return fewer results rather than fake results." },
@@ -317,8 +315,7 @@ async function handleFirecrawlScan(
         },
       }],
       tool_choice: { type: "function", function: { name: "extract_leads" } },
-    }),
-  });
+    });
 
   if (!aiResp.ok) {
     const errText = await aiResp.text();

@@ -47,7 +47,7 @@ export default function Settings() {
   const [values, setValues] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [loaded, setLoaded] = useState(false);
-  const [aiProvider, setAiProvider] = useState("lovable");
+  const [aiProvider, setAiProvider] = useState("aura");
   const [openaiKey, setOpenaiKey] = useState("");
   const [showKey, setShowKey] = useState(false);
   const [agencyDisplayName, setAgencyDisplayName] = useState<string | null>(null);
@@ -95,7 +95,7 @@ export default function Settings() {
           if (!merged.from_email && data[0].from_email) merged.from_email = data[0].from_email;
           if (!merged.agency_phone && data[0].phone) merged.agency_phone = data[0].phone;
           setValues(merged);
-          setAiProvider((data[0] as any).ai_provider || "lovable");
+          setAiProvider((data[0] as any).ai_provider || "aura");
           setOpenaiKey((data[0] as any).openai_api_key_encrypted || "");
           if ((data[0] as any).timezone) setTimezone((data[0] as any).timezone);
           // Sync dark mode from DB only if explicitly set
@@ -866,7 +866,7 @@ export default function Settings() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="lovable">AURA AI (built-in, no key needed)</SelectItem>
+                <SelectItem value="aura">AURA AI (built-in, no key needed)</SelectItem>
                 <SelectItem value="openai">My OpenAI API Key</SelectItem>
               </SelectContent>
             </Select>

@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { fetchAIGateway } from "../_shared/ai-gateway.ts";
+
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -15,21 +17,14 @@ async function callLovableGatewayForMapping(
   corsHeaders: Record<string, string>,
 ): Promise<Record<string, any>> {
   console.log("map-fields: Using Lovable AI gateway (Gemini)");
-  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
+  const response = await fetchAIGateway({
       model: "google/gemini-2.5-flash",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
       temperature: 0.1,
-    }),
-  });
+    });
 
   if (!response.ok) {
     const errText = await response.text();
@@ -81,8 +76,6 @@ serve(async (req) => {
       });
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("Service temporarily unavailable");
 
     // Build a concise representation of what we have and what we need
     const extractedSummary = Object.entries(extracted_data)
@@ -184,7 +177,7 @@ Return a JSON object mapping field keys to inferred values. Only include fields 
     // Use Gemini for field mapping — avoids Claude rate limits since multiple forms
     // call map-fields in parallel. Gemini is fast and accurate enough for mapping.
     let mappings: Record<string, any> = await callLovableGatewayForMapping(
-      LOVABLE_API_KEY!, systemPrompt, userPrompt, corsHeaders
+      systemPrompt, userPrompt, corsHeaders
     );
 
     // Filter to only include keys that are in the target fields list

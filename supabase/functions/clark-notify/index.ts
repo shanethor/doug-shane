@@ -74,7 +74,7 @@ serve(async (req) => {
 
       const agentName = clarkProfile?.producer_name || "Agent";
       const firmName = clarkProfile?.firm_name || "AURA";
-      const origin = req.headers.get("origin") || "https://aura-risk-group.lovable.app";
+      const origin = req.headers.get("origin") || "https://buildingaura.site";
 
       const statusLine = (still_missing ?? 0) === 0
         ? "✅ All missing fields have been filled! You can now generate ACORD forms."
@@ -137,7 +137,7 @@ serve(async (req) => {
 
     const agentName = clarkProfile?.producer_name || "Your Insurance Agent";
     const firmName = clarkProfile?.firm_name || "AURA";
-    const origin = req.headers.get("origin") || "https://aura-risk-group.lovable.app";
+    const origin = req.headers.get("origin") || "https://buildingaura.site";
 
     if (action === "send_questionnaire") {
       if (!client_email) throw new Error("client_email is required");

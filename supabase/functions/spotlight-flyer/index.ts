@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
+import { fetchAIGateway } from "../_shared/ai-gateway.ts";
+
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -7,7 +9,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const LOVABLE_API_KEY = () => Deno.env.get("LOVABLE_API_KEY") || "";
+const "" = () => Deno.env.get("""") || "";
 const SUPABASE_URL = () => Deno.env.get("SUPABASE_URL") || "";
 const SUPABASE_SERVICE_KEY = () => Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 
@@ -114,16 +116,10 @@ async function enrichDemoInput(body: Record<string, unknown>) {
     evergreen: typeof body.evergreen === "boolean" ? body.evergreen : false,
   };
 
-  if (!seedText || !LOVABLE_API_KEY()) return fallback;
+  if (!seedText || !""()) return fallback;
 
   try {
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY()}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
+    const response = await fetchAIGateway({
         model: "google/gemini-3-flash-preview",
         messages: [
           {
@@ -167,8 +163,7 @@ async function enrichDemoInput(body: Record<string, unknown>) {
           },
         }],
         tool_choice: { type: "function", function: { name: "extract_flyer_fields" } },
-      }),
-    });
+      });
 
     if (!response.ok) return fallback;
 
@@ -286,13 +281,7 @@ function buildStructuredPrompt(flyer: any, brandMeta?: Record<string, unknown>):
 
 async function summarizeToBullets(description: string): Promise<string[]> {
   try {
-    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY()}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
+    const resp = await fetchAIGateway({
         model: "google/gemini-3-flash-preview",
         messages: [
           { role: "system", content: "You summarize event or campaign descriptions into 3-5 concise bullet points (8-12 words each). Return ONLY a JSON array of strings. No markdown." },
@@ -307,8 +296,7 @@ async function summarizeToBullets(description: string): Promise<string[]> {
           },
         }],
         tool_choice: { type: "function", function: { name: "return_bullets" } },
-      }),
-    });
+      });
     const data = await resp.json();
     const call = data.choices?.[0]?.message?.tool_calls?.[0];
     if (call) {
@@ -366,13 +354,7 @@ serve(async (req) => {
           });
         }
 
-        const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${LOVABLE_API_KEY()}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
+        const aiRes = await fetchAIGateway({
             model: "google/gemini-2.5-flash",
             messages: [
               {
@@ -419,8 +401,7 @@ serve(async (req) => {
               },
             }],
             tool_choice: { type: "function", function: { name: "extract_business_profile" } },
-          }),
-        });
+          });
 
         if (!aiRes.ok) {
           const errText = await aiRes.text();
@@ -456,13 +437,7 @@ serve(async (req) => {
         ? `You are a brand design analyst. Analyze this marketing material image and extract design attributes: dominant colors (as hex), secondary colors, font style descriptions (serif/sans-serif/script, weight, feel), overall design tone (professional, bold, playful, luxury, minimal, friendly), any brand/company name visible, and any brand patterns or themes you detect. This data will improve future marketing material generation.`
         : `You are a brand design analyst. Analyze this logo image and extract: the dominant brand colors (as hex values), the likely industry, the design tone/style (professional, bold, playful, luxury, minimal, friendly), and any company/brand name text visible in or around the logo. Infer from visual cues only.`;
 
-      const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY()}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+      const aiRes = await fetchAIGateway({
           model: "google/gemini-3-flash-preview",
           messages: [
             { role: "system", content: systemPrompt },
@@ -492,8 +467,7 @@ serve(async (req) => {
             },
           }],
           tool_choice: { type: "function", function: { name: "extract_brand_attributes" } },
-        }),
-      });
+        });
 
       if (!aiRes.ok) {
         if (aiRes.status === 429) throw new Error("Rate limit exceeded. Please try again.");
@@ -515,18 +489,11 @@ serve(async (req) => {
       const prompt = String(body.prompt || "").trim();
       if (!prompt) throw new Error("prompt required");
 
-      const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY()}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+      const aiResp = await fetchAIGateway({
           model: "google/gemini-3-pro-image-preview",
           messages: [{ role: "user", content: prompt }],
           modalities: ["image", "text"],
-        }),
-      });
+        });
 
       if (!aiResp.ok) {
         if (aiResp.status === 429) throw new Error("Rate limit exceeded. Please try again in a moment.");
@@ -599,12 +566,9 @@ serve(async (req) => {
       const scrapedContent = scrapeResults.join("\n\n");
       let result: Record<string, unknown> = { scraped_summary: scrapedContent.slice(0, 1000) };
 
-      if (LOVABLE_API_KEY() && scrapedContent.length > 10) {
+      if (""() && scrapedContent.length > 10) {
         try {
-          const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-            method: "POST",
-            headers: { Authorization: `Bearer ${LOVABLE_API_KEY()}`, "Content-Type": "application/json" },
-            body: JSON.stringify({
+          const aiRes = await fetchAIGateway({
               model: "google/gemini-3-flash-preview",
               messages: [
                 { role: "system", content: "Extract brand identity from scraped website/social content. Return structured brand attributes. Focus on visual identity, messaging, services, and imagery described." },
@@ -633,8 +597,7 @@ serve(async (req) => {
                 },
               }],
               tool_choice: { type: "function", function: { name: "extract_brand_from_web" } },
-            }),
-          });
+            });
           if (aiRes.ok) {
             const aiData = await aiRes.json();
             const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
@@ -880,11 +843,7 @@ serve(async (req) => {
       if (extra_instructions) prompt += `\n\nAdditional instructions: ${String(extra_instructions).slice(0, 500)}`;
 
       try {
-        const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-          method: "POST",
-          headers: { Authorization: `Bearer ${LOVABLE_API_KEY()}`, "Content-Type": "application/json" },
-          body: JSON.stringify({ model: "google/gemini-3-pro-image-preview", messages: [{ role: "user", content: prompt }], modalities: ["image", "text"] }),
-        });
+        const aiResp = await fetchAIGateway({ model: "google/gemini-3-pro-image-preview", messages: [{ role: "user", content: prompt }], modalities: ["image", "text"] });
 
         if (!aiResp.ok) {
           const status = aiResp.status;

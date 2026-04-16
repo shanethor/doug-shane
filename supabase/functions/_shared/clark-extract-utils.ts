@@ -1,4 +1,6 @@
 import { PDFDocument } from "npm:pdf-lib@1.17.1";
+import { fetchAIGateway } from "./ai-gateway.ts";
+
 
 type ClaudeMessage = {
   role: string;
@@ -136,21 +138,14 @@ export async function callClarkAI(
     })),
   ];
 
-  const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
+  const resp = await fetchAIGateway({
       model,
       max_tokens: maxTokens,
       messages: [
         { role: "system", content: system },
         { role: "user", content },
       ],
-    }),
-  });
+    });
 
   if (resp.ok) return resp.json();
 

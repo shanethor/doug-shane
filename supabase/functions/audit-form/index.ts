@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { fetchAIGateway } from "../_shared/ai-gateway.ts";
+
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -38,8 +40,6 @@ serve(async (req) => {
     // form_id: string — which ACORD form (acord-125, acord-130, etc.)
     // agent_defaults: Record<string, any> — agent's saved defaults
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("Service temporarily unavailable");
 
     // Merge agent defaults first (don't override existing values)
     const merged = { ...form_data };
@@ -139,13 +139,7 @@ ${knownData}
 
 Return the COMPLETE set of corrections/additions as field key-value pairs.`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
+    const response = await fetchAIGateway({
         model: "google/gemini-3-flash-preview",
         messages: [
           { role: "system", content: "You are a meticulous insurance underwriter performing final form audit. Fill every gap, estimate every rate, explain every Yes answer." },
@@ -178,8 +172,7 @@ Return the COMPLETE set of corrections/additions as field key-value pairs.`;
           },
         }],
         tool_choice: { type: "function", function: { name: "audit_corrections" } },
-      }),
-    });
+      });
 
     if (!response.ok) {
       if (response.status === 429) {

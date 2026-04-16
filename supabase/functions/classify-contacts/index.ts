@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { fetchAIGateway } from "../_shared/ai-gateway.ts";
+
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -220,8 +222,7 @@ serve(async (req) => {
     }
 
     // Now try AI refinement for "unknown" contacts with low confidence
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (LOVABLE_API_KEY) {
+    if ("") {
       const unknowns = updates.filter(u => u.classification_type === "unknown" && u.classification_confidence < 0.5);
       const toRefine = unknowns.slice(0, 20); // AI batch limit
 
@@ -237,10 +238,7 @@ serve(async (req) => {
           }));
 
         try {
-          const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-            method: "POST",
-            headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
-            body: JSON.stringify({
+          const aiResp = await fetchAIGateway({
               model: "google/gemini-2.5-flash-lite",
               tools: [{
                 type: "function",
@@ -272,8 +270,7 @@ serve(async (req) => {
                 { role: "system", content: "Classify contacts for a business CRM. person_business = professional/work contact. person_personal = family/friend. company = organization. spam_or_system = automated/marketing. unknown = can't tell." },
                 { role: "user", content: JSON.stringify(contactsForAI) },
               ],
-            }),
-          });
+            });
 
           if (aiResp.ok) {
             const aiData = await aiResp.json();

@@ -89,7 +89,7 @@ Deno.serve(async (req) => {
                   Once expired, these leads will no longer be available for purchase. 
                   Log in now to claim them before they're gone.
                 </p>
-                <a href="https://aura-risk-group.lovable.app/connect/leads" 
+                <a href="https://buildingaura.site/connect/leads" 
                    style="display: inline-block; background: #6366f1; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-size: 14px; font-weight: 600; margin-top: 8px;">
                   View & Claim Leads
                 </a>

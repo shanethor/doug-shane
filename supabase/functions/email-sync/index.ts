@@ -1,6 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { safeDecrypt, encryptToken } from "../_shared/token-crypto.ts";
+import { fetchAIGateway } from "../_shared/ai-gateway.ts";
+
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -1031,8 +1033,7 @@ serve(async (req) => {
       let detectedLineType: string | null = null;
 
       if (extractableFiles.length > 0) {
-        const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-        if (LOVABLE_API_KEY) {
+        if ("") {
           try {
             console.log(`[email-sync] Extracting data from ${extractableFiles.length} file(s)...`);
 
@@ -1085,20 +1086,13 @@ Return this JSON structure:
 
 Return ONLY valid JSON. No markdown fences, no explanation.`;
 
-            const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-              method: "POST",
-              headers: {
-                Authorization: `Bearer ${LOVABLE_API_KEY}`,
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
+            const aiResp = await fetchAIGateway({
                 model: "google/gemini-2.5-flash",
                 messages: [
                   { role: "system", content: extractionPrompt },
                   { role: "user", content: userContent },
                 ],
-              }),
-            });
+              });
 
             if (aiResp.ok) {
               const aiResult = await aiResp.json();
@@ -1150,7 +1144,7 @@ Return ONLY valid JSON. No markdown fences, no explanation.`;
 
       let intakeUrl: string | null = null;
       if (intakeLink) {
-        const siteUrl = Deno.env.get("SITE_URL") || "https://doug-shane.lovable.app";
+        const siteUrl = Deno.env.get("SITE_URL") || "https://buildingaura.site";
         intakeUrl = `${siteUrl}/intake/${intakeLink.token}`;
       }
 

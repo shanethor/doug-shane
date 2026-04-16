@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { fetchAIGateway } from "../_shared/ai-gateway.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -608,8 +609,6 @@ serve(async (req) => {
     }
 
     const { messages, trainingMode, userRole } = await req.json();
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("Service temporarily unavailable");
 
     const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
     const systemPrompt = buildSystemPrompt(trainingMode !== false, userRole || "advisor");
@@ -641,20 +640,20 @@ serve(async (req) => {
       if (!claudeResp.ok) {
         const errText = await claudeResp.text();
         console.error("Claude API error in agent-chat:", claudeResp.status, errText);
-        return await callLovableGatewayForChat(LOVABLE_API_KEY, systemPrompt, messages, corsHeaders);
+        return await callLovableGatewayForChat(systemPrompt, messages, corsHeaders);
       }
 
       const claudeResult = await claudeResp.json();
       
       if (claudeResult.type === "error") {
         console.error("Claude response error:", JSON.stringify(claudeResult));
-        return await callLovableGatewayForChat(LOVABLE_API_KEY, systemPrompt, messages, corsHeaders);
+        return await callLovableGatewayForChat(systemPrompt, messages, corsHeaders);
       }
 
       const claudeText = claudeResult.content?.[0]?.text || "";
       if (!claudeText) {
         console.error("Claude returned empty content, falling back");
-        return await callLovableGatewayForChat(LOVABLE_API_KEY, systemPrompt, messages, corsHeaders);
+        return await callLovableGatewayForChat(systemPrompt, messages, corsHeaders);
       }
 
       const encoder = new TextEncoder();
@@ -675,7 +674,7 @@ serve(async (req) => {
       });
     }
 
-    return await callLovableGatewayForChat(LOVABLE_API_KEY, systemPrompt, messages, corsHeaders);
+    return await callLovableGatewayForChat(systemPrompt, messages, corsHeaders);
   } catch (e: any) {
     console.error("agent-chat error:", e);
 
@@ -704,30 +703,19 @@ serve(async (req) => {
 });
 
 async function callLovableGatewayForChat(
-  apiKey: string,
   systemPrompt: string,
   messages: any[],
   corsHeaders: Record<string, string>,
 ): Promise<Response> {
-  console.log("agent-chat: Using Lovable AI gateway (Gemini)");
-  const response = await fetch(
-    "https://ai.gateway.lovable.dev/v1/chat/completions",
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: systemPrompt },
-          ...messages,
-        ],
-        stream: true,
-      }),
-    }
-  );
+  console.log("agent-chat: Using AI gateway (Gemini)");
+  const response = await fetchAIGateway({
+    model: "google/gemini-3-flash-preview",
+    messages: [
+      { role: "system", content: systemPrompt },
+      ...messages,
+    ],
+    stream: true,
+  });
 
   if (!response.ok) {
     if (response.status === 429) {

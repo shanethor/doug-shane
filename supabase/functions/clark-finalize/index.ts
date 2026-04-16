@@ -282,7 +282,7 @@ serve(async (req) => {
           try {
             const pdfResp = await fetch(templateUrl);
             if (!pdfResp.ok) {
-              const fallbackUrl = `https://aura-risk-group.lovable.app/acord-fillable/${formId}.pdf`;
+              const fallbackUrl = `https://buildingaura.site/acord-fillable/${formId}.pdf`;
               const fallbackResp = await fetch(fallbackUrl);
               if (!fallbackResp.ok) {
                 console.warn(`Template not found for ACORD ${formId}, skipping`);

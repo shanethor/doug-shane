@@ -248,7 +248,7 @@ export async function advisorAssist(
       body: result.body,
       metadata: {
         model: result.provider === "openai" ? "gpt-4o" : "gemini-3-flash",
-        engine: result.provider || "lovable",
+        engine: result.provider || "aura",
         duration_ms: duration,
         taskType: "EMAIL_DRAFT",
       },

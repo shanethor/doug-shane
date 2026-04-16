@@ -3,6 +3,8 @@ import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { buildSystemPrompt } from "./system-prompt.ts";
 import { enrichContext } from "./context-enrichment.ts";
+import { fetchAIGateway } from "../_shared/ai-gateway.ts";
+
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -43,8 +45,6 @@ serve(async (req) => {
 
   try {
     const { messages, context } = await req.json();
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
     const authHeader = req.headers.get("authorization");
 
@@ -97,18 +97,11 @@ serve(async (req) => {
       ...messages,
     ];
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
+    const response = await fetchAIGateway({
         model: "google/gemini-3-flash-preview",
         messages: aiMessages,
         stream: true,
-      }),
-    });
+      });
 
     if (!response.ok) {
       if (response.status === 429) {

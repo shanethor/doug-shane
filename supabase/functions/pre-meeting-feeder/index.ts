@@ -120,7 +120,7 @@ ${prospectRows}
 
 ---
 *Generated automatically by AuRa Connect Intelligence 5 days before your meeting.*
-*[View full details in Connect Intelligence →](${Deno.env.get("SUPABASE_URL")?.replace(".supabase.co", ".lovable.app")}/connect/intelligence)*
+*[View full details in Connect Intelligence →](${Deno.env.get("APP_URL") || "https://buildingaura.site"}/connect/intelligence)*
               `.trim();
 
               // Use compose-email to send

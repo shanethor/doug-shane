@@ -1,4 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { fetchAIGateway } from "../_shared/ai-gateway.ts";
+
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -31,8 +33,6 @@ Deno.serve(async (req) => {
     if (!name?.trim()) throw new Error("Name is required");
 
     // Call Lovable AI to generate the Connection Brief
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("AI service not configured");
 
     const systemPrompt = `You are AURA Intelligence, a relationship intelligence engine for insurance advisors and business professionals.
 Given a person's name and optional notes, generate a Connection Brief.
@@ -72,13 +72,7 @@ ${notes?.trim() ? `Notes: ${notes.trim()}` : "No additional notes provided."}
 
 Generate a thorough intelligence brief. If notes mention specific details (industry, location, referral source), use them to build richer context.`;
 
-    const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-      },
-      body: JSON.stringify({
+    const aiRes = await fetchAIGateway({
         model: "google/gemini-3-flash-preview",
         messages: [
           { role: "system", content: systemPrompt },
@@ -86,8 +80,7 @@ Generate a thorough intelligence brief. If notes mention specific details (indus
         ],
         temperature: 0.7,
         response_format: { type: "json_object" },
-      }),
-    });
+      });
 
     if (!aiRes.ok) {
       const errText = await aiRes.text();

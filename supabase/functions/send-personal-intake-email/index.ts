@@ -82,7 +82,7 @@ Deno.serve(async (req) => {
 
     if (leadMatch) {
       // Use the published app URL from the origin or fallback
-      const appUrl = Deno.env.get("APP_URL") || "https://doug-shane.lovable.app";
+      const appUrl = Deno.env.get("APP_URL") || "https://buildingaura.site";
       viewLink = `${appUrl}/lead/${leadMatch.id}`;
     }
 

@@ -137,9 +137,12 @@ The following secrets must also be set in **Supabase → Edge Functions → Secr
 | `SERPER_API_KEY` | Web search for lead enrichment |
 | `APOLLO_API_KEY` | Apollo.io contact database |
 | `PDL_API_KEY` | People Data Labs fallback enrichment |
-| `LOVABLE_API_KEY` | Gemini AI for email composition |
+| `GEMINI_API_KEY` | Google Gemini API key (PDF extraction, lead scan, email drafts) |
+| `ANTHROPIC_API_KEY` | Anthropic Claude API key (advisor assist, agent chat) |
+| `OPENAI_API_KEY` | OpenAI key (compose-email fallback, gpt-4o calls) |
+| `SLACK_BOT_TOKEN` | (Optional) Workspace Slack bot token for contact sync fallback |
 | `SITE_URL` | Public URL (`https://buildingaura.site`) |
-| `APP_URL` | App URL (same as SITE_URL or Lovable preview URL) |
+| `APP_URL` | App URL (same as SITE_URL) |
 
 ---
 
@@ -241,9 +244,9 @@ To load in development: Chrome → Extensions → Load unpacked → select `exte
 
 ## Deployment
 
-The app is deployed via [Lovable](https://lovable.dev) at [buildingaura.site](https://buildingaura.site).
+The app is deployed at [buildingaura.site](https://buildingaura.site).
 
-Pushes to `main` automatically trigger a redeploy. Edge functions must be deployed separately via the Supabase CLI or dashboard.
+Edge functions are deployed via the Supabase CLI or dashboard.
 
 ---
 

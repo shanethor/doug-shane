@@ -1,6 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { PDFDocument } from "https://esm.sh/pdf-lib@1.17.1";
+import { fetchAIGateway } from "../_shared/ai-gateway.ts";
+
 
 /**
  * ═══════════════════════════════════════════════════════════
@@ -261,21 +263,13 @@ async function callGeminiWithPdfs(
   const t0 = Date.now();
   console.log(`[gemini-native] Calling ${model} with raw PDFs...`);
 
-  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
+  const response = await fetchAIGateway({
       model,
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userContent },
       ],
-    }),
-    signal: AbortSignal.timeout(45_000),
-  });
+    });
 
   console.log(`[gemini-native] ${model} responded in ${Date.now() - t0}ms (status: ${response.status})`);
 
@@ -308,21 +302,13 @@ ${ocrText}`;
   const t0 = Date.now();
   console.log(`[text-mapping] Calling Gemini Flash for schema mapping (${ocrText.length} chars)...`);
 
-  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
+  const response = await fetchAIGateway({
       model: "google/gemini-2.5-flash",
       messages: [
         { role: "system", content: SCHEMA_PROMPT },
         { role: "user", content: userPrompt },
       ],
-    }),
-    signal: AbortSignal.timeout(45_000),
-  });
+    });
 
   console.log(`[text-mapping] Gemini Flash responded in ${Date.now() - t0}ms (status: ${response.status})`);
 
@@ -644,18 +630,10 @@ Return ONLY the JSON array, nothing else.`;
       { type: "image_url", image_url: { url: `data:application/pdf;base64,${pdfBase64}` } },
     ];
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
+    const response = await fetchAIGateway({
         model: "google/gemini-2.5-flash-lite",
         messages: [{ role: "user", content: userContent }],
-      }),
-      signal: AbortSignal.timeout(45_000),
-    });
+      });
 
     console.log(`[prescan] Flash Lite responded in ${Date.now() - t0}ms (status: ${response.status})`);
 
@@ -1015,8 +993,6 @@ serve(async (req) => {
 
     const { description, file_contents, pdf_files, submission_id } = await req.json();
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("Service temporarily unavailable");
 
     const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
     const hasPdfs = Array.isArray(pdf_files) && pdf_files.length > 0;
@@ -1070,7 +1046,6 @@ serve(async (req) => {
             console.log(`[prescan] Document has ${pages} pages (>${PRESCAN_THRESHOLD}), running prescan...`);
 
             const dataPages = await prescanForDataPages(
-              LOVABLE_API_KEY,
               cappedBase64,
               cappedPages,
               PRESCAN_TARGET_PAGES,
@@ -1103,7 +1078,6 @@ serve(async (req) => {
       // Stage 1: Gemini Flash
       try {
         const flashRaw = await callGeminiWithPdfs(
-          LOVABLE_API_KEY,
           SCHEMA_PROMPT,
           `Extract all insurance data from the attached PDF document(s). IMPORTANT: Focus on DECLARATIONS PAGES first — these contain insured-specific data (limits, premiums, deductibles, locations, endorsements). SKIP standard policy form language (e.g. "BUSINESSOWNERS COVERAGE FORM" boilerplate, privacy notices) as they contain no insured-specific data. Extract ALL BOP property limits, GL limits, EPLI, cyber coverages, mortgagee/additional interest info, producer/agency details, endorsement form numbers, and location-indexed data.${additionalContext ? `\n\nAdditional context:\n${additionalContext}` : ""}`,
           truncatedFiles,
@@ -1118,7 +1092,6 @@ serve(async (req) => {
           console.log(`[pipeline] Low confidence (${flashCount}), escalating to Gemini Pro...`);
           try {
             const proRaw = await callGeminiWithPdfs(
-              LOVABLE_API_KEY,
               SCHEMA_PROMPT,
                `Extract all insurance data from the attached PDF document(s). IMPORTANT: Focus on DECLARATIONS PAGES first — these contain insured-specific data (limits, premiums, deductibles, locations, endorsements). SKIP standard policy form language boilerplate. Extract ALL BOP property limits, GL limits, EPLI, cyber coverages, mortgagee/additional interest info, producer/agency details, endorsement form numbers, and location-indexed data.${additionalContext ? `\n\nAdditional context:\n${additionalContext}` : ""}`,
               truncatedFiles,
@@ -1165,7 +1138,6 @@ serve(async (req) => {
           console.log(`[pipeline] Prescan result still low (${currentCount}); retrying broad pass on ~${broadFallbackPages} pages without prescan`);
           try {
             const broadRaw = await callGeminiWithPdfs(
-              LOVABLE_API_KEY,
               SCHEMA_PROMPT,
               `Retry extraction across the full truncated document set. Return only mappable ACORD fields in the requested JSON schema.${additionalContext ? `\n\nAdditional context:\n${additionalContext}` : ""}`,
               broadFallbackFiles,
@@ -1186,7 +1158,6 @@ serve(async (req) => {
         console.error("[pipeline] Gemini Flash failed, trying Pro directly:", flashErr);
         try {
           const proRaw = await callGeminiWithPdfs(
-            LOVABLE_API_KEY,
             SCHEMA_PROMPT,
             `Extract all insurance data from the attached PDF document(s). Focus on DECLARATIONS PAGES. SKIP policy form boilerplate. Extract ALL BOP property limits, GL limits, EPLI, cyber coverages, mortgagee info, producer details, endorsement form numbers, and location-indexed data.${additionalContext ? `\n\nAdditional context:\n${additionalContext}` : ""}`,
             truncatedFiles,
@@ -1206,7 +1177,7 @@ serve(async (req) => {
     else {
       pipelineUsed = "text-only";
       console.log(`[pipeline] Using text-only path`);
-      const raw = await callGeminiFlash(LOVABLE_API_KEY, additionalContext, "");
+      const raw = await callGeminiFlash(additionalContext, "");
       extracted = coerceExtractionPayload(parseAiJson(raw));
     }
 

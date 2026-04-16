@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { PDFDocument } from "https://esm.sh/pdf-lib@1.17.1";
+import { fetchAIGateway } from "../_shared/ai-gateway.ts";
+
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -7,7 +9,6 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
 const MAX_PAGES = 10;
 
@@ -84,7 +85,7 @@ serve(async (req) => {
       });
     }
 
-    if (!LOVABLE_API_KEY) {
+    if (!"") {
       return new Response(JSON.stringify({ error: "AI extraction not configured" }), {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -120,21 +121,13 @@ serve(async (req) => {
     const t0 = Date.now();
     console.log(`[extract-dec] Calling Gemini Flash with ${files.length} file(s)...`);
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
+    const response = await fetchAIGateway({
         model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: EXTRACTION_PROMPT },
           { role: "user", content: userContent },
         ],
-      }),
-      signal: AbortSignal.timeout(45_000),
-    });
+      });
 
     console.log(`[extract-dec] Response in ${Date.now() - t0}ms (status: ${response.status})`);
 

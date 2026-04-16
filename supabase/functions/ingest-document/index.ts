@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { fetchAIGateway } from "../_shared/ai-gateway.ts";
+
 // extractPageRange removed — slicing corrupts encrypted PDFs
 
 const corsHeaders = {
@@ -91,10 +93,8 @@ serve(async (req) => {
       ? `\n\nIMPORTANT: This document has ${totalPages} pages. Focus your extraction on pages 1 through ${scanEnd} only. These contain the declarations and coverage summary pages with the key data.`
       : "";
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
-    const rawText = await callGemini(sendBase64, EXTRACTION_PROMPT + pageFocus, LOVABLE_API_KEY);
+    const rawText = await callGemini(sendBase64, EXTRACTION_PROMPT + pageFocus, "");
     console.log(`[ingest] Gemini response length: ${rawText.length} chars`);
     console.log(`[ingest] Response preview: ${rawText.substring(0, 800)}`);
 
@@ -118,7 +118,7 @@ serve(async (req) => {
     if (fieldCount < 10 && totalPages > 0) {
       console.log(`[ingest] Low field count (${fieldCount}), retrying with full-doc prompt`);
       const retryPrompt = EXTRACTION_PROMPT + `\n\nIMPORTANT: The first extraction attempt found very few fields. Please scan ALL pages of this ${totalPages}-page document thoroughly. Look for declarations pages, coverage summaries, schedules, and endorsements throughout the entire document.`;
-      const retryRaw = await callGemini(sendBase64, retryPrompt, LOVABLE_API_KEY);
+      const retryRaw = await callGemini(sendBase64, retryPrompt, "");
       try {
         const retryParsed = parseJson(retryRaw);
         const retryFlat = flattenToFormKeys(retryParsed);
@@ -364,10 +364,7 @@ function uint8ToBase64(bytes: Uint8Array): string {
 }
 
 async function callGemini(base64: string, prompt: string, apiKey: string): Promise<string> {
-  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
+  const response = await fetchAIGateway({
       model: "google/gemini-2.5-flash",
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
@@ -379,9 +376,7 @@ async function callGemini(base64: string, prompt: string, apiKey: string): Promi
           ],
         },
       ],
-    }),
-    signal: AbortSignal.timeout(60_000),
-  });
+    });
 
   if (!response.ok) {
     const t = await response.text();

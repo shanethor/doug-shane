@@ -133,7 +133,7 @@ Deno.serve(async (req) => {
                   <p style="color: #555; font-size: 14px; line-height: 1.6;">
                     You can now sign in and start using the platform.
                   </p>
-                  <a href="${Deno.env.get("SUPABASE_URL")?.replace('.supabase.co', '.lovable.app') || 'https://doug-shane.lovable.app'}/auth"
+                  <a href="${Deno.env.get("APP_URL") || 'https://buildingaura.site'}/auth"
                      style="display: inline-block; margin-top: 20px; padding: 12px 24px; background: #111; color: #fff; text-decoration: none; border-radius: 8px; font-size: 14px;">
                     Sign In to AURA
                   </a>

@@ -455,15 +455,22 @@ serve(async (req) => {
       });
     }
 
-    // ─── Slack API Sync (via Slack connector gateway or manual token) ───
+    // ─── Slack API Sync (direct Slack Web API) ───
     if (action === "sync_slack_api") {
-      const GATEWAY_URL = "https://connector-gateway.lovable.dev/slack/api";
-      const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-      const SLACK_API_KEY = Deno.env.get("SLACK_API_KEY");
+      // Supports either a Slack bot token stored per-user (slack_tokens.access_token)
+      // or a workspace-wide fallback via SLACK_BOT_TOKEN env var.
+      let slackToken: string | null = null;
 
-      if (!LOVABLE_API_KEY || !SLACK_API_KEY) {
+      const { data: tokenRow } = await adminClient
+        .from("slack_tokens")
+        .select("access_token")
+        .eq("user_id", userId)
+        .maybeSingle();
+      slackToken = tokenRow?.access_token ?? Deno.env.get("SLACK_BOT_TOKEN") ?? null;
+
+      if (!slackToken) {
         return new Response(JSON.stringify({
-          error: "Slack connector not configured. Connect Slack via Settings → Connectors.",
+          error: "Slack not connected. Connect Slack via Settings → Connectors.",
           needs_connector: true, connector_id: "slack",
         }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
@@ -471,11 +478,10 @@ serve(async (req) => {
       let allMembers: any[] = [];
       let cursor = "";
       do {
-        const url = `${GATEWAY_URL}/users.list?limit=200${cursor ? `&cursor=${cursor}` : ""}`;
+        const url = `https://slack.com/api/users.list?limit=200${cursor ? `&cursor=${cursor}` : ""}`;
         const resp = await fetch(url, {
           headers: {
-            Authorization: `Bearer ${LOVABLE_API_KEY}`,
-            "X-Connection-Api-Key": SLACK_API_KEY,
+            Authorization: `Bearer ${slackToken}`,
           },
         });
         const data = await resp.json();

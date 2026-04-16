@@ -1,4 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { fetchAIGateway } from "../_shared/ai-gateway.ts";
+
 
 /**
  * ═══════════════════════════════════════════════════════════
@@ -112,8 +114,6 @@ interface IngestRequest {
 }
 
 async function handleIngest(body: IngestRequest, t0: number): Promise<Response> {
-  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-  if (!LOVABLE_API_KEY) throw new Error("AI service not configured");
 
   const { docType, schemaHint, fileBase64, fileMimeType, ocrText, additionalContext } = body;
 
@@ -141,21 +141,13 @@ async function handleIngest(body: IngestRequest, t0: number): Promise<Response> 
 
   console.log(`[ai-router] ingestDocument docType=${docType || "unknown"} hasFile=${!!fileBase64} hasOcr=${!!ocrText}`);
 
-  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${LOVABLE_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
+  const response = await fetchAIGateway({
       model: "google/gemini-2.5-flash",
       messages: [
         { role: "system", content: INGESTION_SYSTEM_PROMPT },
         { role: "user", content: userContent },
       ],
-    }),
-    signal: AbortSignal.timeout(45_000),
-  });
+    });
 
   if (!response.ok) {
     const errText = await response.text();
@@ -212,9 +204,8 @@ interface AdvisorRequest {
 
 async function handleAdvisor(body: AdvisorRequest, t0: number): Promise<Response> {
   const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
-  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
-  if (!ANTHROPIC_API_KEY && !LOVABLE_API_KEY) {
+  if (!ANTHROPIC_API_KEY && !"") {
     throw new Error("AI service not configured");
   }
 
@@ -232,7 +223,7 @@ ${structuredData ? `STRUCTURED DATA (ground truth):\n${JSON.stringify(structured
   if (ANTHROPIC_API_KEY) {
     return await callClaudeAdvisor(ANTHROPIC_API_KEY, fullUserPrompt, stream || false, t0);
   } else {
-    return await callLovableAdvisor(LOVABLE_API_KEY!, fullUserPrompt, stream || false, t0);
+    return await callLovableAdvisor(fullUserPrompt, stream || false, t0);
   }
 }
 
@@ -269,10 +260,9 @@ async function callClaudeAdvisor(
     console.error("[ai-router] Claude Opus error:", response.status, errText);
 
     // Fall back to Lovable AI
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (LOVABLE_API_KEY) {
+    if ("") {
       console.log("[ai-router] Falling back to Lovable AI for advisor");
-      return await callLovableAdvisor(LOVABLE_API_KEY, userPrompt, stream, t0);
+      return await callLovableAdvisor(userPrompt, stream, t0);
     }
     throw new Error(`Claude Opus error: ${response.status}`);
   }
@@ -353,22 +343,14 @@ async function callLovableAdvisor(
   stream: boolean,
   t0: number,
 ): Promise<Response> {
-  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
+  const response = await fetchAIGateway({
       model: "google/gemini-2.5-pro",
       messages: [
         { role: "system", content: ADVISOR_SYSTEM_PROMPT },
         { role: "user", content: userPrompt },
       ],
       stream: stream || false,
-    }),
-    signal: AbortSignal.timeout(45_000),
-  });
+    });
 
   if (!response.ok) {
     const errText = await response.text();
