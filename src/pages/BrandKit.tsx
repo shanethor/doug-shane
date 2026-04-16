@@ -1,8 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Palette, Type, Layout, Layers, Copy, Check } from "lucide-react";
+import { Palette, Type, Layout, Layers, Copy, Check, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useCallback, useRef } from "react";
 
 const AuraLogo = ({ size = 80 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 100 100" fill="none">
@@ -46,6 +46,52 @@ const PRODUCTS = [
     route: "/studio",
   },
 ];
+
+function downloadSvgAsPng(svgElement: SVGElement, filename: string, scale = 3) {
+  const svgData = new XMLSerializer().serializeToString(svgElement);
+  const svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+  const url = URL.createObjectURL(svgBlob);
+  const img = new Image();
+  img.onload = () => {
+    const canvas = document.createElement("canvas");
+    canvas.width = img.width * scale;
+    canvas.height = img.height * scale;
+    const ctx = canvas.getContext("2d")!;
+    ctx.scale(scale, scale);
+    ctx.drawImage(img, 0, 0);
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }, "image/png");
+    URL.revokeObjectURL(url);
+  };
+  img.src = url;
+}
+
+function DownloadableLogoCard({ title, bgStyle, children, filename }: { title: string; bgStyle: React.CSSProperties; children: React.ReactNode; filename: string }) {
+  const svgRef = useRef<HTMLDivElement>(null);
+  const handleDownload = useCallback(() => {
+    const svg = svgRef.current?.querySelector("svg");
+    if (svg) downloadSvgAsPng(svg, filename);
+  }, [filename]);
+  return (
+    <Card>
+      <CardHeader className="pb-2 flex flex-row items-center justify-between">
+        <CardTitle className="text-sm">{title}</CardTitle>
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleDownload} title="Download PNG">
+          <Download className="h-3.5 w-3.5" />
+        </Button>
+      </CardHeader>
+      <CardContent ref={svgRef} className="flex items-center justify-center py-10 rounded-b-lg" style={bgStyle}>
+        {children}
+      </CardContent>
+    </Card>
+  );
+}
 
 function ColorSwatch({ color }: { color: typeof COLORS[0] }) {
   const [copied, setCopied] = useState(false);
@@ -99,27 +145,20 @@ export default function BrandKit() {
             <h2 className="text-2xl font-bold">Logo</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card>
-              <CardHeader className="pb-2"><CardTitle className="text-sm">Primary — Dark BG</CardTitle></CardHeader>
-              <CardContent className="flex items-center justify-center py-10 rounded-b-lg" style={{ background: "#08080A" }}>
-                <AuraLogo size={80} />
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2"><CardTitle className="text-sm">Primary — Light BG</CardTitle></CardHeader>
-              <CardContent className="flex items-center justify-center py-10 rounded-b-lg bg-white">
-                <AuraLogo size={80} />
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2"><CardTitle className="text-sm">Wordmark</CardTitle></CardHeader>
-              <CardContent className="flex items-center justify-center py-10 rounded-b-lg" style={{ background: "#08080A" }}>
-                <div className="flex items-center gap-3">
-                  <AuraLogo size={48} />
-                  <span className="text-3xl font-extrabold text-white tracking-tight">AURA</span>
-                </div>
-              </CardContent>
-            </Card>
+            <DownloadableLogoCard title="Primary — Dark BG" bgStyle={{ background: "#08080A" }} filename="aura-logo-dark.png">
+              <AuraLogo size={80} />
+            </DownloadableLogoCard>
+            <DownloadableLogoCard title="Primary — Light BG" bgStyle={{ background: "#ffffff" }} filename="aura-logo-light.png">
+              <AuraLogo size={80} />
+            </DownloadableLogoCard>
+            <DownloadableLogoCard title="Wordmark" bgStyle={{ background: "#08080A" }} filename="aura-wordmark.png">
+              <svg width="200" height="80" viewBox="0 0 200 80" fill="none">
+                <rect width="80" height="80" rx="18" fill="hsl(140 12% 42%)" />
+                <path d="M40 14L59.2 66H49.7L46.1 56H33.9L30.3 66H20.8L40 14Z" fill="#08080A" />
+                <rect x="31" y="49.5" width="18" height="4.5" rx="2.25" fill="hsl(140 12% 42%)" />
+                <text x="92" y="52" fill="white" fontFamily="Inter, sans-serif" fontWeight="800" fontSize="32" letterSpacing="-0.02em">AURA</text>
+              </svg>
+            </DownloadableLogoCard>
           </div>
           <Card className="border-dashed">
             <CardContent className="py-4">
