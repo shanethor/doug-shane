@@ -67,7 +67,13 @@ async function truncatePdf(base64: string, maxPages: number): Promise<{ base64: 
   const pages = await newDoc.copyPages(srcDoc, Array.from({ length: maxPages }, (_, i) => i));
   pages.forEach((p) => newDoc.addPage(p));
   const slicedBytes = await newDoc.save();
-  const slicedBase64 = btoa(String.fromCharCode(...slicedBytes));
+  // Chunked base64 encode to avoid stack overflow on large PDFs
+  let binary = "";
+  const CHUNK = 0x8000;
+  for (let i = 0; i < slicedBytes.length; i += CHUNK) {
+    binary += String.fromCharCode(...slicedBytes.subarray(i, i + CHUNK));
+  }
+  const slicedBase64 = btoa(binary);
   return { base64: slicedBase64, originalPages, sliced: true };
 }
 
@@ -86,15 +92,19 @@ serve(async (req) => {
     }
 
 
-    // Build content parts for Lovable AI gateway (OpenAI-compatible format)
-    type ContentPart = { type: string; text?: string; image_url?: { url: string } };
+    // Build content parts for AI gateway (OpenAI-compatible format)
+    type ContentPart = {
+      type: string;
+      text?: string;
+      image_url?: { url: string };
+      file?: { file_data: string; mime_type: string };
+    };
     const userContent: ContentPart[] = [{ type: "text", text: "Extract all policy information from the attached declaration pages." }];
 
     for (const file of files) {
       const mimeType = file.mimeType || "application/pdf";
       let fileBase64 = file.base64;
 
-      // Slice large PDFs to first N pages to avoid context overflow
       if (mimeType === "application/pdf") {
         try {
           const result = await truncatePdf(file.base64, MAX_PAGES);
@@ -105,19 +115,23 @@ serve(async (req) => {
         } catch (sliceErr) {
           console.warn("[extract-dec] PDF slice failed, sending original:", sliceErr);
         }
+        userContent.push({
+          type: "file",
+          file: { file_data: `data:${mimeType};base64,${fileBase64}`, mime_type: mimeType },
+        });
+      } else {
+        userContent.push({
+          type: "image_url",
+          image_url: { url: `data:${mimeType};base64,${fileBase64}` },
+        });
       }
-
-      userContent.push({
-        type: "image_url",
-        image_url: { url: `data:${mimeType};base64,${fileBase64}` },
-      });
     }
 
     const t0 = Date.now();
-    console.log(`[extract-dec] Calling Gemini Flash with ${files.length} file(s)...`);
+    console.log(`[extract-dec] Calling Claude Sonnet 4.5 with ${files.length} file(s)...`);
 
     const response = await fetchAIGateway({
-        model: "google/gemini-2.5-flash",
+        model: "anthropic/claude-sonnet-4-5",
         messages: [
           { role: "system", content: EXTRACTION_PROMPT },
           { role: "user", content: userContent },
