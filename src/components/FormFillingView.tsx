@@ -2117,6 +2117,7 @@ export default function FormFillingView({ submissionId, initialMessages, initial
       <div className="flex flex-col h-[calc(100vh-4rem)] overflow-hidden">
         {addFormDialog}
         {emailDialog}
+        {questionnaireDialog}
         <SubmitPackageDialog
           open={submitPackageOpen}
           onOpenChange={setSubmitPackageOpen}
@@ -2203,6 +2204,7 @@ export default function FormFillingView({ submissionId, initialMessages, initial
     <div className="flex h-[calc(100vh-4rem)] overflow-hidden">
       {addFormDialog}
       {emailDialog}
+      {questionnaireDialog}
       <SubmitPackageDialog
         open={submitPackageOpen}
         onOpenChange={setSubmitPackageOpen}
