@@ -208,7 +208,7 @@ serve(async (req) => {
         extraction_confidence: fieldCount > 20 ? 0.9 : fieldCount > 5 ? 0.7 : 0.3,
         total_pages: totalPages || null,
       extraction_metadata: {
-          model: "anthropic/claude-opus-4-5",
+          model: "anthropic/claude-opus-4-7",
           field_count: fieldCount,
           pages_scanned: scanEnd || totalPages,
           total_pages: totalPages,
@@ -377,9 +377,9 @@ function uint8ToBase64(bytes: Uint8Array): string {
 
 async function callGemini(base64: string, prompt: string, _apiKey: string): Promise<string> {
   // ── Use Claude Opus 4.5 (latest Opus) for extraction — same model family as Clark ──
-  // The user requested "Opus 4.7"; the current latest available Opus is 4.5.
+  // Using Claude Opus 4.7 for highest-fidelity extraction.
   const response = await fetchAIGateway({
-      model: "anthropic/claude-opus-4-5",
+      model: "anthropic/claude-opus-4-7",
       max_tokens: 16384,
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
