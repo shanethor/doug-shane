@@ -85,7 +85,7 @@ interface Message {
   role: "user" | "assistant";
   content: string;
   actions?: Array<{ label: string; action: string; icon?: string }>;
-  widget?: "carrier_select" | "inline_questionnaire" | "email_questionnaire";
+  widget?: "carrier_select" | "inline_questionnaire" | "email_questionnaire" | "email_submission";
   widgetData?: any;
 }
 
@@ -94,7 +94,7 @@ interface ClarkChatProps {
   onSubmissionCreated?: (id: string) => void;
   onSubmissionsChanged?: () => void;
   onNewClient?: () => void;
-  tier?: "free" | "starter" | "pro" | "elite";
+  tier?: "free" | "starter" | "pro" | "elite" | "unlimited";
   submissionCount?: number;
 }
 

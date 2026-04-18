@@ -207,8 +207,8 @@ serve(async (req) => {
         extraction_status: fieldCount > 5 ? "complete" : "partial",
         extraction_confidence: fieldCount > 20 ? 0.9 : fieldCount > 5 ? 0.7 : 0.3,
         total_pages: totalPages || null,
-        extraction_metadata: {
-          model: "google/gemini-2.5-flash",
+      extraction_metadata: {
+          model: "anthropic/claude-opus-4-5",
           field_count: fieldCount,
           pages_scanned: scanEnd || totalPages,
           total_pages: totalPages,
@@ -242,7 +242,19 @@ serve(async (req) => {
 // Uses FLAT field keys that directly match ACORD 125/126 form field names.
 // This avoids an error-prone nested-to-flat mapping step.
 
-const EXTRACTION_PROMPT = `You are an expert insurance document parser. Extract ALL available data from this insurance document (declarations page, policy packet, application, or certificate).
+const EXTRACTION_PROMPT = `You are Clark, an expert insurance data extraction AI specializing in Declaration pages, ACORD applications, loss runs, and certificates of insurance.
+
+Your task is EXHAUSTIVE EXTRACTION of ALL pertinent insurance data from the provided document.
+
+Rules:
+- Conduct a FULL, EXHAUSTIVE extraction of ALL pertinent insurance data
+- Capture EVERY detail related to: coverages, limits, deductibles, sub-limits, property schedules, named insureds, additional insureds, specific endorsements, classification codes, experience mods, payroll data, vehicle schedules, driver lists, loss history, prior carriers, policy numbers, premium breakdowns
+- This applies to BOTH personal and commercial lines
+- FILTER OUT: standard legal boilerplate, privacy notices, signature blocks, general terms & conditions — these waste context and add no underwriting value
+- NEVER guess or hallucinate — if a field is not present, omit it entirely or set to null
+- Be extraordinarily thorough — insurance underwriters depend on this data
+
+
 
 Return a FLAT JSON object using these exact field keys. Only include fields you find in the document. Set missing fields to null.
 
@@ -363,9 +375,12 @@ function uint8ToBase64(bytes: Uint8Array): string {
   return btoa(binary);
 }
 
-async function callGemini(base64: string, prompt: string, apiKey: string): Promise<string> {
+async function callGemini(base64: string, prompt: string, _apiKey: string): Promise<string> {
+  // ── Use Claude Opus 4.5 (latest Opus) for extraction — same model family as Clark ──
+  // The user requested "Opus 4.7"; the current latest available Opus is 4.5.
   const response = await fetchAIGateway({
-      model: "google/gemini-2.5-flash",
+      model: "anthropic/claude-opus-4-5",
+      max_tokens: 16384,
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         {

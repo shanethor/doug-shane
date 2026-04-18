@@ -46,7 +46,7 @@ export default function LeadOutreachPanel({ lead, onClose }: Props) {
   // Questionnaire
   const [sendingQuestionnaire, setSendingQuestionnaire] = useState(false);
   const [questionnaireSent, setQuestionnaireSent] = useState(
-    !!lead.questionnaire_sent_at
+    !!(lead as any).questionnaire_sent_at
   );
   const questionnaireStatus = (lead as any).questionnaire_status as string | undefined;
   const questionnaireResponse = (lead as any).questionnaire_response as string | undefined;
@@ -383,7 +383,7 @@ FOLLOW-UP MESSAGE:
               </div>
             )}
 
-            {questionnaireStatus === "sent" && questionnaireStatus !== "responded" && (
+            {questionnaireStatus === "sent" && (
               <div className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs" style={{ background: "hsl(45 80% 50% / 0.08)", border: "1px solid hsl(45 80% 50% / 0.2)" }}>
                 <AlertCircle className="h-3.5 w-3.5 shrink-0" style={{ color: "hsl(45 80% 55%)" }} />
                 <span style={{ color: "hsl(240 5% 70%)" }}>Questionnaire sent — awaiting response</span>
