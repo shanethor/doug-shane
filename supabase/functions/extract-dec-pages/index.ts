@@ -85,11 +85,6 @@ serve(async (req) => {
       });
     }
 
-    if (!"") {
-      return new Response(JSON.stringify({ error: "AI extraction not configured" }), {
-        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
 
     // Build content parts for Lovable AI gateway (OpenAI-compatible format)
     type ContentPart = { type: string; text?: string; image_url?: { url: string } };
