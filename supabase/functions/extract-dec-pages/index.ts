@@ -128,10 +128,10 @@ serve(async (req) => {
     }
 
     const t0 = Date.now();
-    console.log(`[extract-dec] Calling Claude Sonnet 4.5 with ${files.length} file(s)...`);
+    console.log(`[extract-dec] Calling Claude Opus 4.7 with ${files.length} file(s)...`);
 
     const response = await fetchAIGateway({
-        model: "anthropic/claude-sonnet-4-5",
+        model: "anthropic/claude-opus-4-7",
         messages: [
           { role: "system", content: EXTRACTION_PROMPT },
           { role: "user", content: userContent },
