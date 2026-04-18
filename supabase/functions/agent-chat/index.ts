@@ -610,6 +610,29 @@ serve(async (req) => {
 
     const { messages, trainingMode, userRole } = await req.json();
 
+    // ── Partner-link lookup intercept ────────────────────────────────
+    // If the user asks for a partner link by name, answer directly from DB.
+    const lastUserMsg = [...messages].reverse().find((m: any) => m.role === "user")?.content || "";
+    const partnerIntent = /partner\s*(link|page|url|tracker|slug)|(link|url|page).*for\s+[A-Z]/i.test(lastUserMsg)
+      || /\b(where('?s| is)|find|get|fetch|share|send|give me)\b.*\b(link|page|url|tracker)\b/i.test(lastUserMsg);
+    if (partnerIntent) {
+      const partnerReply = await lookupPartnerLink(lastUserMsg, req);
+      if (partnerReply) {
+        const encoder = new TextEncoder();
+        const stream = new ReadableStream({
+          start(controller) {
+            const chunks = partnerReply.match(/.{1,80}/gs) || [partnerReply];
+            for (const chunk of chunks) {
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ choices: [{ delta: { content: chunk } }] })}\n\n`));
+            }
+            controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+            controller.close();
+          },
+        });
+        return new Response(stream, { headers: { ...corsHeaders, "Content-Type": "text/event-stream" } });
+      }
+    }
+
     const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
     const systemPrompt = buildSystemPrompt(trainingMode !== false, userRole || "advisor");
 
