@@ -66,7 +66,7 @@ const MANAGER_SUGGESTIONS = [
 const CLIENT_SERVICES_SUGGESTIONS = [
   { icon: FileSearch, label: "Look up a client", message: "Look up a client's policy details and coverage information." },
   { icon: Mail, label: "Send a COI", message: "I need to send a certificate of insurance for a client." },
-  { icon: ClipboardList, label: "Send intake form", message: "Send an updated intake form to a client." },
+  { icon: ClipboardList, label: "Send questionnaire to client", message: "Send a questionnaire to a client to gather intake info." },
   { icon: Search, label: "Check renewal dates", message: "When do my assigned clients' policies renew?" },
   { icon: Users, label: "Client status", message: "What's the status on my assigned clients?" },
   { icon: Globe, label: "Policy questions", message: "What are the coverage limits for one of my clients?" },
