@@ -92,15 +92,19 @@ serve(async (req) => {
     }
 
 
-    // Build content parts for Lovable AI gateway (OpenAI-compatible format)
-    type ContentPart = { type: string; text?: string; image_url?: { url: string } };
+    // Build content parts for AI gateway (OpenAI-compatible format)
+    type ContentPart = {
+      type: string;
+      text?: string;
+      image_url?: { url: string };
+      file?: { file_data: string; mime_type: string };
+    };
     const userContent: ContentPart[] = [{ type: "text", text: "Extract all policy information from the attached declaration pages." }];
 
     for (const file of files) {
       const mimeType = file.mimeType || "application/pdf";
       let fileBase64 = file.base64;
 
-      // Slice large PDFs to first N pages to avoid context overflow
       if (mimeType === "application/pdf") {
         try {
           const result = await truncatePdf(file.base64, MAX_PAGES);
@@ -111,9 +115,6 @@ serve(async (req) => {
         } catch (sliceErr) {
           console.warn("[extract-dec] PDF slice failed, sending original:", sliceErr);
         }
-      }
-
-      if (mimeType === "application/pdf") {
         userContent.push({
           type: "file",
           file: { file_data: `data:${mimeType};base64,${fileBase64}`, mime_type: mimeType },
@@ -124,6 +125,7 @@ serve(async (req) => {
           image_url: { url: `data:${mimeType};base64,${fileBase64}` },
         });
       }
+    }
 
     const t0 = Date.now();
     console.log(`[extract-dec] Calling Claude Sonnet 4.5 with ${files.length} file(s)...`);
