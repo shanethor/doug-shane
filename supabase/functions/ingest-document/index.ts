@@ -387,7 +387,13 @@ async function callGemini(base64: string, prompt: string, _apiKey: string): Prom
           role: "user",
           content: [
             { type: "text", text: prompt },
-            { type: "image_url", image_url: { url: `data:application/pdf;base64,${base64}` } },
+            {
+              type: "file",
+              file: {
+                filename: "document.pdf",
+                file_data: `data:application/pdf;base64,${base64}`,
+              },
+            },
           ],
         },
       ],
