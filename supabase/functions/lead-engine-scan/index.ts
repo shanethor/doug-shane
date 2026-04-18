@@ -36,9 +36,6 @@ Deno.serve(async (req) => {
       return jsonResp({ error: "Missing authorization header" }, 401);
     }
 
-    if (!"") {
-      return jsonResp({ error: "AI service not configured" }, 500);
-    }
 
     // Resolve user
     let userId: string;
