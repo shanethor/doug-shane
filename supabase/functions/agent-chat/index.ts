@@ -765,3 +765,75 @@ async function callLovableGatewayForChat(
     headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
   });
 }
+
+// ───────────────────────────────────────────────────────────────────
+// Partner link lookup (intent-driven, called before LLM)
+// ───────────────────────────────────────────────────────────────────
+async function lookupPartnerLink(userMsg: string, req: Request): Promise<string | null> {
+  try {
+    const admin = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+
+    const [{ data: trackers }, { data: intakes }] = await Promise.all([
+      admin.from("partner_tracker_tokens").select("partner_slug, token, is_active").eq("is_active", true),
+      admin.from("intake_links").select("partner_slug").not("partner_slug", "is", null),
+    ]);
+
+    const slugCounts = new Map<string, number>();
+    (intakes || []).forEach((r: any) => {
+      if (r.partner_slug) slugCounts.set(r.partner_slug, (slugCounts.get(r.partner_slug) || 0) + 1);
+    });
+    const allSlugs = new Set<string>([
+      ...((trackers || []).map((t: any) => t.partner_slug).filter(Boolean)),
+      ...slugCounts.keys(),
+    ]);
+    if (allSlugs.size === 0) return null;
+
+    const lower = userMsg.toLowerCase();
+    const STOP = new Set(["the","for","link","page","url","partner","tracker","slug","what","where","find","get","fetch","share","send","give","please","aura","insurance","client","clients","need","want","know","tell","with","from","that","this","have","there","here","also"]);
+    const tokens = lower
+      .replace(/[^a-z\s-]/g, " ")
+      .split(/\s+/)
+      .filter((w) => w.length >= 3 && !STOP.has(w));
+
+    let bestSlug: string | null = null;
+    let bestScore = 0;
+    for (const slug of allSlugs) {
+      const slugWords = slug.toLowerCase().split(/[-_\s]+/);
+      let score = 0;
+      for (const t of tokens) {
+        for (const sw of slugWords) {
+          if (sw === t) score += 3;
+          else if (sw.startsWith(t) || t.startsWith(sw)) score += 2;
+          else if (sw.includes(t) || t.includes(sw)) score += 1;
+        }
+      }
+      if (score > bestScore) { bestScore = score; bestSlug = slug; }
+    }
+
+    if (!bestSlug || bestScore < 2) return null;
+
+    const origin = req.headers.get("origin") || req.headers.get("referer")?.match(/^https?:\/\/[^/]+/)?.[0] || "";
+    const tracker = (trackers || []).find((t: any) => t.partner_slug === bestSlug);
+    const submissionCount = slugCounts.get(bestSlug) || 0;
+
+    const lines = [
+      `Here's the partner link for **${bestSlug}**:`,
+      ``,
+      `**Landing page (share with clients):**`,
+      `${origin}/b/${bestSlug}`,
+    ];
+    if (tracker?.token) {
+      lines.push(``, `**Partner tracker (for them to see referrals):**`, `${origin}/partner-tracker?token=${tracker.token}`);
+    }
+    if (submissionCount > 0) {
+      lines.push(``, `📊 ${submissionCount} intake link${submissionCount === 1 ? "" : "s"} generated under this partner.`);
+    }
+    return lines.join("\n");
+  } catch (e) {
+    console.error("lookupPartnerLink error:", e);
+    return null;
+  }
+}
