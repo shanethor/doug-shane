@@ -610,6 +610,29 @@ serve(async (req) => {
 
     const { messages, trainingMode, userRole } = await req.json();
 
+    // ── Partner-link lookup intercept ────────────────────────────────
+    // If the user asks for a partner link by name, answer directly from DB.
+    const lastUserMsg = [...messages].reverse().find((m: any) => m.role === "user")?.content || "";
+    const partnerIntent = /partner\s*(link|page|url|tracker|slug)|(link|url|page).*for\s+[A-Z]/i.test(lastUserMsg)
+      || /\b(where('?s| is)|find|get|fetch|share|send|give me)\b.*\b(link|page|url|tracker)\b/i.test(lastUserMsg);
+    if (partnerIntent) {
+      const partnerReply = await lookupPartnerLink(lastUserMsg, req);
+      if (partnerReply) {
+        const encoder = new TextEncoder();
+        const stream = new ReadableStream({
+          start(controller) {
+            const chunks = partnerReply.match(/.{1,80}/gs) || [partnerReply];
+            for (const chunk of chunks) {
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ choices: [{ delta: { content: chunk } }] })}\n\n`));
+            }
+            controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+            controller.close();
+          },
+        });
+        return new Response(stream, { headers: { ...corsHeaders, "Content-Type": "text/event-stream" } });
+      }
+    }
+
     const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
     const systemPrompt = buildSystemPrompt(trainingMode !== false, userRole || "advisor");
 
@@ -741,4 +764,76 @@ async function callLovableGatewayForChat(
   return new Response(response.body, {
     headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
   });
+}
+
+// ───────────────────────────────────────────────────────────────────
+// Partner link lookup (intent-driven, called before LLM)
+// ───────────────────────────────────────────────────────────────────
+async function lookupPartnerLink(userMsg: string, req: Request): Promise<string | null> {
+  try {
+    const admin = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+
+    const [{ data: trackers }, { data: intakes }] = await Promise.all([
+      admin.from("partner_tracker_tokens").select("partner_slug, token, is_active").eq("is_active", true),
+      admin.from("intake_links").select("partner_slug").not("partner_slug", "is", null),
+    ]);
+
+    const slugCounts = new Map<string, number>();
+    (intakes || []).forEach((r: any) => {
+      if (r.partner_slug) slugCounts.set(r.partner_slug, (slugCounts.get(r.partner_slug) || 0) + 1);
+    });
+    const allSlugs = new Set<string>([
+      ...((trackers || []).map((t: any) => t.partner_slug).filter(Boolean)),
+      ...slugCounts.keys(),
+    ]);
+    if (allSlugs.size === 0) return null;
+
+    const lower = userMsg.toLowerCase();
+    const STOP = new Set(["the","for","link","page","url","partner","tracker","slug","what","where","find","get","fetch","share","send","give","please","aura","insurance","client","clients","need","want","know","tell","with","from","that","this","have","there","here","also"]);
+    const tokens = lower
+      .replace(/[^a-z\s-]/g, " ")
+      .split(/\s+/)
+      .filter((w) => w.length >= 3 && !STOP.has(w));
+
+    let bestSlug: string | null = null;
+    let bestScore = 0;
+    for (const slug of allSlugs) {
+      const slugWords = slug.toLowerCase().split(/[-_\s]+/);
+      let score = 0;
+      for (const t of tokens) {
+        for (const sw of slugWords) {
+          if (sw === t) score += 3;
+          else if (sw.startsWith(t) || t.startsWith(sw)) score += 2;
+          else if (sw.includes(t) || t.includes(sw)) score += 1;
+        }
+      }
+      if (score > bestScore) { bestScore = score; bestSlug = slug; }
+    }
+
+    if (!bestSlug || bestScore < 2) return null;
+
+    const origin = req.headers.get("origin") || req.headers.get("referer")?.match(/^https?:\/\/[^/]+/)?.[0] || "";
+    const tracker = (trackers || []).find((t: any) => t.partner_slug === bestSlug);
+    const submissionCount = slugCounts.get(bestSlug) || 0;
+
+    const lines = [
+      `Here's the partner link for **${bestSlug}**:`,
+      ``,
+      `**Landing page (share with clients):**`,
+      `${origin}/b/${bestSlug}`,
+    ];
+    if (tracker?.token) {
+      lines.push(``, `**Partner tracker (for them to see referrals):**`, `${origin}/partner-tracker?token=${tracker.token}`);
+    }
+    if (submissionCount > 0) {
+      lines.push(``, `📊 ${submissionCount} intake link${submissionCount === 1 ? "" : "s"} generated under this partner.`);
+    }
+    return lines.join("\n");
+  } catch (e) {
+    console.error("lookupPartnerLink error:", e);
+    return null;
+  }
 }
