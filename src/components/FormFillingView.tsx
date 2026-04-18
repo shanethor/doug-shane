@@ -2025,7 +2025,93 @@ export default function FormFillingView({ submissionId, initialMessages, initial
     </Dialog>
   );
 
-  // ─── MOBILE LAYOUT ───
+  // ─── Send Questionnaire to Client Dialog (mirrors Clark flow) ───
+  const handleSendQuestionnaire = async () => {
+    if (!user) {
+      toast.error("Not signed in");
+      return;
+    }
+    if (!questionnaireClientEmail.includes("@") || !questionnaireClientName.trim()) {
+      toast.error("Enter a valid name and email");
+      return;
+    }
+    setSendingQuestionnaire(true);
+    try {
+      // Step 1 — create an intake link tied to this submission
+      const linkResult = await generateIntakeLink({
+        agentId: user.id,
+        submissionId: submissionId !== "draft" ? submissionId : null,
+        customerName: questionnaireClientName,
+        customerEmail: questionnaireClientEmail,
+      });
+      if (!linkResult) throw new Error("Failed to create questionnaire link");
+
+      // Step 2 — email the link to the client (uses same Resend infra as Clark)
+      const { error: emailErr } = await supabase.functions.invoke("send-intake-link-email", {
+        body: {
+          token: linkResult.token,
+          clientEmail: questionnaireClientEmail,
+          agentId: user.id,
+        },
+      });
+      if (emailErr) throw emailErr;
+
+      toast.success(`Questionnaire sent to ${questionnaireClientEmail}`);
+      setQuestionnaireDialogOpen(false);
+      setQuestionnaireClientName("");
+      setQuestionnaireClientEmail("");
+    } catch (err: any) {
+      console.error("send questionnaire failed:", err);
+      toast.error(err?.message || "Failed to send questionnaire");
+    } finally {
+      setSendingQuestionnaire(false);
+    }
+  };
+
+  const questionnaireDialog = (
+    <Dialog open={questionnaireDialogOpen} onOpenChange={setQuestionnaireDialogOpen}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="text-sm">Send Questionnaire to Client</DialogTitle>
+          <DialogDescription className="text-xs text-muted-foreground">
+            Email your client a quick form to fill in any missing details. Their answers route back into this submission automatically — same flow as Clark.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3 py-2">
+          <div>
+            <Label className="text-xs">Client Name</Label>
+            <Input
+              value={questionnaireClientName}
+              onChange={(e) => setQuestionnaireClientName(e.target.value)}
+              placeholder="Jane Doe"
+              className="h-8 text-xs mt-1"
+            />
+          </div>
+          <div>
+            <Label className="text-xs">Client Email</Label>
+            <Input
+              type="email"
+              value={questionnaireClientEmail}
+              onChange={(e) => setQuestionnaireClientEmail(e.target.value)}
+              placeholder="jane@company.com"
+              className="h-8 text-xs mt-1"
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button size="sm" variant="outline" onClick={() => setQuestionnaireDialogOpen(false)}>Cancel</Button>
+          <Button
+            size="sm"
+            onClick={handleSendQuestionnaire}
+            disabled={!questionnaireClientEmail.includes("@") || !questionnaireClientName.trim() || sendingQuestionnaire}
+          >
+            {sendingQuestionnaire ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Mail className="h-3 w-3 mr-1" />}
+            Send Questionnaire
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
   if (isMobile) {
     return (
       <div className="flex flex-col h-[calc(100vh-4rem)] overflow-hidden">
