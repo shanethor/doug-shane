@@ -113,11 +113,17 @@ serve(async (req) => {
         }
       }
 
-      userContent.push({
-        type: "image_url",
-        image_url: { url: `data:${mimeType};base64,${fileBase64}` },
-      });
-    }
+      if (mimeType === "application/pdf") {
+        userContent.push({
+          type: "file",
+          file: { file_data: `data:${mimeType};base64,${fileBase64}`, mime_type: mimeType },
+        });
+      } else {
+        userContent.push({
+          type: "image_url",
+          image_url: { url: `data:${mimeType};base64,${fileBase64}` },
+        });
+      }
 
     const t0 = Date.now();
     console.log(`[extract-dec] Calling Claude Sonnet 4.5 with ${files.length} file(s)...`);
