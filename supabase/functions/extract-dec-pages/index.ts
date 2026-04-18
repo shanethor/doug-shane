@@ -67,7 +67,13 @@ async function truncatePdf(base64: string, maxPages: number): Promise<{ base64: 
   const pages = await newDoc.copyPages(srcDoc, Array.from({ length: maxPages }, (_, i) => i));
   pages.forEach((p) => newDoc.addPage(p));
   const slicedBytes = await newDoc.save();
-  const slicedBase64 = btoa(String.fromCharCode(...slicedBytes));
+  // Chunked base64 encode to avoid stack overflow on large PDFs
+  let binary = "";
+  const CHUNK = 0x8000;
+  for (let i = 0; i < slicedBytes.length; i += CHUNK) {
+    binary += String.fromCharCode(...slicedBytes.subarray(i, i + CHUNK));
+  }
+  const slicedBase64 = btoa(binary);
   return { base64: slicedBase64, originalPages, sliced: true };
 }
 
@@ -114,10 +120,10 @@ serve(async (req) => {
     }
 
     const t0 = Date.now();
-    console.log(`[extract-dec] Calling Gemini Flash with ${files.length} file(s)...`);
+    console.log(`[extract-dec] Calling Claude Sonnet 4.5 with ${files.length} file(s)...`);
 
     const response = await fetchAIGateway({
-        model: "google/gemini-2.5-flash",
+        model: "anthropic/claude-sonnet-4-5",
         messages: [
           { role: "system", content: EXTRACTION_PROMPT },
           { role: "user", content: userContent },
