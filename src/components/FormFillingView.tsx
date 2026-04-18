@@ -90,6 +90,12 @@ export default function FormFillingView({ submissionId, initialMessages, initial
   const [emailMode, setEmailMode] = useState<"individual" | "package">("individual");
   const [sendingEmail, setSendingEmail] = useState(false);
 
+  // Send Questionnaire to Client dialog (mirrors Clark flow)
+  const [questionnaireDialogOpen, setQuestionnaireDialogOpen] = useState(false);
+  const [questionnaireClientName, setQuestionnaireClientName] = useState("");
+  const [questionnaireClientEmail, setQuestionnaireClientEmail] = useState("");
+  const [sendingQuestionnaire, setSendingQuestionnaire] = useState(false);
+
   // Chat state
   const [messages, setMessages] = useState<Msg[]>(initialMessages);
   const [input, setInput] = useState("");
@@ -1516,22 +1522,10 @@ export default function FormFillingView({ submissionId, initialMessages, initial
           size="sm"
           variant="outline"
           className="w-full text-xs h-7"
-          onClick={async () => {
-            if (!user) return;
-            const result = await generateIntakeLink({
-              agentId: user.id,
-              submissionId: submissionId !== "draft" ? submissionId : null,
-            });
-            if (result) {
-              await navigator.clipboard.writeText(result.url);
-              toast.success("Intake link copied to clipboard!");
-            } else {
-              toast.error("Failed to generate intake link");
-            }
-          }}
+          onClick={() => setQuestionnaireDialogOpen(true)}
         >
-          <LinkIcon className="h-3 w-3 mr-1" />
-          Send Intake to Customer
+          <Mail className="h-3 w-3 mr-1" />
+          Send Questionnaire to Client
         </Button>
       </div>
     </div>

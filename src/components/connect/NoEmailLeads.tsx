@@ -96,7 +96,7 @@ export default function NoEmailLeads() {
                 <Badge variant="outline" className="text-[10px] gap-0.5 shrink-0">
                   <Target className="h-2.5 w-2.5" />{lead.score}
                 </Badge>
-                {lead.verified && (
+                {(lead as any).verified && (
                   <Badge className="text-[10px] bg-green-500/15 text-green-600 border-green-500/30 shrink-0">
                     Verified
                   </Badge>
