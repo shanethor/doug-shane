@@ -32,7 +32,8 @@ function loadConfig(): ConnectNavConfig {
     if (raw) {
       const parsed = JSON.parse(raw);
       const validIds = new Set(ALL_CONNECT_TABS.map(t => t.id));
-      const filtered = (parsed.visibleTabIds || []).filter((id: string) => validIds.has(id));
+      // Always strip "leads" — feature hidden from nav
+      const filtered = (parsed.visibleTabIds || []).filter((id: string) => validIds.has(id) && id !== "leads");
       if (filtered.length >= 2) return { visibleTabIds: filtered };
     }
   } catch {}
