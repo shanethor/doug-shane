@@ -4510,62 +4510,157 @@ export type Database = {
           },
         ]
       }
+      signal_image_queue: {
+        Row: {
+          attempts: number
+          created_at: string
+          last_attempt_at: string | null
+          last_error: string | null
+          next_strategy: string
+          signal_item_id: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          last_attempt_at?: string | null
+          last_error?: string | null
+          next_strategy?: string
+          signal_item_id: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          last_attempt_at?: string | null
+          last_error?: string | null
+          next_strategy?: string
+          signal_item_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "signal_image_queue_signal_item_id_fkey"
+            columns: ["signal_item_id"]
+            isOneToOne: true
+            referencedRelation: "signal_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      signal_ingest_runs: {
+        Row: {
+          cost_estimate_usd: number | null
+          created_at: string
+          error_log: Json | null
+          finished_at: string | null
+          gemini_tokens_used: number | null
+          id: string
+          industry: string
+          items_after_dedupe: number | null
+          items_after_scoring: number | null
+          items_fetched: number | null
+          sources_attempted: number | null
+          sources_failed: number | null
+          started_at: string
+        }
+        Insert: {
+          cost_estimate_usd?: number | null
+          created_at?: string
+          error_log?: Json | null
+          finished_at?: string | null
+          gemini_tokens_used?: number | null
+          id?: string
+          industry: string
+          items_after_dedupe?: number | null
+          items_after_scoring?: number | null
+          items_fetched?: number | null
+          sources_attempted?: number | null
+          sources_failed?: number | null
+          started_at?: string
+        }
+        Update: {
+          cost_estimate_usd?: number | null
+          created_at?: string
+          error_log?: Json | null
+          finished_at?: string | null
+          gemini_tokens_used?: number | null
+          id?: string
+          industry?: string
+          items_after_dedupe?: number | null
+          items_after_scoring?: number | null
+          items_fetched?: number | null
+          sources_attempted?: number | null
+          sources_failed?: number | null
+          started_at?: string
+        }
+        Relationships: []
+      }
       signal_items: {
         Row: {
           ai_image: boolean
           created_at: string
+          engagement: Json | null
           hash: string | null
           id: string
           image_url: string | null
           importance_score: number
           industry: string | null
+          ingest_run_id: string | null
           published_at: string | null
           raw: Json | null
           signal_type: string | null
           source_kind: string
           source_name: string | null
+          source_tier: number | null
           source_url: string | null
           sub_vertical: string | null
           summary: string
           title: string
+          title_simhash: number | null
           topics: string[]
         }
         Insert: {
           ai_image?: boolean
           created_at?: string
+          engagement?: Json | null
           hash?: string | null
           id?: string
           image_url?: string | null
           importance_score?: number
           industry?: string | null
+          ingest_run_id?: string | null
           published_at?: string | null
           raw?: Json | null
           signal_type?: string | null
           source_kind?: string
           source_name?: string | null
+          source_tier?: number | null
           source_url?: string | null
           sub_vertical?: string | null
           summary: string
           title: string
+          title_simhash?: number | null
           topics?: string[]
         }
         Update: {
           ai_image?: boolean
           created_at?: string
+          engagement?: Json | null
           hash?: string | null
           id?: string
           image_url?: string | null
           importance_score?: number
           industry?: string | null
+          ingest_run_id?: string | null
           published_at?: string | null
           raw?: Json | null
           signal_type?: string | null
           source_kind?: string
           source_name?: string | null
+          source_tier?: number | null
           source_url?: string | null
           sub_vertical?: string | null
           summary?: string
           title?: string
+          title_simhash?: number | null
           topics?: string[]
         }
         Relationships: []
@@ -4580,6 +4675,8 @@ export type Database = {
           digest_time: string
           digest_timezone: string
           industry_override: string | null
+          interests_seeded: boolean
+          last_seen_at: string | null
           source_weights: Json
           topic_weights: Json
           updated_at: string
@@ -4594,6 +4691,8 @@ export type Database = {
           digest_time?: string
           digest_timezone?: string
           industry_override?: string | null
+          interests_seeded?: boolean
+          last_seen_at?: string | null
           source_weights?: Json
           topic_weights?: Json
           updated_at?: string
@@ -4608,10 +4707,45 @@ export type Database = {
           digest_time?: string
           digest_timezone?: string
           industry_override?: string | null
+          interests_seeded?: boolean
+          last_seen_at?: string | null
           source_weights?: Json
           topic_weights?: Json
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      signal_source_health: {
+        Row: {
+          consecutive_empty_pulls: number
+          consecutive_errors: number
+          industry: string
+          last_error: string | null
+          last_successful_pull: string | null
+          source_url: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          consecutive_empty_pulls?: number
+          consecutive_errors?: number
+          industry: string
+          last_error?: string | null
+          last_successful_pull?: string | null
+          source_url: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          consecutive_empty_pulls?: number
+          consecutive_errors?: number
+          industry?: string
+          last_error?: string | null
+          last_successful_pull?: string | null
+          source_url?: string
+          status?: string
+          updated_at?: string
         }
         Relationships: []
       }
