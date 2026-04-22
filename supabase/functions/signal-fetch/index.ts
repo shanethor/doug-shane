@@ -211,13 +211,24 @@ serve(async (req) => {
       for (const s of scored.items) scoresMap.set(s.index, s);
     }
 
-    // Try to grab og:image for top items (parallel, capped)
-    const imageEnriched = await Promise.all(unique.map(async (it, idx) => {
+    // Always try to grab og:image for every story
+    const ogEnriched = await Promise.all(unique.map(async (it, idx) => {
       const sc = scoresMap.get(idx);
       const score = sc?.importance_score ?? 50;
-      const image = score >= 60 ? await tryFetchImage(it.link) : null;
-      return { ...it, idx, score, sc, image };
+      const image = await tryFetchImage(it.link);
+      return { ...it, idx, score, sc, image, ai_image: false };
     }));
+
+    // For the top items without an OG image, generate an AI cover (cap to 4 to limit cost/time)
+    const needsAi = ogEnriched
+      .filter(x => !x.image)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 4);
+    const aiResults = await Promise.all(needsAi.map(async x => ({ idx: x.idx, url: await generateAiImage(x.title) })));
+    const aiMap = new Map(aiResults.filter(r => r.url).map(r => [r.idx, r.url!]));
+    const imageEnriched = ogEnriched.map(x => aiMap.has(x.idx)
+      ? { ...x, image: aiMap.get(x.idx)!, ai_image: true }
+      : x);
 
     const rows = await Promise.all(imageEnriched
       .filter(x => !((x.sc?.topics || []).some((t: string) => blockedTopics.has(t))))
@@ -227,7 +238,7 @@ serve(async (req) => {
         source_name: x.source,
         source_url: x.link,
         image_url: x.image,
-        ai_image: false,
+        ai_image: x.ai_image,
         industry,
         sub_vertical: subVertical || null,
         topics: x.sc?.topics || [],
