@@ -367,6 +367,18 @@ export default function ConnectSignal() {
             </Card>
           ))}
         </div>
+        {visibleCount < items.length && (
+          <div className="flex justify-center pt-2">
+            <Button
+              variant="outline"
+              onClick={() => setVisibleCount(c => c + 10)}
+            >
+              <ChevronDown className="h-4 w-4 mr-2" />
+              Show 10 more ({items.length - visibleCount} remaining)
+            </Button>
+          </div>
+        )}
+        </>
       )}
     </div>
   );
