@@ -24,6 +24,9 @@ function clamp(v: number, lo: number, hi: number): number {
 
 function explainScore(item: any, user: any): string {
   const reasons: string[] = [];
+  const haystack = `${item.title || ""} ${item.summary || ""} ${(item.topics || []).join(" ")}`.toLowerCase();
+  const customHit = (user.custom_topics || []).find((t: string) => t && haystack.includes(t));
+  if (customHit) reasons.push(`Following "${customHit}"`);
   if (item.published_at) {
     const hours = (Date.now() - new Date(item.published_at).getTime()) / 3_600_000;
     if (hours < 6) reasons.push("Breaking");
