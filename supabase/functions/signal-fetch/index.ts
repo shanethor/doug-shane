@@ -161,7 +161,13 @@ serve(async (req) => {
       `${industry} ${subVertical || ""} regulation OR lawsuit OR trend`,
       `${industry} ${subVertical || ""} acquisition OR funding OR expansion`,
     ];
-    const fetched = (await Promise.all(queries.map(q => fetchGoogleNewsRSS(q, 6)))).flat();
+    const [industryResults, topHeadlines, hn] = await Promise.all([
+      Promise.all(queries.map(q => fetchGoogleNewsRSS(q, 6))).then(arr => arr.flat()),
+      fetchGoogleNewsTopHeadlines(10),
+      fetchHackerNews(8),
+    ]);
+    // Always include fallbacks so the feed is never empty
+    const fetched = [...industryResults, ...topHeadlines, ...hn];
 
     // Dedupe by title
     const seen = new Set<string>();
