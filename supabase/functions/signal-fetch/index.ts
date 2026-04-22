@@ -68,10 +68,14 @@ async function fetchHackerNews(max = 10) {
 }
 
 function extractImageFromHtml(html: string): string | null {
-  const og = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i);
+  const og = html.match(/<meta[^>]+property=["']og:image(?::url)?["'][^>]+content=["']([^"']+)["']/i)
+    || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image(?::url)?["']/i);
   if (og) return og[1];
-  const tw = html.match(/<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["']/i);
+  const tw = html.match(/<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["']/i)
+    || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+name=["']twitter:image["']/i);
   if (tw) return tw[1];
+  const img = html.match(/<img[^>]+src=["'](https?:\/\/[^"']+\.(?:jpg|jpeg|png|webp)[^"'?]*)/i);
+  if (img) return img[1];
   return null;
 }
 
@@ -81,6 +85,24 @@ async function tryFetchImage(url: string): Promise<string | null> {
     if (!r.ok) return null;
     const html = await r.text();
     return extractImageFromHtml(html);
+  } catch { return null; }
+}
+
+async function generateAiImage(prompt: string): Promise<string | null> {
+  try {
+    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash-image",
+        messages: [{ role: "user", content: `Editorial illustration, modern, clean, professional, no text. Subject: ${prompt}` }],
+        modalities: ["image", "text"],
+      }),
+      signal: AbortSignal.timeout(20000),
+    });
+    if (!resp.ok) return null;
+    const data = await resp.json();
+    return data.choices?.[0]?.message?.images?.[0]?.image_url?.url || null;
   } catch { return null; }
 }
 
