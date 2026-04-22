@@ -4472,6 +4472,149 @@ export type Database = {
         }
         Relationships: []
       }
+      signal_feedback: {
+        Row: {
+          created_at: string
+          id: string
+          reaction: string
+          signal_item_id: string
+          source_snapshot: string | null
+          topics_snapshot: string[]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          reaction: string
+          signal_item_id: string
+          source_snapshot?: string | null
+          topics_snapshot?: string[]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          reaction?: string
+          signal_item_id?: string
+          source_snapshot?: string | null
+          topics_snapshot?: string[]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "signal_feedback_signal_item_id_fkey"
+            columns: ["signal_item_id"]
+            isOneToOne: false
+            referencedRelation: "signal_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      signal_items: {
+        Row: {
+          ai_image: boolean
+          created_at: string
+          hash: string | null
+          id: string
+          image_url: string | null
+          importance_score: number
+          industry: string | null
+          published_at: string | null
+          raw: Json | null
+          signal_type: string | null
+          source_kind: string
+          source_name: string | null
+          source_url: string | null
+          sub_vertical: string | null
+          summary: string
+          title: string
+          topics: string[]
+        }
+        Insert: {
+          ai_image?: boolean
+          created_at?: string
+          hash?: string | null
+          id?: string
+          image_url?: string | null
+          importance_score?: number
+          industry?: string | null
+          published_at?: string | null
+          raw?: Json | null
+          signal_type?: string | null
+          source_kind?: string
+          source_name?: string | null
+          source_url?: string | null
+          sub_vertical?: string | null
+          summary: string
+          title: string
+          topics?: string[]
+        }
+        Update: {
+          ai_image?: boolean
+          created_at?: string
+          hash?: string | null
+          id?: string
+          image_url?: string | null
+          importance_score?: number
+          industry?: string | null
+          published_at?: string | null
+          raw?: Json | null
+          signal_type?: string | null
+          source_kind?: string
+          source_name?: string | null
+          source_url?: string | null
+          sub_vertical?: string | null
+          summary?: string
+          title?: string
+          topics?: string[]
+        }
+        Relationships: []
+      }
+      signal_preferences: {
+        Row: {
+          blocked_sources: string[]
+          blocked_topics: string[]
+          created_at: string
+          digest_enabled: boolean
+          digest_last_sent_at: string | null
+          digest_time: string
+          digest_timezone: string
+          industry_override: string | null
+          source_weights: Json
+          topic_weights: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          blocked_sources?: string[]
+          blocked_topics?: string[]
+          created_at?: string
+          digest_enabled?: boolean
+          digest_last_sent_at?: string | null
+          digest_time?: string
+          digest_timezone?: string
+          industry_override?: string | null
+          source_weights?: Json
+          topic_weights?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          blocked_sources?: string[]
+          blocked_topics?: string[]
+          created_at?: string
+          digest_enabled?: boolean
+          digest_last_sent_at?: string | null
+          digest_time?: string
+          digest_timezone?: string
+          industry_override?: string | null
+          source_weights?: Json
+          topic_weights?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       social_posts: {
         Row: {
           audience_demographics: Json | null
