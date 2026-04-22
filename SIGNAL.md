@@ -1,158 +1,200 @@
-# Signal — Build Guide
+# Signal v2 — Build Guide
 
-Signal is a per-user, AI-curated industry intelligence feed at `/connect/signal`. It fetches industry news + posts daily, scores them with Lovable AI (Gemini), and learns from per-user feedback (👍 great info / 👎 not interested) to improve relevance over time. Users can also opt into a daily email digest.
+Signal is a per-user, AI-curated industry intelligence feed at `/connect/signal`. v2 separates **global ingestion** (one shared pool of stories per industry) from **per-user ranking** (personalized scoring with "why you saw this" reasons), and adds a **nightly learning loop** that turns 👍/👎 feedback into durable topic + source weights.
 
 ## Architecture
 
 ```
-┌────────────────┐     ┌──────────────────┐     ┌──────────────┐
-│ Google News    │ ──► │ signal-fetch     │ ──► │ signal_items │
-│ X / RSS        │     │ (edge function)  │     │  (shared)    │
-└────────────────┘     │  Lovable AI      │     └──────┬───────┘
-                       │  scoring         │            │
-                       └──────────────────┘            ▼
-                                              ┌────────────────┐
-                                              │ ConnectSignal  │
-                                              │  (page)        │
-                                              └──────┬─────────┘
-                                                     │ react
-                                                     ▼
-                                          ┌─────────────────────┐
-                                          │ signal_feedback     │
-                                          │ signal_preferences  │
-                                          └─────────┬───────────┘
-                                                    │ used as bias
-                                                    ▼ on next fetch
+ ┌─────────────────────────────┐
+ │ Global ingest (every 2h)    │  signal-ingest
+ │  RSS · Reddit · Nitter · HN │  → AI batch score (rule fallback)
+ │  → dedupe (hash + simhash)  │  → upsert signal_items
+ └────────────┬────────────────┘
+              │
+              ▼
+ ┌─────────────────────────────┐
+ │ signal_items (shared pool)  │
+ └────────────┬────────────────┘
+              │ on page visit / refresh
+              ▼
+ ┌─────────────────────────────┐
+ │ signal-rank (per-user)      │  importance + topic_w*5 + source_w*3
+ │  hybrid score + diversity   │  + recency + freshness, max 3/source
+ │  + "why" caption            │
+ └────────────┬────────────────┘
+              │
+              ▼  user reacts 👍 / 👎 / clicks / saves
+ ┌─────────────────────────────┐
+ │ signal_feedback             │
+ └────────────┬────────────────┘
+              │ nightly aggregate
+              ▼
+ ┌─────────────────────────────┐
+ │ signal-learn                │  +1 great, −1 not_interested, +0.25 click
+ │  decays old weights 0.95/wk │  → updates signal_preferences.topic_weights
+ └─────────────────────────────┘
+
+ Background:
+  • signal-image-retry (every 30 min) — OG → Twitter → AI fallback
+  • signal-digest      (every hour)   — sends top-5 email at user's local time
 ```
 
 ## Frontend
 
 - **Page**: `src/pages/ConnectSignal.tsx`
 - **Route**: `/connect/signal` (mounted via `ConnectProduct.tsx`)
-- **Nav entry**: added in `src/hooks/useConnectNavConfig.tsx` between Leads and Pipeline.
-- **Vertical context**: pulled from `useUserVertical()` (existing).
+- **Nav**: between Leads and Pipeline (`useConnectNavConfig`).
 
 UI sections:
-1. **Hero card** with the manifesto quote.
-2. **Daily digest scheduler** — toggle + time picker, persisted to `signal_preferences`.
-3. **Refresh button** — calls `signal-fetch` edge function.
-4. **Feed grid** — image, title, AI summary, topic chips, source link, 👍/👎 buttons.
-5. **AI cover generation** — when no `og:image` is found, user can tap "Generate cover" → `signal-image` function uses Gemini image gen and stores `image_url`.
+1. Hero card with manifesto quote.
+2. Daily-digest scheduler (toggle + time picker, persisted to `signal_preferences`).
+3. Refresh → calls **`signal-ingest`** for the user's industry, then re-ranks.
+4. Feed grid: image · type+score chip · title · AI summary · **"✦ why you saw this"** caption · topic chips · source link · 👍/👎.
+5. AI cover generation on demand → `signal-image`.
+
+The page calls **`signal-rank`** (not raw table reads) so users always see personalized ordering, diversity caps, and reason captions.
 
 ## Edge functions
 
-### `supabase/functions/signal-fetch/index.ts`
-- Auth required (JWT).
-- Reads `signal_preferences` + last 50 `signal_feedback` rows for the user.
-- Pulls 3 Google News RSS queries scoped to industry/sub-vertical.
-- Dedupes, filters blocked sources/topics.
-- Sends batch to Lovable AI (`google/gemini-2.5-flash`, JSON mode) for: `importance_score`, `topics`, `signal_type`, tightened `summary`. The user's like/dislike topics are passed in the prompt as a `learnedContext` line so scoring biases toward what they care about.
-- Tries to extract `og:image` from each top-scoring article (parallel, 4 s timeout).
-- Upserts into `signal_items` with a SHA-256 `hash` for dedupe.
+### `signal-ingest` (global, cron every 2h)
+- No JWT required (cron-triggered). Iterates all industries (or a passed-in list).
+- Pulls **RSS** (Google News + curated trade press), **Reddit** (`.json` public endpoints), **Nitter** (rotating public instances in `signal-sources.ts`), and **Hacker News** Algolia for tech.
+- Computes SHA-256 `hash` and SimHash of the title for near-duplicate detection.
+- Batch-scores via Lovable AI (`google/gemini-2.5-flash`, JSON mode). On AI failure, **rule-based fallback** uses `TIER_1_SOURCES` boost + keyword heuristics so the pipeline never stalls.
+- Tries `og:image` extraction in parallel (4s timeout). Misses go to `signal_image_queue`.
+- Logs every run to `signal_ingest_runs` and updates `signal_source_health` (success/fail counts, last_status).
 
-### `supabase/functions/signal-image/index.ts`
-- Auth required.
-- Generates an editorial illustration via `google/gemini-2.5-flash-image` and updates the row's `image_url` + `ai_image=true`.
+### `signal-rank` (per-user, on demand)
+- JWT required. Reads `signal_preferences` + dismissed feedback for the user.
+- Pulls last 72h candidates for the industry (max 300), filters blocked topics/sources and dismissed items.
+- Score = `clamp(importance + clamp(Σtopic_weight*5, ±25) + clamp(source_weight*3, ±10) + recency + freshness, 0, 150)`.
+  - `recency`: 20 (<6h), 15 (<24h), 8 (<48h), 3 (<72h).
+  - `freshness`: +10 if `created_at > last_seen_at`.
+- Diversity cap: max 3 per source in top N (overflow appended).
+- Generates a 1-line "why" caption (`Breaking · You like NAIC`, etc.).
+- Updates `signal_preferences.last_seen_at` so the next visit's freshness boost only applies to genuinely new items.
 
-### Future: `supabase/functions/signal-digest/index.ts` (recommended)
-- Triggered hourly by `pg_cron` + `pg_net`.
-- For each `signal_preferences` row where `digest_enabled = true` AND current local time matches `digest_time`, send a Resend email containing the user's top 5 unseen signals (excluding any with `not_interested` feedback). Update `digest_last_sent_at`.
+### `signal-learn` (nightly cron)
+- Aggregates the last 30 days of `signal_feedback` per user.
+- Weights: `+1 great_info`, `−1 not_interested`, `+0.25 clicked`, `+0.5 saved`.
+- Applies decay (multiply existing weights by 0.95) before adding the new deltas; clamps to ±10.
+- Writes back to `signal_preferences.topic_weights` and `source_weights`.
 
-Cron setup (run via `insert` tool, NOT migration, since URL/anon key are project-specific):
-```sql
-select cron.schedule(
-  'signal-digest-hourly',
-  '0 * * * *',
-  $$ select net.http_post(
-      url:='https://<PROJECT_REF>.supabase.co/functions/v1/signal-digest',
-      headers:='{"Content-Type":"application/json","Authorization":"Bearer <ANON_KEY>"}'::jsonb,
-      body:='{}'::jsonb
-    ); $$
-);
-```
+### `signal-image-retry` (cron every 30 min)
+- Walks `signal_image_queue` rows that are still missing images.
+- Tries OG → Twitter card → AI generation in order; updates the row + dequeues on success.
+
+### `signal-digest` (cron hourly)
+- For each `signal_preferences` row where `digest_enabled` AND the user's local hour matches `digest_time` AND not sent today, calls `signal-rank` and emails the top 5 via Resend.
+- Updates `digest_last_sent_at`.
+
+### `signal-image` (manual)
+- JWT required. Generates an editorial cover via `google/gemini-2.5-flash-image`, sets `image_url` + `ai_image=true`.
+
+## Sources (`supabase/functions/_shared/signal-sources.ts`)
+
+`INDUSTRY_SOURCES` maps each vertical id (matching `connect-verticals.ts`) to:
+
+| field            | example                                            |
+|------------------|----------------------------------------------------|
+| `rss_news`       | Google News queries + Insurance Journal, FreightWaves, Construction Dive, … |
+| `reddit`         | `["Insurance", "InsuranceClaims"]`                 |
+| `nitter_handles` | `["InsuranceJrnl", "AonPLC"]` (rotated across `NITTER_INSTANCES`) |
+| `regulatory`     | `["https://content.naic.org/rss.xml"]`             |
+| `substack`, `podcast_rss` | reserved                                  |
+
+Tier-1 publication names live in `TIER_1_SOURCES` and get a fallback-scoring boost when AI is unavailable. 17 verticals are configured (insurance, real_estate, trucking, contractors fully tuned; the rest use a `generic(label)` template until tuned).
 
 ## Storage / Training Schema
 
-### `signal_items` — curated story pool (shared across users)
-| column            | type          | notes                                      |
-|-------------------|---------------|--------------------------------------------|
-| id                | uuid PK       | gen_random_uuid                            |
-| title             | text          | required                                   |
-| summary           | text          | AI-tightened, required                     |
-| source_name       | text          | e.g. "Reuters"                             |
-| source_url        | text          | canonical link                             |
-| image_url         | text          | og:image or AI-generated                   |
-| ai_image          | bool          | true if generated by `signal-image`        |
-| industry          | text          | matches `useUserVertical().config.label`   |
-| sub_vertical      | text          | optional                                   |
-| topics            | text[]        | AI-extracted tags (3-5)                    |
-| signal_type       | text          | news \| trend \| regulatory \| risk \| opportunity |
-| source_kind       | text          | news \| x \| blog \| reg                  |
-| importance_score  | int (0-100)   | AI scored                                  |
-| hash              | text UNIQUE   | sha256(title+url) — dedupe                 |
-| raw               | jsonb         | original RSS payload for replay            |
-| published_at      | timestamptz   | from RSS                                   |
-| created_at        | timestamptz   | default now()                              |
+### `signal_items` — shared story pool
+| column            | type        | notes                                  |
+|-------------------|-------------|----------------------------------------|
+| id                | uuid PK     |                                        |
+| title, summary    | text        | AI-tightened                           |
+| source_name, source_url, image_url | text |                                |
+| ai_image          | bool        | AI-generated cover                     |
+| industry, sub_vertical | text   | matches vertical id                    |
+| topics            | text[]      | 3-5 tags                               |
+| signal_type       | text        | news \| trend \| regulatory \| risk \| opportunity |
+| source_kind       | text        | news \| reddit \| x \| hn \| reg \| blog |
+| source_tier       | int (1-3)   | 1 = Tier-1 publication                 |
+| importance_score  | int 0-100   |                                        |
+| hash              | text UNIQUE | sha256(title+url) — exact dedupe       |
+| title_simhash     | bigint      | near-duplicate detection               |
+| raw, published_at, created_at | …  |                                        |
 
 RLS: any authenticated user can SELECT.
 
-### `signal_feedback` — training labels
-| column            | type          | notes                                      |
-|-------------------|---------------|--------------------------------------------|
-| id                | uuid PK       |                                            |
-| user_id           | uuid          | owner                                      |
-| signal_item_id    | uuid FK       | → signal_items(id) ON DELETE CASCADE       |
-| reaction          | text          | `not_interested` \| `great_info` \| `viewed` \| `clicked` \| `saved` |
-| topics_snapshot   | text[]        | snapshot of topics at time of reaction (durable training even if item deleted) |
-| source_snapshot   | text          | snapshot of source                         |
-| created_at        | timestamptz   |                                            |
+### `signal_feedback` — training labels (the dataset)
+| column          | type    | notes                                                                  |
+|-----------------|---------|------------------------------------------------------------------------|
+| user_id         | uuid    |                                                                        |
+| signal_item_id  | uuid FK | → signal_items(id) ON DELETE CASCADE                                   |
+| reaction        | text    | `not_interested` \| `great_info` \| `viewed` \| `clicked` \| `saved`   |
+| topics_snapshot | text[]  | snapshot at time of reaction (durable training)                        |
+| source_snapshot | text    |                                                                        |
+| created_at      | timestamptz |                                                                    |
 
-UNIQUE (user_id, signal_item_id, reaction). RLS: owner-only.
-
-**This table IS the training set.** Export with:
-```sql
-SELECT user_id, reaction, topics_snapshot, source_snapshot, created_at
-FROM signal_feedback
-ORDER BY created_at DESC;
-```
+UNIQUE (user_id, signal_item_id, reaction). RLS owner-only.
 
 ### `signal_preferences` — per-user state
-| column                | type          | notes                                          |
-|-----------------------|---------------|------------------------------------------------|
-| user_id               | uuid PK       |                                                |
-| topic_weights         | jsonb         | `{ "topic": -5..+5 }` learned weights          |
-| source_weights        | jsonb         | `{ "Reuters": 1.5 }`                           |
-| blocked_topics        | text[]        | hard exclude                                   |
-| blocked_sources       | text[]        | hard exclude                                   |
-| industry_override     | text          | optional override of `profiles.connect_vertical` |
-| digest_enabled        | bool          |                                                |
-| digest_time           | time          | local time in `digest_timezone`                |
-| digest_timezone       | text          | IANA tz                                        |
-| digest_last_sent_at   | timestamptz   |                                                |
+| column            | type     | notes                                              |
+|-------------------|----------|----------------------------------------------------|
+| user_id           | uuid PK  |                                                    |
+| topic_weights     | jsonb    | `{ "topic": -10..+10 }` — written by `signal-learn`|
+| source_weights    | jsonb    | `{ "Reuters": 1.5 }`                               |
+| blocked_topics    | text[]   | hard exclude                                       |
+| blocked_sources   | text[]   |                                                    |
+| industry_override | text     |                                                    |
+| digest_enabled    | bool     |                                                    |
+| digest_time       | time     | local time                                         |
+| digest_timezone   | text     | IANA                                               |
+| digest_last_sent_at, last_seen_at | timestamptz |                                  |
 
-RLS: owner-only.
+### Operational tables
+- **`signal_ingest_runs`** — per-run log (industry, sources hit, fetched/inserted counts, errors).
+- **`signal_source_health`** — rolling success/fail counts per source URL; surfaces in admin.
+- **`signal_image_queue`** — items still missing covers; drained by `signal-image-retry`.
 
-## Learning loop
+RLS: admin-only on the operational tables; owner-only on per-user tables.
 
-Today (v1):
-- Likes/dislikes are summarized as a free-text `learnedContext` line passed to the AI scorer.
-- Items the user marked `not_interested` are filtered client-side from the feed.
+## Cron schedule
 
-Next (v2 — recommended next milestone):
-1. Nightly job aggregates `signal_feedback` per user → updates `topic_weights` and `source_weights` in `signal_preferences`:
-   - +1 for `great_info`, −1 for `not_interested`, +0.25 for `clicked`, decay 0.95/week.
-2. `signal-fetch` post-scores each item:
-   `final = importance_score + sum(topic_weights[t] for t in topics)*5 + source_weights[source]*3`.
-3. Cap at 100, sort, take top N.
+Created via `supabase--insert` (project-specific URL/key — not migrations). All call edge functions with the project anon key:
 
-## Adding new sources
+| job                        | cadence       | function              |
+|----------------------------|---------------|-----------------------|
+| `signal-ingest-2h`         | `0 */2 * * *` | `signal-ingest`       |
+| `signal-image-retry-30m`   | `*/30 * * * *`| `signal-image-retry`  |
+| `signal-learn-daily`       | `15 4 * * *`  | `signal-learn`        |
+| `signal-digest-hourly`     | `0 * * * *`   | `signal-digest`       |
 
-- **X / Twitter posts**: add a fetcher inside `signal-fetch` (e.g. via Twitter API v2 with bearer token stored in secrets) that emits `{ title, link, pubDate, source: "X / @handle", description }` and pushes into the `unique` array before AI scoring.
-- **Regulatory feeds**: add NAIC / state DOI RSS feeds the same way, set `source_kind = 'reg'`.
-- **Industry blogs**: same pattern; add to the queries array.
+## Learning loop summary
+
+1. User reacts → row in `signal_feedback` with `topics_snapshot`.
+2. Nightly `signal-learn` decays old weights ×0.95 then adds the day's deltas, clamped ±10, and writes `signal_preferences.topic_weights` / `source_weights`.
+3. Next `signal-rank` call uses those weights — instantly more relevant ordering and a richer "why" caption.
+
+## Adding a new industry
+
+1. Add an entry to `INDUSTRY_SOURCES` in `supabase/functions/_shared/signal-sources.ts` (use `generic(label)` to start).
+2. Add the vertical to `connect-verticals.ts` (already done for the 17 supported).
+3. The next `signal-ingest` run picks it up automatically.
 
 ## Cost & rate limits
 
-- One `signal-fetch` call ≈ 1 Gemini Flash request (~18 stories scored in one prompt).
-- Image generation only fires on user click (lazy).
-- Recommended: cap manual refresh to once per 5 minutes per user via simple in-memory throttle inside the edge function if abuse is observed.
+- One ingest cycle ≈ N industries × 1 Gemini Flash batch call (~20 stories scored per prompt). Rule-based fallback prevents stalls when AI is down.
+- Image generation only runs on user click or in the retry queue (lazy).
+- Reddit/Nitter calls are throttled per source; failures get logged to `signal_source_health` so flaky sources can be muted in admin.
+
+## Files of interest
+
+- `src/pages/ConnectSignal.tsx` — feed UI
+- `supabase/functions/_shared/signal-sources.ts` — industry source map
+- `supabase/functions/_shared/signal-utils.ts` — hashing, simhash, AI scorer, fallback
+- `supabase/functions/signal-ingest/index.ts`
+- `supabase/functions/signal-rank/index.ts`
+- `supabase/functions/signal-learn/index.ts`
+- `supabase/functions/signal-digest/index.ts`
+- `supabase/functions/signal-image/index.ts` & `signal-image-retry/index.ts`
