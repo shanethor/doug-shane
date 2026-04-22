@@ -23,6 +23,8 @@ type SignalItem = {
   signal_type: string | null;
   importance_score: number;
   published_at: string | null;
+  user_score?: number;
+  why?: string;
 };
 
 type Prefs = {
@@ -36,7 +38,8 @@ const HEADER_QUOTE = "Professionals waste 2-3 valuable hours each day scrolling.
 export default function ConnectSignal() {
   const { user } = useAuth();
   const { config } = useUserVertical();
-  const industry = config?.label || "Insurance";
+  const industryLabel = config?.label || "Insurance";
+  const industryId = (config as any)?.id || "insurance";
 
   const [items, setItems] = useState<SignalItem[]>([]);
   const [feedback, setFeedback] = useState<Record<string, string>>({});
@@ -52,30 +55,39 @@ export default function ConnectSignal() {
   const loadItems = useCallback(async () => {
     if (!user) return;
     setLoading(true);
-    const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-    const { data: rows } = await supabase
-      .from("signal_items")
-      .select("*")
-      .gte("created_at", since)
-      .order("importance_score", { ascending: false })
-      .order("published_at", { ascending: false })
-      .limit(40);
+    try {
+      // v2: use signal-rank for personalized scoring + "why" reasons
+      const { data: ranked, error: rankErr } = await supabase.functions.invoke("signal-rank", {
+        body: { industry: industryId, topN: 40 },
+      });
+      const { data: fb } = await supabase
+        .from("signal_feedback")
+        .select("signal_item_id, reaction")
+        .eq("user_id", user.id);
 
-    const { data: fb } = await supabase
-      .from("signal_feedback")
-      .select("signal_item_id, reaction")
-      .eq("user_id", user.id);
+      const fbMap: Record<string, string> = {};
+      (fb || []).forEach((f: any) => { fbMap[f.signal_item_id] = f.reaction; });
+      setFeedback(fbMap);
 
-    const fbMap: Record<string, string> = {};
-    const hidden = new Set<string>();
-    (fb || []).forEach((f: any) => {
-      fbMap[f.signal_item_id] = f.reaction;
-      if (f.reaction === "not_interested") hidden.add(f.signal_item_id);
-    });
-    setFeedback(fbMap);
-    setItems((rows || []).filter((r: any) => !hidden.has(r.id)) as SignalItem[]);
-    setLoading(false);
-  }, [user]);
+      if (!rankErr && ranked?.items) {
+        setItems(ranked.items as SignalItem[]);
+      } else {
+        // Fallback: direct table query
+        const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+        const { data: rows } = await supabase
+          .from("signal_items")
+          .select("*")
+          .eq("industry", industryId)
+          .gte("created_at", since)
+          .order("importance_score", { ascending: false })
+          .limit(40);
+        const hidden = new Set(Object.entries(fbMap).filter(([, r]) => r === "not_interested").map(([id]) => id));
+        setItems((rows || []).filter((r: any) => !hidden.has(r.id)) as SignalItem[]);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [user, industryId]);
 
   const loadPrefs = useCallback(async () => {
     if (!user) return;
@@ -94,8 +106,9 @@ export default function ConnectSignal() {
   const refresh = async () => {
     setRefreshing(true);
     try {
-      const { error } = await supabase.functions.invoke("signal-fetch", {
-        body: { industry, subVertical: config?.subVerticals?.[0]?.label },
+      // v2: trigger global ingest for this industry, then re-rank
+      const { error } = await supabase.functions.invoke("signal-ingest", {
+        body: { industries: [industryId] },
       });
       if (error) throw error;
       await loadItems();
