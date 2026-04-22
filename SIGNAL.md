@@ -147,6 +147,7 @@ UNIQUE (user_id, signal_item_id, reaction). RLS owner-only.
 | source_weights    | jsonb    | `{ "Reuters": 1.5 }`                               |
 | blocked_topics    | text[]   | hard exclude                                       |
 | blocked_sources   | text[]   |                                                    |
+| custom_topics     | text[]   | user-added subjects; substring-boosted in `signal-rank` |
 | industry_override | text     |                                                    |
 | digest_enabled    | bool     |                                                    |
 | digest_time       | time     | local time                                         |
