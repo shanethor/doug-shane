@@ -65,6 +65,7 @@ serve(async (req) => {
       source_weights: (prefs as any)?.source_weights || {},
       blocked_topics: new Set<string>(((prefs as any)?.blocked_topics) || []),
       blocked_sources: new Set<string>(((prefs as any)?.blocked_sources) || []),
+      custom_topics: ((prefs as any)?.custom_topics || []).map((t: string) => t.toLowerCase()),
       last_seen_at: (prefs as any)?.last_seen_at ? new Date((prefs as any).last_seen_at).getTime() : 0,
     };
     const dismissedIds = new Set<string>((dismissed || []).map((d: any) => d.signal_item_id));
@@ -96,7 +97,11 @@ serve(async (req) => {
       const sourceBoost = clamp((userCtx.source_weights[item.source_name] || 0) * 3, -10, 10);
       const recency = recencyBoost(item.published_at);
       const freshness = userCtx.last_seen_at && new Date(item.created_at).getTime() > userCtx.last_seen_at ? 10 : 0;
-      const userScore = clamp(importance + topicBoost + sourceBoost + recency + freshness, 0, 150);
+      // Custom topic boost: matches title/summary/topics against user-followed subjects
+      const haystack = `${item.title || ""} ${item.summary || ""} ${(item.topics || []).join(" ")}`.toLowerCase();
+      const customMatches = userCtx.custom_topics.filter((t: string) => t && haystack.includes(t));
+      const customBoost = clamp(customMatches.length * 20, 0, 40);
+      const userScore = clamp(importance + topicBoost + sourceBoost + recency + freshness + customBoost, 0, 200);
       return { ...item, user_score: userScore, why: explainScore(item, userCtx) };
     });
 
