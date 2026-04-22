@@ -23,6 +23,7 @@ const ConnectLeadDetail = lazy(() => import("@/pages/ConnectLeadDetail"));
 const ConnectRewardsPage = lazy(() => import("@/pages/ConnectRewards"));
 const ConnectPropertyDashboard = lazy(() => import("@/pages/ConnectPropertyDashboard"));
 const ConnectDashboard = lazy(() => import("@/pages/ConnectDashboard"));
+const ConnectSignal = lazy(() => import("@/pages/ConnectSignal"));
 
 function PageLoader() {
   return (
@@ -185,6 +186,7 @@ export default function ConnectProduct() {
   const getPage = () => {
     if (leadDetailMatch) return "lead-detail";
     if (path.startsWith("/connect/dashboard")) return "dashboard";
+    if (path.startsWith("/connect/signal")) return "signal";
     if (path.startsWith("/connect/property")) return "property";
     if (path.startsWith("/connect/intelligence")) return "intelligence";
     if (path.startsWith("/connect/rewards")) return "rewards";
@@ -230,6 +232,7 @@ export default function ConnectProduct() {
             <Suspense fallback={<PageLoader />}>
               {/* Free pages — always accessible */}
               {page === "dashboard" && <ConnectDashboard isSubscriber={isSubscriber} />}
+              {page === "signal" && <ConnectSignal />}
               {page === "lead-detail" && <ConnectLeadDetail />}
               {page === "leads" && <ConnectLeads />}
               {page === "pipeline" && <ConnectPipelineTab />}

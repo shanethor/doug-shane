@@ -9,6 +9,7 @@ export type ConnectNavTab = {
 export const ALL_CONNECT_TABS: ConnectNavTab[] = [
   { id: "dashboard", label: "Dashboard", to: "/connect/dashboard" },
   { id: "leads", label: "Leads", to: "/connect/leads" },
+  { id: "signal", label: "Signal", to: "/connect/signal" },
   { id: "pipeline", label: "Pipeline", to: "/connect/pipeline" },
   { id: "sage", label: "Clark", to: "/connect/clark" },
   { id: "create", label: "Create", to: "/connect/create" },
@@ -19,7 +20,7 @@ export const ALL_CONNECT_TABS: ConnectNavTab[] = [
   { id: "property", label: "Property", to: "/connect/property" },
 ];
 
-const DEFAULT_VISIBLE_IDS = ["dashboard", "pipeline", "sage", "create", "connect", "intelligence", "email", "calendar"];
+const DEFAULT_VISIBLE_IDS = ["dashboard", "signal", "pipeline", "sage", "create", "connect", "intelligence", "email", "calendar"];
 const STORAGE_KEY = "connect_nav_config";
 
 export type ConnectNavConfig = {
