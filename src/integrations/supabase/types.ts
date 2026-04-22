@@ -4670,6 +4670,7 @@ export type Database = {
           blocked_sources: string[]
           blocked_topics: string[]
           created_at: string
+          custom_topics: string[]
           digest_enabled: boolean
           digest_last_sent_at: string | null
           digest_time: string
@@ -4686,6 +4687,7 @@ export type Database = {
           blocked_sources?: string[]
           blocked_topics?: string[]
           created_at?: string
+          custom_topics?: string[]
           digest_enabled?: boolean
           digest_last_sent_at?: string | null
           digest_time?: string
@@ -4702,6 +4704,7 @@ export type Database = {
           blocked_sources?: string[]
           blocked_topics?: string[]
           created_at?: string
+          custom_topics?: string[]
           digest_enabled?: boolean
           digest_last_sent_at?: string | null
           digest_time?: string
