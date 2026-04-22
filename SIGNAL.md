@@ -48,9 +48,10 @@ Signal is a per-user, AI-curated industry intelligence feed at `/connect/signal`
 UI sections:
 1. Hero card with manifesto quote.
 2. Daily-digest scheduler (toggle + time picker, persisted to `signal_preferences`).
-3. Refresh → calls **`signal-ingest`** for the user's industry, then re-ranks.
-4. Feed grid: image · type+score chip · title · AI summary · **"✦ why you saw this"** caption · topic chips · source link · 👍/👎.
-5. AI cover generation on demand → `signal-image`.
+3. **Your subjects** — free-form chip input persisted to `signal_preferences.custom_topics`. Each subject acts as a substring boost (+20 per match, capped +40) inside `signal-rank` and surfaces in the "why" caption as `Following "<topic>"`.
+4. Refresh → calls **`signal-ingest`** for the user's industry, then re-ranks.
+5. Feed grid (default **10 visible**, "Show 10 more" pagination over a pool of up to 60 ranked items): image · type+score chip · title · AI summary · **"✦ why you saw this"** caption · topic chips · source link · 👍/👎.
+6. AI cover generation on demand → `signal-image`.
 
 The page calls **`signal-rank`** (not raw table reads) so users always see personalized ordering, diversity caps, and reason captions.
 
