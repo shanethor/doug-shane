@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ThumbsDown, ThumbsUp, RefreshCw, Bell, ExternalLink, Loader2, Sparkles, Image as ImageIcon } from "lucide-react";
+import { ThumbsDown, ThumbsUp, RefreshCw, Bell, ExternalLink, Loader2, Sparkles, Image as ImageIcon, Plus, X, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 
 type SignalItem = {
@@ -31,9 +31,11 @@ type Prefs = {
   digest_enabled: boolean;
   digest_time: string;
   digest_timezone: string;
+  custom_topics: string[];
 };
 
 const HEADER_QUOTE = "Professionals waste 2-3 valuable hours each day scrolling. Useful information exists, but social media is designed to keep us away from our jobs and families. Signal aims to fix that.";
+const DEFAULT_VISIBLE = 10;
 
 export default function ConnectSignal() {
   const { user } = useAuth();
@@ -46,10 +48,13 @@ export default function ConnectSignal() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [genImageId, setGenImageId] = useState<string | null>(null);
+  const [visibleCount, setVisibleCount] = useState(DEFAULT_VISIBLE);
+  const [newTopic, setNewTopic] = useState("");
   const [prefs, setPrefs] = useState<Prefs>({
     digest_enabled: false,
     digest_time: "08:00",
     digest_timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "America/New_York",
+    custom_topics: [],
   });
 
   const loadItems = useCallback(async () => {
@@ -58,7 +63,7 @@ export default function ConnectSignal() {
     try {
       // v2: use signal-rank for personalized scoring + "why" reasons
       const { data: ranked, error: rankErr } = await supabase.functions.invoke("signal-rank", {
-        body: { industry: industryId, topN: 40 },
+        body: { industry: industryId, topN: 60 },
       });
       const { data: fb } = await supabase
         .from("signal_feedback")
@@ -97,6 +102,7 @@ export default function ConnectSignal() {
         digest_enabled: (data as any).digest_enabled,
         digest_time: ((data as any).digest_time || "08:00").slice(0, 5),
         digest_timezone: (data as any).digest_timezone,
+        custom_topics: (data as any).custom_topics || [],
       });
     }
   }, [user]);
@@ -161,8 +167,25 @@ export default function ConnectSignal() {
       digest_enabled: next.digest_enabled,
       digest_time: next.digest_time,
       digest_timezone: next.digest_timezone,
-    }, { onConflict: "user_id" });
-    toast.success("Digest settings saved");
+      custom_topics: next.custom_topics,
+    } as any, { onConflict: "user_id" });
+  };
+
+  const addTopic = async () => {
+    const t = newTopic.trim().toLowerCase();
+    if (!t) return;
+    if (prefs.custom_topics.includes(t)) { setNewTopic(""); return; }
+    const next = { ...prefs, custom_topics: [...prefs.custom_topics, t] };
+    setNewTopic("");
+    await savePrefs(next);
+    toast.success(`Following "${t}"`);
+    loadItems();
+  };
+
+  const removeTopic = async (t: string) => {
+    const next = { ...prefs, custom_topics: prefs.custom_topics.filter(x => x !== t) };
+    await savePrefs(next);
+    loadItems();
   };
 
   return (
