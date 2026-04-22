@@ -265,6 +265,9 @@ export default function ConnectSignal() {
               <div className="p-4 flex-1 flex flex-col gap-3">
                 <h3 className="font-semibold leading-tight line-clamp-2">{item.title}</h3>
                 <p className="text-sm text-muted-foreground line-clamp-3">{item.summary}</p>
+                {item.why && (
+                  <p className="text-[11px] text-primary/80 italic">✦ {item.why}</p>
+                )}
                 {item.topics?.length > 0 && (
                   <div className="flex flex-wrap gap-1">
                     {item.topics.slice(0, 4).map(t => (
