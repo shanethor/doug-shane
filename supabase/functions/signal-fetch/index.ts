@@ -28,6 +28,45 @@ async function fetchGoogleNewsRSS(query: string, max = 12) {
   return items;
 }
 
+async function fetchGoogleNewsTopHeadlines(max = 12) {
+  // Top headlines feed — no query required, always returns fresh stories
+  const url = `https://news.google.com/rss?hl=en-US&gl=US&ceid=US:en`;
+  try {
+    const resp = await fetch(url);
+    if (!resp.ok) return [];
+    const xml = await resp.text();
+    const items: Array<{ title: string; link: string; pubDate: string; source: string; description: string }> = [];
+    const itemRegex = /<item>([\s\S]*?)<\/item>/g;
+    let m;
+    while ((m = itemRegex.exec(xml)) !== null && items.length < max) {
+      const it = m[1];
+      const title = it.match(/<title>([\s\S]*?)<\/title>/)?.[1]?.replace(/<!\[CDATA\[(.*?)\]\]>/g, "$1") || "";
+      const link = it.match(/<link>([\s\S]*?)<\/link>/)?.[1] || "";
+      const pubDate = it.match(/<pubDate>([\s\S]*?)<\/pubDate>/)?.[1] || "";
+      const source = it.match(/<source[^>]*>([\s\S]*?)<\/source>/)?.[1]?.replace(/<!\[CDATA\[(.*?)\]\]>/g, "$1") || "Google News";
+      const description = it.match(/<description>([\s\S]*?)<\/description>/)?.[1]?.replace(/<!\[CDATA\[(.*?)\]\]>/g, "$1") || "";
+      if (title) items.push({ title, link, pubDate, source, description });
+    }
+    return items;
+  } catch { return []; }
+}
+
+async function fetchHackerNews(max = 10) {
+  // HN Algolia API — free, no key, great signal-to-noise for business/tech
+  try {
+    const resp = await fetch(`https://hn.algolia.com/api/v1/search?tags=front_page&hitsPerPage=${max}`);
+    if (!resp.ok) return [];
+    const data = await resp.json();
+    return (data.hits || []).filter((h: any) => h.url && h.title).map((h: any) => ({
+      title: h.title as string,
+      link: h.url as string,
+      pubDate: h.created_at as string,
+      source: "Hacker News",
+      description: (h.story_text || "").slice(0, 240),
+    }));
+  } catch { return []; }
+}
+
 function extractImageFromHtml(html: string): string | null {
   const og = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i);
   if (og) return og[1];
@@ -122,7 +161,13 @@ serve(async (req) => {
       `${industry} ${subVertical || ""} regulation OR lawsuit OR trend`,
       `${industry} ${subVertical || ""} acquisition OR funding OR expansion`,
     ];
-    const fetched = (await Promise.all(queries.map(q => fetchGoogleNewsRSS(q, 6)))).flat();
+    const [industryResults, topHeadlines, hn] = await Promise.all([
+      Promise.all(queries.map(q => fetchGoogleNewsRSS(q, 6))).then(arr => arr.flat()),
+      fetchGoogleNewsTopHeadlines(10),
+      fetchHackerNews(8),
+    ]);
+    // Always include fallbacks so the feed is never empty
+    const fetched = [...industryResults, ...topHeadlines, ...hn];
 
     // Dedupe by title
     const seen = new Set<string>();
