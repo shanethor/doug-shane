@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ThumbsDown, ThumbsUp, RefreshCw, Bell, ExternalLink, Loader2, Sparkles, Image as ImageIcon } from "lucide-react";
+import { ThumbsDown, ThumbsUp, RefreshCw, Bell, ExternalLink, Loader2, Sparkles, Image as ImageIcon, Plus, X, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 
 type SignalItem = {
@@ -31,9 +31,11 @@ type Prefs = {
   digest_enabled: boolean;
   digest_time: string;
   digest_timezone: string;
+  custom_topics: string[];
 };
 
 const HEADER_QUOTE = "Professionals waste 2-3 valuable hours each day scrolling. Useful information exists, but social media is designed to keep us away from our jobs and families. Signal aims to fix that.";
+const DEFAULT_VISIBLE = 10;
 
 export default function ConnectSignal() {
   const { user } = useAuth();
@@ -46,10 +48,13 @@ export default function ConnectSignal() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [genImageId, setGenImageId] = useState<string | null>(null);
+  const [visibleCount, setVisibleCount] = useState(DEFAULT_VISIBLE);
+  const [newTopic, setNewTopic] = useState("");
   const [prefs, setPrefs] = useState<Prefs>({
     digest_enabled: false,
     digest_time: "08:00",
     digest_timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "America/New_York",
+    custom_topics: [],
   });
 
   const loadItems = useCallback(async () => {
@@ -58,7 +63,7 @@ export default function ConnectSignal() {
     try {
       // v2: use signal-rank for personalized scoring + "why" reasons
       const { data: ranked, error: rankErr } = await supabase.functions.invoke("signal-rank", {
-        body: { industry: industryId, topN: 40 },
+        body: { industry: industryId, topN: 60 },
       });
       const { data: fb } = await supabase
         .from("signal_feedback")
@@ -97,6 +102,7 @@ export default function ConnectSignal() {
         digest_enabled: (data as any).digest_enabled,
         digest_time: ((data as any).digest_time || "08:00").slice(0, 5),
         digest_timezone: (data as any).digest_timezone,
+        custom_topics: (data as any).custom_topics || [],
       });
     }
   }, [user]);
@@ -161,8 +167,25 @@ export default function ConnectSignal() {
       digest_enabled: next.digest_enabled,
       digest_time: next.digest_time,
       digest_timezone: next.digest_timezone,
-    }, { onConflict: "user_id" });
-    toast.success("Digest settings saved");
+      custom_topics: next.custom_topics,
+    } as any, { onConflict: "user_id" });
+  };
+
+  const addTopic = async () => {
+    const t = newTopic.trim().toLowerCase();
+    if (!t) return;
+    if (prefs.custom_topics.includes(t)) { setNewTopic(""); return; }
+    const next = { ...prefs, custom_topics: [...prefs.custom_topics, t] };
+    setNewTopic("");
+    await savePrefs(next);
+    toast.success(`Following "${t}"`);
+    loadItems();
+  };
+
+  const removeTopic = async (t: string) => {
+    const next = { ...prefs, custom_topics: prefs.custom_topics.filter(x => x !== t) };
+    await savePrefs(next);
+    loadItems();
   };
 
   return (
@@ -208,8 +231,44 @@ export default function ConnectSignal() {
         </div>
       </Card>
 
+      {/* Custom subjects */}
+      <Card className="p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <Sparkles className="h-4 w-4 text-primary" />
+          <p className="text-sm font-medium">Your subjects</p>
+          <span className="text-xs text-muted-foreground">— add topics you want to follow beyond {industryLabel}.</span>
+        </div>
+        <div className="flex flex-wrap gap-2 mb-3">
+          {prefs.custom_topics.length === 0 && (
+            <span className="text-xs text-muted-foreground">No extra subjects yet. Try “cyber liability”, “AI regulation”, “mortgage rates”…</span>
+          )}
+          {prefs.custom_topics.map(t => (
+            <Badge key={t} variant="secondary" className="gap-1 pr-1">
+              {t}
+              <button onClick={() => removeTopic(t)} className="hover:bg-background/50 rounded-sm p-0.5">
+                <X className="h-3 w-3" />
+              </button>
+            </Badge>
+          ))}
+        </div>
+        <div className="flex gap-2">
+          <Input
+            placeholder="Add a subject (e.g. cyber liability)"
+            value={newTopic}
+            onChange={(e) => setNewTopic(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addTopic(); } }}
+            className="flex-1"
+          />
+          <Button size="sm" onClick={addTopic} disabled={!newTopic.trim()}>
+            <Plus className="h-4 w-4 mr-1" /> Add
+          </Button>
+        </div>
+      </Card>
+
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">{items.length} signals in your feed</p>
+        <p className="text-sm text-muted-foreground">
+          Showing {Math.min(visibleCount, items.length)} of {items.length} signals
+        </p>
         <Button variant="outline" size="sm" onClick={refresh} disabled={refreshing}>
           {refreshing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
           Refresh
@@ -227,8 +286,9 @@ export default function ConnectSignal() {
           </Button>
         </Card>
       ) : (
+        <>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {items.map(item => (
+          {items.slice(0, visibleCount).map(item => (
             <Card key={item.id} className="overflow-hidden flex flex-col">
               <div className="relative aspect-video bg-muted">
                 {item.image_url ? (
@@ -307,6 +367,18 @@ export default function ConnectSignal() {
             </Card>
           ))}
         </div>
+        {visibleCount < items.length && (
+          <div className="flex justify-center pt-2">
+            <Button
+              variant="outline"
+              onClick={() => setVisibleCount(c => c + 10)}
+            >
+              <ChevronDown className="h-4 w-4 mr-2" />
+              Show 10 more ({items.length - visibleCount} remaining)
+            </Button>
+          </div>
+        )}
+        </>
       )}
     </div>
   );
