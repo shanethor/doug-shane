@@ -231,8 +231,44 @@ export default function ConnectSignal() {
         </div>
       </Card>
 
+      {/* Custom subjects */}
+      <Card className="p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <Sparkles className="h-4 w-4 text-primary" />
+          <p className="text-sm font-medium">Your subjects</p>
+          <span className="text-xs text-muted-foreground">— add topics you want to follow beyond {industryLabel}.</span>
+        </div>
+        <div className="flex flex-wrap gap-2 mb-3">
+          {prefs.custom_topics.length === 0 && (
+            <span className="text-xs text-muted-foreground">No extra subjects yet. Try “cyber liability”, “AI regulation”, “mortgage rates”…</span>
+          )}
+          {prefs.custom_topics.map(t => (
+            <Badge key={t} variant="secondary" className="gap-1 pr-1">
+              {t}
+              <button onClick={() => removeTopic(t)} className="hover:bg-background/50 rounded-sm p-0.5">
+                <X className="h-3 w-3" />
+              </button>
+            </Badge>
+          ))}
+        </div>
+        <div className="flex gap-2">
+          <Input
+            placeholder="Add a subject (e.g. cyber liability)"
+            value={newTopic}
+            onChange={(e) => setNewTopic(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addTopic(); } }}
+            className="flex-1"
+          />
+          <Button size="sm" onClick={addTopic} disabled={!newTopic.trim()}>
+            <Plus className="h-4 w-4 mr-1" /> Add
+          </Button>
+        </div>
+      </Card>
+
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">{items.length} signals in your feed</p>
+        <p className="text-sm text-muted-foreground">
+          Showing {Math.min(visibleCount, items.length)} of {items.length} signals
+        </p>
         <Button variant="outline" size="sm" onClick={refresh} disabled={refreshing}>
           {refreshing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
           Refresh
@@ -250,8 +286,9 @@ export default function ConnectSignal() {
           </Button>
         </Card>
       ) : (
+        <>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {items.map(item => (
+          {items.slice(0, visibleCount).map(item => (
             <Card key={item.id} className="overflow-hidden flex flex-col">
               <div className="relative aspect-video bg-muted">
                 {item.image_url ? (
