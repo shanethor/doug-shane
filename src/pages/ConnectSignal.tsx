@@ -171,7 +171,7 @@ export default function ConnectSignal() {
         <div className="flex items-center gap-2 mb-2">
           <Sparkles className="h-5 w-5 text-primary" />
           <h1 className="text-2xl font-bold">Signal</h1>
-          <Badge variant="secondary" className="ml-2">{industry}</Badge>
+          <Badge variant="secondary" className="ml-2">{industryLabel}</Badge>
         </div>
         <p className="text-sm text-muted-foreground italic max-w-3xl">"{HEADER_QUOTE}"</p>
       </div>
@@ -220,7 +220,7 @@ export default function ConnectSignal() {
         <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
       ) : items.length === 0 ? (
         <Card className="p-12 text-center">
-          <p className="text-muted-foreground mb-4">No signals yet for {industry}.</p>
+          <p className="text-muted-foreground mb-4">No signals yet for {industryLabel}.</p>
           <Button onClick={refresh} disabled={refreshing}>
             {refreshing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
             Fetch your first batch
