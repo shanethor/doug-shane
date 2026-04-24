@@ -8,19 +8,16 @@ export type ConnectNavTab = {
 
 export const ALL_CONNECT_TABS: ConnectNavTab[] = [
   { id: "dashboard", label: "Dashboard", to: "/connect/dashboard" },
-  { id: "leads", label: "Leads", to: "/connect/leads" },
-  { id: "signal", label: "Signal", to: "/connect/signal" },
+  { id: "connect", label: "Connect", to: "/connect" },
+  { id: "flux", label: "Flux", to: "/connect/intelligence" },
   { id: "pipeline", label: "Pipeline", to: "/connect/pipeline" },
   { id: "sage", label: "Clark", to: "/connect/clark" },
   { id: "create", label: "Create", to: "/connect/create" },
-  { id: "connect", label: "Connect", to: "/connect" },
-  { id: "intelligence", label: "Intelligence", to: "/connect/intelligence" },
   { id: "email", label: "Email", to: "/connect/email" },
   { id: "calendar", label: "Calendar", to: "/connect/calendar" },
-  { id: "property", label: "Property", to: "/connect/property" },
 ];
 
-const DEFAULT_VISIBLE_IDS = ["dashboard", "signal", "pipeline", "sage", "create", "connect", "intelligence", "email", "calendar"];
+const DEFAULT_VISIBLE_IDS = ["dashboard", "connect", "flux", "pipeline", "sage", "create", "email", "calendar"];
 const STORAGE_KEY = "connect_nav_config";
 
 export type ConnectNavConfig = {
@@ -33,8 +30,8 @@ function loadConfig(): ConnectNavConfig {
     if (raw) {
       const parsed = JSON.parse(raw);
       const validIds = new Set(ALL_CONNECT_TABS.map(t => t.id));
-      // Always strip "leads" — feature hidden from nav
-      const filtered = (parsed.visibleTabIds || []).filter((id: string) => validIds.has(id) && id !== "leads");
+      // Strip any ids no longer in ALL_CONNECT_TABS (e.g. legacy leads/signal/property/intelligence)
+      const filtered = (parsed.visibleTabIds || []).filter((id: string) => validIds.has(id));
       if (filtered.length >= 2) return { visibleTabIds: filtered };
     }
   } catch {}
