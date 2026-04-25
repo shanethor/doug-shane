@@ -183,9 +183,7 @@ export default function Clark() {
         </div>
       </div>
 
-      <ConnectBanner />
-
-      <div className="mx-auto max-w-7xl px-3 sm:px-4 pb-2">
+      <div className="mx-auto max-w-7xl px-3 sm:px-4 pt-2">
         <div className="flex items-center justify-between gap-3 px-4 py-2.5 rounded-lg border border-dashed border-primary/30 bg-gradient-to-r from-primary/5 to-transparent">
           <div className="flex items-center gap-3 min-w-0">
             <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary/15 shrink-0">
@@ -205,6 +203,8 @@ export default function Clark() {
           </Badge>
         </div>
       </div>
+
+      <ConnectBanner />
 
       <div className="mx-auto max-w-7xl flex relative" style={{ height: "calc(100vh - 105px)" }}>
         {showPanel && (

@@ -287,6 +287,26 @@ export default function ConnectDashboard({ isSubscriber = false }: { isSubscribe
   return (
     <div className="max-w-6xl mx-auto space-y-5 pb-12">
 
+      {/* ═══ SMS Coming Soon — top banner ═══ */}
+      <div className="flex items-center justify-between gap-3 px-4 py-2.5 rounded-lg border border-dashed border-primary/30 bg-gradient-to-r from-primary/5 to-transparent">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary/15 shrink-0">
+            <Smartphone className="h-4 w-4 text-primary" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-foreground truncate">
+              Text <span className="font-mono text-primary">(999) 999-9999</span> to chat with Clark on the go
+            </p>
+            <p className="text-xs text-muted-foreground truncate">
+              Pipeline updates, lead alerts, and quick AI replies — right in your texts.
+            </p>
+          </div>
+        </div>
+        <Badge variant="outline" className="text-[10px] uppercase tracking-wider border-primary/30 text-primary shrink-0">
+          Coming Soon
+        </Badge>
+      </div>
+
       {/* ═══ ZONE A — Header ═══ */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
         <div>
@@ -626,35 +646,6 @@ export default function ConnectDashboard({ isSubscriber = false }: { isSubscribe
                 </div>
               </div>
             ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* ═══ ZONE G1 — SMS Coming Soon ═══ */}
-      <Card className="border-dashed border-primary/30 bg-gradient-to-br from-primary/5 to-transparent">
-        <CardContent className="p-5">
-          <div className="flex items-start gap-4">
-            <div className="h-10 w-10 rounded-lg bg-primary/15 flex items-center justify-center shrink-0">
-              <Smartphone className="h-5 w-5 text-primary" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap mb-1">
-                <h3 className="text-sm font-semibold text-foreground">Text Clark on the go</h3>
-                <Badge variant="outline" className="text-[10px] uppercase tracking-wider border-primary/30 text-primary">
-                  Coming Soon
-                </Badge>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Get pipeline updates, lead alerts, and quick AI replies right in your text messages — no app required. Perfect for the windshield, the worksite, or between meetings.
-              </p>
-              <div className="flex flex-wrap gap-1.5 mt-3">
-                {["Daily pipeline digest", "New lead alerts", "Quick Clark Q&A", "Meeting reminders"].map(f => (
-                  <span key={f} className="px-2 py-1 rounded-md text-[10px] bg-muted/40 text-muted-foreground border border-border">
-                    {f}
-                  </span>
-                ))}
-              </div>
-            </div>
           </div>
         </CardContent>
       </Card>
