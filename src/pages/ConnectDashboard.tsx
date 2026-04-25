@@ -144,6 +144,16 @@ export default function ConnectDashboard({ isSubscriber = false }: { isSubscribe
     .filter(l => ["presenting", "negotiating"].includes(l.stage || ""))
     .reduce((s, l) => s + (l.target_premium || l.est_premium || 0), 0);
 
+  // KPI summary
+  const wonLeads = leads.filter(l => ["sold", "won", "bound", "closed_won"].includes(l.stage || "")).length;
+  const lostLeads = leads.filter(l => ["lost", "closed_lost"].includes(l.stage || "")).length;
+  const closedTotal = wonLeads + lostLeads;
+  const conversionRate = closedTotal > 0 ? Math.round((wonLeads / closedTotal) * 100) : 0;
+  const wonValue = leads
+    .filter(l => ["sold", "won", "bound", "closed_won"].includes(l.stage || ""))
+    .reduce((s, l) => s + (l.target_premium || l.est_premium || 0), 0);
+  const avgDealSize = wonLeads > 0 ? Math.round(wonValue / wonLeads) : 0;
+
   // Stale leads (no update in 48h)
   const staleLeads = useMemo(() => {
     const cutoff = Date.now() - 48 * 3600000;
