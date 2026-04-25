@@ -321,6 +321,50 @@ export default function ConnectDashboard({ isSubscriber = false }: { isSubscribe
 
       {/* ═══ ZONE B — Pipeline Snapshot ═══ */}
       <div className="space-y-3">
+        {/* KPI Summary Row */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <Card className="bg-card border-border">
+            <CardContent className="p-3">
+              <div className="flex items-center gap-1.5 text-muted-foreground mb-1">
+                <Users className="h-3 w-3" />
+                <span className="text-[10px] uppercase tracking-wider">Active</span>
+              </div>
+              <p className="text-xl font-bold text-foreground">{activeLeadCount}</p>
+              <p className="text-[10px] text-muted-foreground">leads in flight</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-card border-border">
+            <CardContent className="p-3">
+              <div className="flex items-center gap-1.5 text-muted-foreground mb-1">
+                <Percent className="h-3 w-3" />
+                <span className="text-[10px] uppercase tracking-wider">Win Rate</span>
+              </div>
+              <p className="text-xl font-bold text-foreground">{conversionRate}%</p>
+              <p className="text-[10px] text-muted-foreground">{wonLeads} won / {closedTotal} closed</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-card border-border">
+            <CardContent className="p-3">
+              <div className="flex items-center gap-1.5 text-muted-foreground mb-1">
+                <TrendingUp className="h-3 w-3" />
+                <span className="text-[10px] uppercase tracking-wider">Avg Deal</span>
+              </div>
+              <p className="text-xl font-bold text-foreground">${avgDealSize.toLocaleString()}</p>
+              <p className="text-[10px] text-muted-foreground">per won lead</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-card border-border">
+            <CardContent className="p-3">
+              <div className="flex items-center gap-1.5 text-muted-foreground mb-1">
+                <DollarSign className="h-3 w-3" />
+                <span className="text-[10px] uppercase tracking-wider">Booked</span>
+              </div>
+              <p className="text-xl font-bold text-foreground">${wonValue.toLocaleString()}</p>
+              <p className="text-[10px] text-muted-foreground">closed-won value</p>
+            </CardContent>
+          </Card>
+        </div>
+
         {/* B1: Stage Counts */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {(activeStages.length > 0 ? activeStages.slice(0, 4) : [
