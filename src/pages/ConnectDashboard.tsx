@@ -9,6 +9,7 @@ import {
   Sparkles, Send, Image, Palette, Clock, Plus, BarChart3,
   Loader2, FileText, ArrowUpRight, Calendar as CalendarIcon,
   PenLine, ChevronRight, MessageSquare, Activity, Lock,
+  Smartphone, TrendingUp, Percent,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
