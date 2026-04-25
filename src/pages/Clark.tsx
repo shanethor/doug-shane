@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CLARK_TIERS, CLARK_ADMIN_EMAILS, type ClarkTierKey } from "@/lib/clark-tiers";
 import { toast } from "sonner";
-import { CreditCard, Zap, PanelLeftClose, PanelLeft, ArrowRight, Network, X } from "lucide-react";
+import { CreditCard, Zap, PanelLeftClose, PanelLeft, ArrowRight, Network, X, Smartphone } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Link } from "react-router-dom";
 
@@ -184,6 +184,27 @@ export default function Clark() {
       </div>
 
       <ConnectBanner />
+
+      <div className="mx-auto max-w-7xl px-3 sm:px-4 pb-2">
+        <div className="flex items-center justify-between gap-3 px-4 py-2.5 rounded-lg border border-dashed border-primary/30 bg-gradient-to-r from-primary/5 to-transparent">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary/15 shrink-0">
+              <Smartphone className="h-4 w-4 text-primary" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-foreground truncate">
+                Text <span className="font-mono text-primary">(999) 999-9999</span> to chat with Clark on the go
+              </p>
+              <p className="text-xs text-muted-foreground truncate">
+                Submit clients, get answers, and update files via SMS — no app needed.
+              </p>
+            </div>
+          </div>
+          <Badge variant="outline" className="text-[10px] uppercase tracking-wider border-primary/30 text-primary shrink-0">
+            Coming Soon
+          </Badge>
+        </div>
+      </div>
 
       <div className="mx-auto max-w-7xl flex relative" style={{ height: "calc(100vh - 105px)" }}>
         {showPanel && (
