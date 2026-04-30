@@ -1,5 +1,8 @@
 project_id = "wxastapzvnktttlhaiwe"
 
+[functions.admin-export-db]
+verify_jwt = false
+
 [functions.map-fields]
 verify_jwt = false
 
