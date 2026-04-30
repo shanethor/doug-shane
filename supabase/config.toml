@@ -1,7 +1,7 @@
+project_id = "wxastapzvnktttlhaiwe"
 
 [functions.admin-export-db]
 verify_jwt = false
-project_id = "wxastapzvnktttlhaiwe"
 
 [functions.map-fields]
 verify_jwt = false
