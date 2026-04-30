@@ -51,7 +51,10 @@ Deno.serve(async (req) => {
 
   const select = url.searchParams.get("select") ?? "*";
   const order = url.searchParams.get("order") ?? "";
-  let q = admin.from(table).select(select, { count: "exact" });
+  const noCount = url.searchParams.get("nocount") === "1";
+  let q = noCount
+    ? admin.from(table).select(select)
+    : admin.from(table).select(select, { count: "exact" });
   if (order) q = q.order(order, { ascending: true });
   const { data, error, count } = await q.range(offset, offset + limit - 1);
 
