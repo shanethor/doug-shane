@@ -49,10 +49,11 @@ Deno.serve(async (req) => {
     });
   }
 
-  const { data, error, count } = await admin
-    .from(table)
-    .select("*", { count: "exact" })
-    .range(offset, offset + limit - 1);
+  const select = url.searchParams.get("select") ?? "*";
+  const order = url.searchParams.get("order") ?? "";
+  let q = admin.from(table).select(select, { count: "exact" });
+  if (order) q = q.order(order, { ascending: true });
+  const { data, error, count } = await q.range(offset, offset + limit - 1);
 
   if (error) {
     return new Response(JSON.stringify({ error: error.message }), {
