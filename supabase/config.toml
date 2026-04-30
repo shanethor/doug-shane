@@ -1,3 +1,6 @@
+
+[functions.admin-export-db]
+verify_jwt = false
 project_id = "wxastapzvnktttlhaiwe"
 
 [functions.map-fields]
