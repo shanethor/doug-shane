@@ -154,51 +154,58 @@
      Both selectors use .dark coexistence (we keep .dark on html for
      components that gate styles via the dark class).
      ─────────────────────────────────────────────────────────── */
-  /* DAY — sage-tinted soft warm-light. Use & .dark to win specificity
-     even when .dark is also present on <html>. */
+  /* DAY — distinctly sage-tinted soft warm-light. Win against .dark
+     by selecting both states. */
   html.connect-day,
   html.connect-day.dark {
-    --background: 95 20% 92%;
-    --foreground: 140 25% 14%;
+    --background: 110 22% 88%;
+    --foreground: 145 30% 12%;
 
-    --card: 90 25% 96%;
-    --card-foreground: 140 25% 14%;
+    --card: 105 26% 93%;
+    --card-foreground: 145 30% 12%;
 
-    --popover: 90 25% 96%;
-    --popover-foreground: 140 25% 14%;
+    --popover: 105 26% 93%;
+    --popover-foreground: 145 30% 12%;
 
-    --primary: 140 22% 36%;
-    --primary-foreground: 80 30% 98%;
+    --primary: 145 26% 32%;
+    --primary-foreground: 90 40% 97%;
 
-    --secondary: 95 18% 86%;
-    --secondary-foreground: 140 25% 14%;
+    --secondary: 110 20% 82%;
+    --secondary-foreground: 145 30% 12%;
 
-    --muted: 95 15% 88%;
-    --muted-foreground: 140 12% 34%;
+    --muted: 105 18% 84%;
+    --muted-foreground: 145 14% 30%;
 
-    --accent: 140 24% 50%;
+    --accent: 145 28% 46%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 65% 48%;
+    --destructive: 0 65% 46%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 100 15% 78%;
-    --input: 100 15% 78%;
-    --ring: 140 22% 36%;
+    --border: 115 18% 72%;
+    --input: 115 18% 72%;
+    --ring: 145 26% 32%;
 
-    --aura-navy: 140 25% 26%;
-    --aura-steel: 140 14% 46%;
-    --aura-silver: 140 12% 68%;
-    --aura-glow: 140 22% 38%;
+    --aura-navy: 145 30% 22%;
+    --aura-steel: 145 16% 42%;
+    --aura-silver: 145 14% 64%;
+    --aura-glow: 145 26% 34%;
 
-    --sidebar-background: 95 18% 90%;
-    --sidebar-foreground: 140 25% 18%;
-    --sidebar-primary: 140 22% 36%;
-    --sidebar-primary-foreground: 80 30% 98%;
-    --sidebar-accent: 95 18% 84%;
-    --sidebar-accent-foreground: 140 25% 14%;
-    --sidebar-border: 100 15% 76%;
-    --sidebar-ring: 140 22% 36%;
+    --sidebar-background: 110 22% 84%;
+    --sidebar-foreground: 145 30% 16%;
+    --sidebar-primary: 145 26% 32%;
+    --sidebar-primary-foreground: 90 40% 97%;
+    --sidebar-accent: 110 20% 78%;
+    --sidebar-accent-foreground: 145 30% 12%;
+    --sidebar-border: 115 18% 70%;
+    --sidebar-ring: 145 26% 32%;
+
+    color-scheme: light;
+  }
+  /* Force body to actually paint sage even if children try to inherit dark bg */
+  html.connect-day body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
   }
   /* In day mode body itself should be light regardless of .dark */
   html.connect-day body { color-scheme: light; }

@@ -183,14 +183,25 @@ export default function ConnectProduct() {
   useEffect(() => {
     try { localStorage.setItem("connect-view-mode", viewMode); } catch {}
     const root = document.documentElement;
-    root.classList.remove("connect-day", "connect-night");
-    if (viewMode === "day") {
-      root.classList.add("connect-day");
-      root.classList.remove("dark"); // ensure light bg paints from :root tokens too
-    } else {
-      root.classList.add("connect-night");
-      root.classList.add("dark");
-    }
+
+    const apply = () => {
+      if (viewMode === "day") {
+        if (!root.classList.contains("connect-day")) root.classList.add("connect-day");
+        if (root.classList.contains("connect-night")) root.classList.remove("connect-night");
+        if (root.classList.contains("dark")) root.classList.remove("dark");
+      } else {
+        if (!root.classList.contains("connect-night")) root.classList.add("connect-night");
+        if (root.classList.contains("connect-day")) root.classList.remove("connect-day");
+        if (!root.classList.contains("dark")) root.classList.add("dark");
+      }
+    };
+    apply();
+
+    // Other code (syncThemeFromProfile, Settings page) may toggle .dark.
+    // While Connect is mounted, our viewMode is authoritative — re-enforce.
+    const observer = new MutationObserver(() => apply());
+    observer.observe(root, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
   }, [viewMode]);
   // Restore site default (dark) and clear connect classes when leaving Connect
   useEffect(() => {
@@ -252,24 +263,36 @@ export default function ConnectProduct() {
         <QuoteTicker />
         <CrossProductBanner />
         <div className="flex items-center justify-end gap-2 px-2 sm:px-4 lg:px-6 pt-2">
-          <button
-            onClick={() => setViewMode(viewMode === "day" ? "night" : "day")}
-            className="group inline-flex items-center gap-2 rounded-full border border-border bg-card/60 backdrop-blur px-3 py-1.5 text-xs font-medium text-foreground hover:bg-card transition-colors"
-            aria-label={`Switch to ${viewMode === "day" ? "night" : "day"} view`}
-            title={`Switch to ${viewMode === "day" ? "Night" : "Day"} view`}
+          <div
+            role="group"
+            aria-label="Connect view mode"
+            className="inline-flex items-center rounded-full border border-border bg-card/60 backdrop-blur p-0.5 text-xs font-medium"
           >
-            {viewMode === "day" ? (
-              <>
-                <Sun className="h-3.5 w-3.5 text-primary" />
-                <span>Day</span>
-              </>
-            ) : (
-              <>
-                <Moon className="h-3.5 w-3.5 text-primary" />
-                <span>Night</span>
-              </>
-            )}
-          </button>
+            <button
+              onClick={() => setViewMode("day")}
+              aria-pressed={viewMode === "day"}
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 transition-colors ${
+                viewMode === "day"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Sun className="h-3.5 w-3.5" />
+              <span>Day</span>
+            </button>
+            <button
+              onClick={() => setViewMode("night")}
+              aria-pressed={viewMode === "night"}
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 transition-colors ${
+                viewMode === "night"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Moon className="h-3.5 w-3.5" />
+              <span>Night</span>
+            </button>
+          </div>
         </div>
         <div className="flex-1 w-full px-2 sm:px-4 lg:px-6 py-4">
           <div style={{
