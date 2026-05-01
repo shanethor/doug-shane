@@ -148,91 +148,104 @@
 
   /* ───────────────────────────────────────────────────────────
      Connect Day / Night views
-     - .connect-day  → light, sage palette
-     - .connect-night → dark, gold palette
-     Scoped: only applies inside the Connect product wrapper.
+     Applied on <html> so body bg + all child tokens swap.
+     - .connect-day  → soft sage-tinted light palette
+     - .connect-night → deep warm bronze with gold accents
+     Both selectors use .dark coexistence (we keep .dark on html for
+     components that gate styles via the dark class).
      ─────────────────────────────────────────────────────────── */
-  .connect-day {
-    --background: 80 18% 96%;
-    --foreground: 140 20% 14%;
+  /* DAY — sage-tinted soft warm-light. Use & .dark to win specificity
+     even when .dark is also present on <html>. */
+  html.connect-day,
+  html.connect-day.dark {
+    --background: 95 20% 92%;
+    --foreground: 140 25% 14%;
 
-    --card: 80 22% 99%;
-    --card-foreground: 140 20% 14%;
+    --card: 90 25% 96%;
+    --card-foreground: 140 25% 14%;
 
-    --popover: 80 22% 99%;
-    --popover-foreground: 140 20% 14%;
+    --popover: 90 25% 96%;
+    --popover-foreground: 140 25% 14%;
 
-    --primary: 140 18% 38%;
+    --primary: 140 22% 36%;
     --primary-foreground: 80 30% 98%;
 
-    --secondary: 90 18% 90%;
-    --secondary-foreground: 140 20% 14%;
+    --secondary: 95 18% 86%;
+    --secondary-foreground: 140 25% 14%;
 
-    --muted: 90 14% 92%;
-    --muted-foreground: 140 10% 38%;
+    --muted: 95 15% 88%;
+    --muted-foreground: 140 12% 34%;
 
-    --accent: 140 22% 55%;
+    --accent: 140 24% 50%;
     --accent-foreground: 0 0% 100%;
 
-    --border: 100 14% 84%;
-    --input: 100 14% 84%;
-    --ring: 140 18% 38%;
+    --destructive: 0 65% 48%;
+    --destructive-foreground: 0 0% 100%;
 
-    --aura-navy: 140 18% 30%;
-    --aura-steel: 140 12% 50%;
-    --aura-silver: 140 10% 72%;
-    --aura-glow: 140 18% 38%;
+    --border: 100 15% 78%;
+    --input: 100 15% 78%;
+    --ring: 140 22% 36%;
 
-    --sidebar-background: 80 18% 96%;
-    --sidebar-foreground: 140 20% 18%;
-    --sidebar-primary: 140 18% 38%;
+    --aura-navy: 140 25% 26%;
+    --aura-steel: 140 14% 46%;
+    --aura-silver: 140 12% 68%;
+    --aura-glow: 140 22% 38%;
+
+    --sidebar-background: 95 18% 90%;
+    --sidebar-foreground: 140 25% 18%;
+    --sidebar-primary: 140 22% 36%;
     --sidebar-primary-foreground: 80 30% 98%;
-    --sidebar-accent: 90 18% 90%;
-    --sidebar-accent-foreground: 140 20% 14%;
-    --sidebar-border: 100 14% 84%;
-    --sidebar-ring: 140 18% 38%;
+    --sidebar-accent: 95 18% 84%;
+    --sidebar-accent-foreground: 140 25% 14%;
+    --sidebar-border: 100 15% 76%;
+    --sidebar-ring: 140 22% 36%;
   }
+  /* In day mode body itself should be light regardless of .dark */
+  html.connect-day body { color-scheme: light; }
 
-  .connect-night {
-    --background: 36 18% 5%;
-    --foreground: 43 35% 88%;
+  /* NIGHT — gold/bronze palette */
+  html.connect-night,
+  html.connect-night.dark {
+    --background: 36 22% 5%;
+    --foreground: 43 40% 88%;
 
-    --card: 36 16% 8%;
-    --card-foreground: 43 35% 88%;
+    --card: 36 20% 8%;
+    --card-foreground: 43 40% 88%;
 
-    --popover: 36 16% 8%;
-    --popover-foreground: 43 35% 88%;
+    --popover: 36 20% 8%;
+    --popover-foreground: 43 40% 88%;
 
-    --primary: 43 65% 52%;
+    --primary: 43 70% 54%;
     --primary-foreground: 36 30% 8%;
 
-    --secondary: 36 14% 12%;
-    --secondary-foreground: 43 35% 86%;
+    --secondary: 36 16% 12%;
+    --secondary-foreground: 43 40% 86%;
 
-    --muted: 36 12% 13%;
-    --muted-foreground: 43 18% 62%;
+    --muted: 36 14% 13%;
+    --muted-foreground: 43 22% 62%;
 
-    --accent: 43 55% 45%;
+    --accent: 43 60% 46%;
     --accent-foreground: 36 30% 8%;
 
-    --border: 36 18% 16%;
-    --input: 36 18% 16%;
-    --ring: 43 65% 52%;
+    --border: 36 22% 16%;
+    --input: 36 22% 16%;
+    --ring: 43 70% 54%;
 
-    --aura-navy: 43 35% 86%;
-    --aura-steel: 43 22% 58%;
-    --aura-silver: 43 14% 40%;
-    --aura-glow: 43 65% 52%;
+    --aura-navy: 43 40% 86%;
+    --aura-steel: 43 26% 58%;
+    --aura-silver: 43 16% 40%;
+    --aura-glow: 43 70% 54%;
 
-    --sidebar-background: 36 18% 6%;
-    --sidebar-foreground: 43 30% 86%;
-    --sidebar-primary: 43 65% 52%;
+    --sidebar-background: 36 22% 6%;
+    --sidebar-foreground: 43 35% 86%;
+    --sidebar-primary: 43 70% 54%;
     --sidebar-primary-foreground: 36 30% 8%;
-    --sidebar-accent: 36 14% 11%;
-    --sidebar-accent-foreground: 43 30% 86%;
-    --sidebar-border: 36 16% 14%;
-    --sidebar-ring: 43 65% 52%;
+    --sidebar-accent: 36 16% 11%;
+    --sidebar-accent-foreground: 43 35% 86%;
+    --sidebar-border: 36 18% 14%;
+    --sidebar-ring: 43 70% 54%;
   }
+  html.connect-night body { color-scheme: dark; }
 }
 
 @layer base {
