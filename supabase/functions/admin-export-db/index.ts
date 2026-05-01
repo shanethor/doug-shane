@@ -43,6 +43,78 @@ Deno.serve(async (req) => {
     });
   }
 
+  // List storage objects in a bucket
+  if (table === "__bucket_list__") {
+    const bucket = url.searchParams.get("bucket")!;
+    const all: any[] = [];
+    let page = 0;
+    const pageSize = 1000;
+    // recursive listing
+    async function walk(prefix: string) {
+      let off = 0;
+      while (true) {
+        const { data, error } = await admin.storage.from(bucket).list(prefix, {
+          limit: pageSize, offset: off, sortBy: { column: "name", order: "asc" },
+        });
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        for (const item of data) {
+          const path = prefix ? `${prefix}/${item.name}` : item.name;
+          if (item.id === null || item.metadata === null) {
+            // folder
+            await walk(path);
+          } else {
+            all.push({ path, size: item.metadata?.size ?? 0 });
+          }
+        }
+        if (data.length < pageSize) break;
+        off += pageSize;
+      }
+    }
+    try { await walk(""); } catch (e) {
+      return new Response(JSON.stringify({ error: String(e) }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    return new Response(JSON.stringify({ bucket, files: all }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  // Sign URLs for storage objects (batch)
+  if (table === "__bucket_sign__") {
+    const bucket = url.searchParams.get("bucket")!;
+    const body = await req.json();
+    const paths: string[] = body.paths;
+    const { data, error } = await admin.storage.from(bucket).createSignedUrls(paths, 3600);
+    if (error) {
+      return new Response(JSON.stringify({ error: error.message }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    return new Response(JSON.stringify({ urls: data }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  // Stream a chunk of signal_items image_url base64 data
+  if (table === "__signal_images__") {
+    const { data, error } = await admin
+      .from("signal_items")
+      .select("id, image_url")
+      .not("image_url", "is", null)
+      .order("id", { ascending: true })
+      .range(offset, offset + limit - 1);
+    if (error) {
+      return new Response(JSON.stringify({ error: error.message }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    return new Response(JSON.stringify({ rows: data ?? [] }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
   if (!table || !TABLES.includes(table)) {
     return new Response(JSON.stringify({ error: "invalid table" }), {
       status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
