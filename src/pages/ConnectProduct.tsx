@@ -182,17 +182,23 @@ export default function ConnectProduct() {
   });
   useEffect(() => {
     try { localStorage.setItem("connect-view-mode", viewMode); } catch {}
-    // Mirror onto <html> so global components (sidebar, dropdowns) follow Connect's mode
     const root = document.documentElement;
-    if (viewMode === "day") root.classList.remove("dark");
-    else root.classList.add("dark");
-    return () => {
-      // Restore dark default when leaving Connect
-    };
+    root.classList.remove("connect-day", "connect-night");
+    if (viewMode === "day") {
+      root.classList.add("connect-day");
+      root.classList.remove("dark"); // ensure light bg paints from :root tokens too
+    } else {
+      root.classList.add("connect-night");
+      root.classList.add("dark");
+    }
   }, [viewMode]);
-  // When unmounting Connect entirely, restore dark mode site default
+  // Restore site default (dark) and clear connect classes when leaving Connect
   useEffect(() => {
-    return () => { document.documentElement.classList.add("dark"); };
+    return () => {
+      const root = document.documentElement;
+      root.classList.remove("connect-day", "connect-night");
+      root.classList.add("dark");
+    };
   }, []);
 
   const handleIntroComplete = () => {
@@ -239,7 +245,6 @@ export default function ConnectProduct() {
   return (
     <>
       {showIntro && <CinematicIntro onComplete={handleIntroComplete} />}
-      <div className={viewMode === "day" ? "connect-day" : "connect-night"}>
       <ProductLayout
         onStudioClick={() => navigate("/connect/studio")}
         studioUnlocked={false}
@@ -294,7 +299,6 @@ export default function ConnectProduct() {
           </div>
         </div>
       </ProductLayout>
-      </div>
     </>
   );
 }
