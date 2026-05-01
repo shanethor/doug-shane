@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { isMasterEmail } from "@/lib/master-accounts";
 import { ComingSoonGate } from "@/components/connect/ComingSoonGate";
 import { useEarlyAccessWhitelist } from "@/hooks/useEarlyAccessWhitelist";
-import { Loader2, ArrowRight, Shield, X } from "lucide-react";
+import { Loader2, ArrowRight, Shield, X, Sun, Moon } from "lucide-react";
 import { Link } from "react-router-dom";
 
 // Lazy-load heavy sub-pages to keep the ConnectProduct chunk small
@@ -173,6 +173,28 @@ export default function ConnectProduct() {
     try { return !!sessionStorage.getItem("connect-entered"); } catch { return false; }
   });
 
+  // Day / Night view toggle (sage = day, gold = night). Persisted per-device.
+  const [viewMode, setViewMode] = useState<"day" | "night">(() => {
+    try {
+      const v = localStorage.getItem("connect-view-mode");
+      return v === "day" || v === "night" ? v : "night";
+    } catch { return "night"; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem("connect-view-mode", viewMode); } catch {}
+    // Mirror onto <html> so global components (sidebar, dropdowns) follow Connect's mode
+    const root = document.documentElement;
+    if (viewMode === "day") root.classList.remove("dark");
+    else root.classList.add("dark");
+    return () => {
+      // Restore dark default when leaving Connect
+    };
+  }, [viewMode]);
+  // When unmounting Connect entirely, restore dark mode site default
+  useEffect(() => {
+    return () => { document.documentElement.classList.add("dark"); };
+  }, []);
+
   const handleIntroComplete = () => {
     sessionStorage.setItem("connect-entered", "true");
     setShowIntro(false);
@@ -217,12 +239,33 @@ export default function ConnectProduct() {
   return (
     <>
       {showIntro && <CinematicIntro onComplete={handleIntroComplete} />}
+      <div className={viewMode === "day" ? "connect-day" : "connect-night"}>
       <ProductLayout
         onStudioClick={() => navigate("/connect/studio")}
         studioUnlocked={false}
       >
         <QuoteTicker />
         <CrossProductBanner />
+        <div className="flex items-center justify-end gap-2 px-2 sm:px-4 lg:px-6 pt-2">
+          <button
+            onClick={() => setViewMode(viewMode === "day" ? "night" : "day")}
+            className="group inline-flex items-center gap-2 rounded-full border border-border bg-card/60 backdrop-blur px-3 py-1.5 text-xs font-medium text-foreground hover:bg-card transition-colors"
+            aria-label={`Switch to ${viewMode === "day" ? "night" : "day"} view`}
+            title={`Switch to ${viewMode === "day" ? "Night" : "Day"} view`}
+          >
+            {viewMode === "day" ? (
+              <>
+                <Sun className="h-3.5 w-3.5 text-primary" />
+                <span>Day</span>
+              </>
+            ) : (
+              <>
+                <Moon className="h-3.5 w-3.5 text-primary" />
+                <span>Night</span>
+              </>
+            )}
+          </button>
+        </div>
         <div className="flex-1 w-full px-2 sm:px-4 lg:px-6 py-4">
           <div style={{
             opacity: introComplete ? 1 : 0,
@@ -251,6 +294,7 @@ export default function ConnectProduct() {
           </div>
         </div>
       </ProductLayout>
+      </div>
     </>
   );
 }
