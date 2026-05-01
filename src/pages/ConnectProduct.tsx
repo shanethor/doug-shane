@@ -183,14 +183,25 @@ export default function ConnectProduct() {
   useEffect(() => {
     try { localStorage.setItem("connect-view-mode", viewMode); } catch {}
     const root = document.documentElement;
-    root.classList.remove("connect-day", "connect-night");
-    if (viewMode === "day") {
-      root.classList.add("connect-day");
-      root.classList.remove("dark"); // ensure light bg paints from :root tokens too
-    } else {
-      root.classList.add("connect-night");
-      root.classList.add("dark");
-    }
+
+    const apply = () => {
+      if (viewMode === "day") {
+        if (!root.classList.contains("connect-day")) root.classList.add("connect-day");
+        if (root.classList.contains("connect-night")) root.classList.remove("connect-night");
+        if (root.classList.contains("dark")) root.classList.remove("dark");
+      } else {
+        if (!root.classList.contains("connect-night")) root.classList.add("connect-night");
+        if (root.classList.contains("connect-day")) root.classList.remove("connect-day");
+        if (!root.classList.contains("dark")) root.classList.add("dark");
+      }
+    };
+    apply();
+
+    // Other code (syncThemeFromProfile, Settings page) may toggle .dark.
+    // While Connect is mounted, our viewMode is authoritative — re-enforce.
+    const observer = new MutationObserver(() => apply());
+    observer.observe(root, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
   }, [viewMode]);
   // Restore site default (dark) and clear connect classes when leaving Connect
   useEffect(() => {
