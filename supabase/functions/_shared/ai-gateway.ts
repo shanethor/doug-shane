@@ -106,6 +106,12 @@ function stripPrefix(model: string): string {
  * For streaming, returns a Response whose body is an SSE stream.
  */
 export async function callAI(opts: CallAIOptions): Promise<CallAIResponse | Response> {
+  // ─────────────────────────────────────────────────────────────
+  // AI FEATURES DISABLED (user request — stop all AI usage/spend)
+  // To re-enable, remove this guard.
+  // ─────────────────────────────────────────────────────────────
+  throw new Error("AI features are disabled for this project.");
+  // eslint-disable-next-line no-unreachable
   const provider = detectProvider(opts.model);
 
   if (opts.stream) {
@@ -624,6 +630,12 @@ function fakeStreamResponse(result: CallAIResponse): Response {
  * Returns a Response object so legacy code that does `await resp.json()` still works.
  */
 export async function fetchAIGateway(body: CallAIOptions): Promise<Response> {
+  // AI features disabled — return 503 immediately without contacting any provider.
+  return new Response(
+    JSON.stringify({ error: "AI features are disabled for this project." }),
+    { status: 503, headers: { "Content-Type": "application/json" } },
+  );
+  // eslint-disable-next-line no-unreachable
   if (body.stream) {
     const result = await callAI(body);
     if (result instanceof Response) return result;
